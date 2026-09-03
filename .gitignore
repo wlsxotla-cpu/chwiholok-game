@@ -1,0 +1,13 @@
+# Godot editor/import cache (regenerated automatically)
+.godot/
+
+# Build output
+build/
+
+# Autonomous loop logs (runtime output, not source)
+logs/
+
+# OS/editor cruft
+Thumbs.db
+.DS_Store
+*.tmp
