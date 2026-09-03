@@ -33,13 +33,24 @@ $Settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries
 
-Register-ScheduledTask `
-    -TaskName $TaskName `
-    -Action $Action `
-    -Trigger $Trigger `
-    -Settings $Settings `
-    -Description "취호록 자율 개발 루프 (로그인 시 시작, 비정상 종료 시 재시작)" `
-    -Force | Out-Null
+try {
+    Register-ScheduledTask `
+        -TaskName $TaskName `
+        -Action $Action `
+        -Trigger $Trigger `
+        -Settings $Settings `
+        -Description "취호록 자율 개발 루프 (로그인 시 시작, 비정상 종료 시 재시작)" `
+        -Force `
+        -ErrorAction Stop | Out-Null
+} catch {
+    Write-Host "등록 실패: $($_.Exception.Message)"
+    if ($_.Exception.Message -match "Access is denied") {
+        Write-Host ""
+        Write-Host "관리자 권한이 필요합니다. PowerShell을 '관리자 권한으로 실행'한 뒤 다시 실행하세요:"
+        Write-Host "  $($MyInvocation.MyCommand.Path)"
+    }
+    exit 1
+}
 
 Write-Host "작업 스케줄러에 '$TaskName' 등록 완료. 아직 시작되지 않았습니다."
 Write-Host "시작:   loop\loop_control.ps1 -Action start"
