@@ -74,7 +74,9 @@ while ($true) {
     }
     $promptText = Get-Content $PromptFile -Raw -Encoding utf8
 
-    $argList = @("-p", $promptText, "--model", $Config.LOOP_MODEL, "--max-turns", $Config.LOOP_MAX_TURNS)
+    # 참고: 설치된 claude.exe에는 턴 수를 직접 제한하는 플래그가 없어서
+    # LOOP_MAX_TURNS(env.sh)는 여기서 CLI에 넘기지 않습니다.
+    $argList = @("-p", $promptText, "--model", $Config.LOOP_MODEL)
     if ($Config.LOOP_EXTRA_ARGS -and $Config.LOOP_EXTRA_ARGS.Trim() -ne "") {
         $argList += ($Config.LOOP_EXTRA_ARGS -split '\s+')
     }
