@@ -11,6 +11,7 @@ const MAX_WEAPON_LEVEL := 8
 const SOFT_CAP_LEVEL := 5
 const MAX_WEAPON_SLOTS := 5
 const PASSIVE_SLOTS := 5
+const FUSION_START_LEVEL := 5
 const TARGET_SEARCH_RANGE := 300.0
 
 const WEAPON_DEFS := {
@@ -630,7 +631,7 @@ func _try_fuse(wid: String) -> void:
 		return
 	weapons.erase(w_self)
 	weapons.erase(w_partner)
-	weapons.append({"id": fid, "level": 1, "timer": 0.0})
+	weapons.append({"id": fid, "level": FUSION_START_LEVEL, "timer": 0.0})
 	SoundManager.play("levelup", 3.0, 0.5)
 	screen_shake(6.0, 0.25)
 	weapon_fused.emit(WEAPON_DEFS.get(fid, {}).get("name", fid))
