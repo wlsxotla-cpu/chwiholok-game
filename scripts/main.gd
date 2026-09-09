@@ -1,14 +1,14 @@
 extends Node2D
 
 @export var spawn_interval: float = 2.3
-@export var min_spawn_interval: float = 0.25
+@export var min_spawn_interval: float = 0.16
 @export var difficulty_ramp: float = 0.992
 
 const BOSS_INTERVAL := 150.0
 const HORDE_INTERVAL := 50.0
 const FIRST_HORDE_DELAY := 110.0
 const OVERLORD_TIME := 1800.0
-const SAFETY_ENEMY_CEILING := 220
+const SAFETY_ENEMY_CEILING := 320
 
 var elapsed: float = 0.0
 var spawn_timer: float = 0.0
@@ -114,7 +114,7 @@ func _spawn_boss() -> void:
 	SoundManager.play("levelup", 3.0, 0.6)
 
 func _spawn_horde() -> void:
-	var count: int = 32 if GameState.hard_mode else 24
+	var count: int = 44 if GameState.hard_mode else 34
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	for i in range(count):
 		var enemy := preload("res://scenes/Enemy.tscn").instantiate()

@@ -37,16 +37,7 @@ func _ready() -> void:
 	_check_update_notice()
 
 func _check_update_notice() -> void:
-	if not OS.has_feature("web"):
-		return
-	var last_seen: Variant = JavaScriptBridge.eval("(function(){ try { return localStorage.getItem('chwiholok_last_seen_version') || ''; } catch(e) { return ''; } })()", true)
-	if typeof(last_seen) != TYPE_STRING:
-		return
-	if last_seen == "":
-		JavaScriptBridge.eval("try { localStorage.setItem('chwiholok_last_seen_version', %s); } catch(e) {}" % JSON.stringify(GameState.VERSION), true)
-		return
-	if last_seen != GameState.VERSION:
-		_show_changelog_popup(false)
+	_show_changelog_popup(false)
 
 func _show_changelog_popup(show_all: bool) -> void:
 	pending_update = not show_all
