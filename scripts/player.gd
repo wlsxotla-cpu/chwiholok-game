@@ -559,7 +559,16 @@ func _offer_level_up() -> void:
 			pool.append({"kind": "upgrade_weapon", "wid": w.id})
 	if owned_passives.size() < PASSIVE_SLOTS:
 		for pid in PASSIVE_DEFS.keys():
-			if not owned_passives.get(pid, false):
+			if owned_passives.get(pid, false):
+				continue
+			var pdef: Dictionary = PASSIVE_DEFS[pid]
+			var has_maxed_weapon := false
+			for wid2 in pdef.weapons:
+				var w2 := _get_weapon(wid2)
+				if not w2.is_empty() and int(w2.level) >= MAX_WEAPON_LEVEL:
+					has_maxed_weapon = true
+					break
+			if has_maxed_weapon:
 				pool.append({"kind": "passive", "pid": pid})
 	for s in upgrade_pool:
 		pool.append({"kind": "stat", "sid": s.id})
