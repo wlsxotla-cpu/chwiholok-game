@@ -30,6 +30,23 @@ func _ready() -> void:
 		dev_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1))
 		$Margin/VBox.add_child(dev_label)
 		$Margin/VBox.move_child(dev_label, 1)
+
+		var dev_coins_btn := Button.new()
+		dev_coins_btn.text = "[테스트] 내공 +9999"
+		dev_coins_btn.pressed.connect(func() -> void:
+			GameState.total_coins += 9999
+			_refresh_all())
+		$Margin/VBox.add_child(dev_coins_btn)
+		$Margin/VBox.move_child(dev_coins_btn, 2)
+
+		var dev_max_btn := Button.new()
+		dev_max_btn.text = "[테스트] 모든 강화 만렙"
+		dev_max_btn.pressed.connect(func() -> void:
+			for id in GameState.META_DEFS.keys():
+				GameState.meta_upgrades[id] = int(GameState.META_DEFS[id].max_level)
+			_refresh_all())
+		$Margin/VBox.add_child(dev_max_btn)
+		$Margin/VBox.move_child(dev_max_btn, 3)
 	shop_toggle.pressed.connect(_on_shop_toggle)
 	shop_panel.visible = false
 	guide_toggle.pressed.connect(_on_guide_toggle)

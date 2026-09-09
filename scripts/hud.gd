@@ -3,6 +3,7 @@ extends CanvasLayer
 signal upgrade_chosen(id: String)
 signal restart_pressed
 signal menu_pressed
+signal dev_action(action: String)
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var timer_label: Label = $TopRightInfo/TimerLabel
@@ -33,6 +34,17 @@ signal menu_pressed
 @onready var ingame_guide_panel: Panel = $InGameGuidePanel
 @onready var ingame_guide_list: VBoxContainer = $InGameGuidePanel/VBox/Scroll/List
 @onready var ingame_guide_close: Button = $InGameGuidePanel/VBox/CloseButton
+@onready var dev_button: Button = $PausePanel/VBox/DevButton
+@onready var dev_panel: Panel = $DevPanel
+@onready var dev_close: Button = $DevPanel/VBox/CloseButton
+@onready var dev_heal_button: Button = $DevPanel/VBox/Scroll/List/HealButton
+@onready var dev_kill_all_button: Button = $DevPanel/VBox/Scroll/List/KillAllButton
+@onready var dev_max_weapons_button: Button = $DevPanel/VBox/Scroll/List/MaxWeaponsButton
+@onready var dev_gain_xp_button: Button = $DevPanel/VBox/Scroll/List/GainXpButton
+@onready var dev_add_coins_button: Button = $DevPanel/VBox/Scroll/List/AddCoinsButton
+@onready var dev_spawn_boss_button: Button = $DevPanel/VBox/Scroll/List/SpawnBossButton
+@onready var dev_spawn_horde_button: Button = $DevPanel/VBox/Scroll/List/SpawnHordeButton
+@onready var dev_spawn_overlord_button: Button = $DevPanel/VBox/Scroll/List/SpawnOverlordButton
 @onready var weapon_row: HBoxContainer = $Margin/VBox/WeaponRow
 @onready var passive_row: HBoxContainer = $Margin/VBox/PassiveRow
 @onready var evolve_label: Label = $EvolveLabel
@@ -72,6 +84,29 @@ func _ready() -> void:
 	ingame_guide_panel.visible = false
 	_build_ingame_guide()
 	_refresh_sound_buttons()
+
+	dev_button.visible = GameState.dev_mode
+	dev_panel.visible = false
+	dev_button.pressed.connect(_on_dev_pressed)
+	dev_close.pressed.connect(_on_dev_close)
+	dev_heal_button.pressed.connect(func() -> void: dev_action.emit("heal"))
+	dev_kill_all_button.pressed.connect(func() -> void: dev_action.emit("kill_all"))
+	dev_max_weapons_button.pressed.connect(func() -> void: dev_action.emit("max_weapons"))
+	dev_gain_xp_button.pressed.connect(func() -> void: dev_action.emit("gain_xp"))
+	dev_add_coins_button.pressed.connect(func() -> void: dev_action.emit("add_coins"))
+	dev_spawn_boss_button.pressed.connect(func() -> void: dev_action.emit("spawn_boss"))
+	dev_spawn_horde_button.pressed.connect(func() -> void: dev_action.emit("spawn_horde"))
+	dev_spawn_overlord_button.pressed.connect(func() -> void: dev_action.emit("spawn_overlord"))
+
+func _on_dev_pressed() -> void:
+	SoundManager.play("click")
+	pause_panel.visible = false
+	dev_panel.visible = true
+
+func _on_dev_close() -> void:
+	SoundManager.play("click")
+	dev_panel.visible = false
+	pause_panel.visible = true
 
 func _on_sfx_toggle() -> void:
 	SoundManager.set_sfx_enabled(not SoundManager.sfx_enabled)

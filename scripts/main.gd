@@ -36,6 +36,7 @@ func _ready() -> void:
 	hud.upgrade_chosen.connect(func(id: String) -> void: player.apply_upgrade(id))
 	hud.restart_pressed.connect(_on_restart_pressed)
 	hud.menu_pressed.connect(_on_menu_pressed)
+	hud.dev_action.connect(_on_dev_action)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
 	_update_hud()
@@ -140,6 +141,33 @@ func _spawn_overlord() -> void:
 	hud.show_overlord_warning()
 	SoundManager.play("levelup", 4.0, 0.45)
 	screen_shake_all()
+
+func _on_dev_action(action: String) -> void:
+	if not GameState.dev_mode:
+		return
+	match action:
+		"heal":
+			player.heal(999999.0)
+		"kill_all":
+			for e in get_tree().get_nodes_in_group("enemies"):
+				if is_instance_valid(e):
+					e.take_damage(9999999.0)
+		"max_weapons":
+			for w in player.weapons.duplicate():
+				w.level = player.MAX_WEAPON_LEVEL
+				player._try_evolve(w, w.id)
+				player._try_fuse(w.id)
+			player.stats_changed.emit()
+		"gain_xp":
+			player.gain_xp(999999.0)
+		"add_coins":
+			player.add_coins(9999)
+		"spawn_boss":
+			_spawn_boss()
+		"spawn_horde":
+			_spawn_horde()
+		"spawn_overlord":
+			_spawn_overlord()
 
 func _on_overlord_defeated() -> void:
 	hud.show_overlord_defeated()

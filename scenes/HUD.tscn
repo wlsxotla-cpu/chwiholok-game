@@ -183,6 +183,14 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 56)
 text = "무기 도감"
 
+[node name="DevButton" type="Button" parent="PausePanel/VBox"]
+process_mode = 3
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+theme_override_colors/font_color = Color(1.0, 0.4, 0.4, 1)
+text = "[테스트] 관리자 도구"
+
 [node name="MenuButton" type="Button" parent="PausePanel/VBox"]
 process_mode = 3
 layout_mode = 2
@@ -288,6 +296,107 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 14
 
 [node name="CloseButton" type="Button" parent="InGameGuidePanel/VBox"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+text = "닫기"
+
+[node name="DevPanel" type="Panel" parent="."]
+process_mode = 3
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 60.0
+offset_right = -30.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="DevPanel"]
+process_mode = 3
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="DevPanel/VBox"]
+process_mode = 3
+layout_mode = 2
+horizontal_alignment = 1
+text = "[테스트] 관리자 도구"
+theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1.0, 0.4, 0.4, 1)
+
+[node name="Scroll" type="ScrollContainer" parent="DevPanel/VBox"]
+process_mode = 3
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="List" type="VBoxContainer" parent="DevPanel/VBox/Scroll"]
+process_mode = 3
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HealButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "체력 완전 회복"
+
+[node name="KillAllButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "몬스터 전멸"
+
+[node name="MaxWeaponsButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "보유 무기 전체 만렙"
+
+[node name="GainXpButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "경험치 대량 획득 (레벨업)"
+
+[node name="AddCoinsButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "내공 +9999"
+
+[node name="SpawnBossButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "보스 즉시 스폰"
+
+[node name="SpawnHordeButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "몬스터 웨이브 즉시 스폰"
+
+[node name="SpawnOverlordButton" type="Button" parent="DevPanel/VBox/Scroll/List"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+text = "천마(오버로드) 즉시 스폰"
+
+[node name="CloseButton" type="Button" parent="DevPanel/VBox"]
 process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 60)

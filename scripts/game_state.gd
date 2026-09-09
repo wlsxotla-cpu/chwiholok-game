@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.9.6 · 2026-09-09"
+const VERSION := "v0.9.7 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -136,6 +136,8 @@ func _load_data() -> void:
 		music_enabled = bool(parsed.get("music_enabled", true))
 
 func _save_data() -> void:
+	if dev_mode:
+		return
 	var data := {
 		"total_coins": total_coins,
 		"meta_upgrades": meta_upgrades,
