@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.9.8 · 2026-09-09"
+const VERSION := "v0.9.9 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -46,15 +46,17 @@ func _ready() -> void:
 	_load_data()
 	_check_dev_mode()
 
+const DEV_KEY := "chwiho9427x"
+
 func _check_dev_mode() -> void:
 	if not OS.has_feature("web"):
 		return
 	var query: Variant = JavaScriptBridge.eval("window.location.search", true)
-	if typeof(query) == TYPE_STRING and query.find("dev=1") != -1:
+	if typeof(query) == TYPE_STRING and query.find("admin=" + DEV_KEY) != -1:
 		dev_mode = true
-		JavaScriptBridge.eval("try { localStorage.setItem('chwiholok_dev', '1'); } catch(e) {}", true)
+		JavaScriptBridge.eval("try { localStorage.setItem('chwiholok_admin_v2', '1'); } catch(e) {}", true)
 		return
-	var stored: Variant = JavaScriptBridge.eval("(function(){ try { return localStorage.getItem('chwiholok_dev') || ''; } catch(e) { return ''; } })()", true)
+	var stored: Variant = JavaScriptBridge.eval("(function(){ try { return localStorage.getItem('chwiholok_admin_v2') || ''; } catch(e) { return ''; } })()", true)
 	if typeof(stored) == TYPE_STRING and stored == "1":
 		dev_mode = true
 
