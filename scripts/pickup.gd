@@ -12,9 +12,12 @@ const TEXTURES := {
 @export var type: Type = Type.XP
 @export var value: float = 1.0
 
+const MAX_LIFETIME := 40.0
+
 var player: Node2D
 var attracting: bool = false
 var speed: float = 0.0
+var lifetime: float = MAX_LIFETIME
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -24,6 +27,12 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 func _physics_process(delta: float) -> void:
+	lifetime -= delta
+	if lifetime <= 0.0:
+		queue_free()
+		return
+	if lifetime <= 3.0:
+		sprite.modulate.a = 0.4 + 0.6 * absf(sin(lifetime * 12.0))
 	if player == null:
 		return
 	var dist: float = global_position.distance_to(player.global_position)

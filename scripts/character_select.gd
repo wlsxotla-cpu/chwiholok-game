@@ -158,6 +158,13 @@ func _build_shop_row(id: String) -> Control:
 	desc_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
 	info.add_child(desc_label)
 
+	if lvl > 0:
+		var bonus_label := Label.new()
+		bonus_label.text = "현재 적용중: %s" % _current_bonus_text(id, lvl)
+		bonus_label.add_theme_font_size_override("font_size", 13)
+		bonus_label.add_theme_color_override("font_color", Color(0.45, 0.85, 0.5, 1))
+		info.add_child(bonus_label)
+
 	var buy_btn := Button.new()
 	if maxed:
 		buy_btn.text = "MAX"
@@ -169,6 +176,19 @@ func _build_shop_row(id: String) -> Control:
 	row.add_child(buy_btn)
 
 	return row
+
+func _current_bonus_text(id: String, lvl: int) -> String:
+	match id:
+		"hp":
+			return "체력 +%d" % (15 * lvl)
+		"dmg":
+			return "공격력 +%d%%" % (5 * lvl)
+		"move":
+			return "이동속도 +%d%%" % (4 * lvl)
+		"pickup":
+			return "수집 반경 +%d%%" % (10 * lvl)
+		_:
+			return ""
 
 func _on_buy_pressed(id: String) -> void:
 	SoundManager.play("click")

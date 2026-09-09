@@ -41,7 +41,7 @@ func _ready() -> void:
 	speed = def.speed
 	max_health = def.health * difficulty_mult
 	contact_damage = def.contact_damage * (1.0 + (difficulty_mult - 1.0) * 0.6)
-	xp_value = def.xp
+	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5)
 	health = max_health
 	sprite.texture = load(def.texture)
 	fire_timer = float(def.get("fire_cooldown", 0.0)) * randf_range(0.4, 1.0)
@@ -52,9 +52,24 @@ func _ready() -> void:
 		shape.radius = 42.0 if type == Type.OVERLORD else 30.0
 		$CollisionShape2D.shape = shape
 		slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
+	else:
+		_apply_rank_tint()
 
 	add_to_group("enemies")
 	player = get_tree().get_first_node_in_group("player")
+
+func _apply_rank_tint() -> void:
+	if difficulty_mult >= 5.0:
+		sprite.modulate = Color(1.0, 0.35, 0.95, 1.0)
+		sprite.scale *= 1.25
+	elif difficulty_mult >= 3.5:
+		sprite.modulate = Color(1.0, 0.25, 0.25, 1.0)
+		sprite.scale *= 1.16
+	elif difficulty_mult >= 2.2:
+		sprite.modulate = Color(1.0, 0.55, 0.15, 1.0)
+		sprite.scale *= 1.08
+	elif difficulty_mult >= 1.4:
+		sprite.modulate = Color(1.0, 0.95, 0.3, 1.0)
 
 func _physics_process(delta: float) -> void:
 	if player == null:
@@ -213,3 +228,14 @@ func _drop_loot() -> void:
 			var angle: float = TAU * i / float(coin_count)
 			bonus_coin.global_position = global_position + Vector2(cos(angle), sin(angle)) * 26.0
 			parent.add_child(bonus_coin)
+
+		var xp_gem_count: int = 10 if type == Type.OVERLORD else 5
+		var bonus_xp_total: float = xp_value * (2.0 if type == Type.OVERLORD else 1.0)
+		var xp_per_gem: float = bonus_xp_total / float(xp_gem_count)
+		for i in range(xp_gem_count):
+			var bonus_gem := preload("res://scenes/Pickup.tscn").instantiate()
+			bonus_gem.type = bonus_gem.Type.XP
+			bonus_gem.value = xp_per_gem
+			var angle: float = TAU * (i + 0.5) / float(xp_gem_count)
+			bonus_gem.global_position = global_position + Vector2(cos(angle), sin(angle)) * 44.0
+			parent.add_child(bonus_gem)
