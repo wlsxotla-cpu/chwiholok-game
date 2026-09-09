@@ -488,6 +488,9 @@ func _get_weapon(id: String) -> Dictionary:
 			return w
 	return {}
 
+func has_weapon(id: String) -> bool:
+	return not _get_weapon(id).is_empty()
+
 func take_damage(amount: float) -> void:
 	if invincible_timer > 0.0:
 		return
