@@ -2,6 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
+const VERSION := "v0.9.0 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -49,6 +50,11 @@ func _check_dev_mode() -> void:
 		return
 	var query: Variant = JavaScriptBridge.eval("window.location.search", true)
 	if typeof(query) == TYPE_STRING and query.find("dev=1") != -1:
+		dev_mode = true
+		JavaScriptBridge.eval("try { localStorage.setItem('chwiholok_dev', '1'); } catch(e) {}", true)
+		return
+	var stored: Variant = JavaScriptBridge.eval("(function(){ try { return localStorage.getItem('chwiholok_dev') || ''; } catch(e) { return ''; } })()", true)
+	if typeof(stored) == TYPE_STRING and stored == "1":
 		dev_mode = true
 
 func get_character(id: String) -> Dictionary:

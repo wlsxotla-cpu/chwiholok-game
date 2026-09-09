@@ -10,6 +10,13 @@ extends Control
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
 
 func _ready() -> void:
+	var version_label := Label.new()
+	version_label.text = GameState.VERSION
+	version_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	version_label.position = Vector2(6, 4)
+	version_label.add_theme_font_size_override("font_size", 11)
+	version_label.add_theme_color_override("font_color", Color(0.6, 0.58, 0.55, 0.7))
+	add_child(version_label)
 	if GameState.dev_mode:
 		var dev_label := Label.new()
 		dev_label.text = "개발자 모드 — 모든 캐릭터 해금됨"

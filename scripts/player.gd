@@ -76,6 +76,9 @@ var orbit_node: Node2D = null
 var shake_time: float = 0.0
 var shake_strength: float = 0.0
 
+const INVINCIBLE_DURATION := 0.5
+var invincible_timer: float = 0.0
+
 var upgrade_pool: Array = [
 	{"id": "dmg", "name": "공격력 증가", "desc": "모든 무기 공격력 +10%"},
 	{"id": "speed", "name": "공격속도 증가", "desc": "모든 무기 쿨타임 -10%"},
@@ -162,9 +165,16 @@ func _physics_process(delta: float) -> void:
 		input_dir = input_dir.normalized()
 
 	var target_velocity: Vector2 = input_dir * speed
-	velocity = velocity.lerp(target_velocity, clamp(11.0 * delta, 0.0, 1.0))
+	velocity = velocity.lerp(target_velocity, clamp(20.0 * delta, 0.0, 1.0))
 	move_and_slide()
 	_update_animation(input_dir)
+
+	if invincible_timer > 0.0:
+		invincible_timer -= delta
+		anim.visible = int(invincible_timer * 20.0) % 2 == 0
+		if invincible_timer <= 0.0:
+			anim.visible = true
+			anim.modulate = Color(1, 1, 1, 1)
 
 	for w in weapons:
 		w.timer -= delta
@@ -467,11 +477,14 @@ func _get_weapon(id: String) -> Dictionary:
 	return {}
 
 func take_damage(amount: float) -> void:
+	if invincible_timer > 0.0:
+		return
 	health -= amount
 	stats_changed.emit()
 	screen_shake(clamp(amount * 0.5, 3.0, 10.0), 0.18)
 	SoundManager.play("hurt")
 	_flash_hurt()
+	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
 		health = 0.0
 		died.emit()
