@@ -97,6 +97,10 @@ theme_override_colors/font_color = Color(0.91, 0.71, 0.24, 1)
 layout_mode = 2
 text = "상점"
 
+[node name="GuideToggle" type="Button" parent="Margin/VBox/CoinsRow"]
+layout_mode = 2
+text = "무기 도감"
+
 [node name="ShopPanel" type="PanelContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
@@ -104,6 +108,18 @@ layout_mode = 2
 [node name="ShopList" type="VBoxContainer" parent="Margin/VBox/ShopPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
+
+[node name="GuidePanel" type="PanelContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 320)
+
+[node name="GuideScroll" type="ScrollContainer" parent="Margin/VBox/GuidePanel"]
+layout_mode = 2
+
+[node name="GuideList" type="VBoxContainer" parent="Margin/VBox/GuidePanel/GuideScroll"]
+layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="Grid" type="GridContainer" parent="Margin/VBox"]
 layout_mode = 2
