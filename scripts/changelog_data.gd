@@ -1,6 +1,9 @@
 extends RefCounted
 
 const ENTRIES := [
+	{"version": "v0.17.2", "date": "2026-09-09", "changes": [
+		"관통시/표창/회류표/화염구가 풀숲을 못 부수던 버그 수정",
+	]},
 	{"version": "v0.17.1", "date": "2026-09-09", "changes": [
 		"천지개벽검 보유 시 적의 화살을 검으로 막아내는 특수 능력 추가",
 	]},
