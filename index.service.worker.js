@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1788952612|6789901';
+const CACHE_VERSION = '1788952742|7015093';
 /** @type {string} */
 const CACHE_PREFIX = '취호록-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
@@ -19,6 +19,9 @@ const CACHED_FILES = ["index.html","index.js","index.offline.html","index.icon.p
 /** @type {string[]} */
 const CACHEABLE_FILES = ["index.wasm","index.pck"];
 const FULL_CACHE = CACHED_FILES.concat(CACHEABLE_FILES);
+
+self.skipWaiting();
+self.clients.claim();
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(CACHED_FILES)));
