@@ -539,7 +539,7 @@ func gain_xp(amount: float) -> void:
 	if xp >= xp_to_level:
 		xp -= xp_to_level
 		level += 1
-		xp_to_level *= 1.13
+		xp_to_level *= 1.20
 		_offer_level_up()
 
 func _offer_level_up() -> void:
