@@ -71,16 +71,16 @@ func _ready() -> void:
 
 func _apply_rank_tint() -> void:
 	if difficulty_mult >= 5.0:
-		sprite.modulate = Color(1.0, 0.35, 0.95, 1.0)
+		sprite.modulate = Color(0.95, 0.68, 0.92, 1.0)
 		sprite.scale *= 1.25
 	elif difficulty_mult >= 3.5:
-		sprite.modulate = Color(1.0, 0.25, 0.25, 1.0)
+		sprite.modulate = Color(1.0, 0.62, 0.58, 1.0)
 		sprite.scale *= 1.16
 	elif difficulty_mult >= 2.2:
-		sprite.modulate = Color(1.0, 0.55, 0.15, 1.0)
+		sprite.modulate = Color(1.0, 0.78, 0.58, 1.0)
 		sprite.scale *= 1.08
 	elif difficulty_mult >= 1.4:
-		sprite.modulate = Color(1.0, 0.95, 0.3, 1.0)
+		sprite.modulate = Color(1.0, 0.93, 0.7, 1.0)
 
 func _physics_process(delta: float) -> void:
 	if player == null:
