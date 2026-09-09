@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.9.1 · 2026-09-09"
+const VERSION := "v0.9.2 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -27,8 +27,8 @@ const WEAPON_NAMES := {
 
 const META_DEFS := {
 	"hp": {"name": "체력 강화", "desc": "최대체력 +15", "base_cost": 15, "max_level": 10},
-	"dmg": {"name": "공격력 강화", "desc": "전체 공격력 +5%", "base_cost": 18, "max_level": 10},
-	"move": {"name": "이동속도 강화", "desc": "이동속도 +4%", "base_cost": 15, "max_level": 8},
+	"dmg": {"name": "공격력 강화", "desc": "전체 공격력 +7%", "base_cost": 18, "max_level": 10},
+	"move": {"name": "이동속도 강화", "desc": "이동속도 +6%", "base_cost": 15, "max_level": 8},
 	"pickup": {"name": "수집 반경 강화", "desc": "픽업 반경 +10%", "base_cost": 12, "max_level": 8},
 }
 

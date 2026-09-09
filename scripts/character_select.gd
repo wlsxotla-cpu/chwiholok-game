@@ -182,9 +182,9 @@ func _current_bonus_text(id: String, lvl: int) -> String:
 		"hp":
 			return "체력 +%d" % (15 * lvl)
 		"dmg":
-			return "공격력 +%d%%" % (5 * lvl)
+			return "공격력 +%d%%" % (7 * lvl)
 		"move":
-			return "이동속도 +%d%%" % (4 * lvl)
+			return "이동속도 +%d%%" % (6 * lvl)
 		"pickup":
 			return "수집 반경 +%d%%" % (10 * lvl)
 		_:
@@ -193,4 +193,23 @@ func _current_bonus_text(id: String, lvl: int) -> String:
 func _on_buy_pressed(id: String) -> void:
 	SoundManager.play("click")
 	if GameState.buy_upgrade(id):
+		var def: Dictionary = GameState.META_DEFS[id]
+		_show_toast("%s! %s" % [def.name, def.desc])
 		_refresh_all()
+
+func _show_toast(text: String) -> void:
+	var toast := Label.new()
+	toast.text = text
+	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	toast.position = Vector2(-140, 90)
+	toast.custom_minimum_size = Vector2(280, 0)
+	toast.add_theme_font_size_override("font_size", 20)
+	toast.add_theme_color_override("font_color", Color(0.45, 0.9, 0.5, 1))
+	toast.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	toast.add_theme_constant_override("outline_size", 6)
+	add_child(toast)
+	var tween := create_tween()
+	tween.tween_property(toast, "position:y", 40, 0.6).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(toast, "modulate:a", 0.0, 0.9).set_delay(0.5)
+	tween.tween_callback(toast.queue_free)
