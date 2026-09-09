@@ -122,15 +122,24 @@ func _refresh_sound_buttons() -> void:
 	sfx_button.text = "효과음: %s" % ("ON" if SoundManager.sfx_enabled else "OFF")
 	music_button.text = "음악: %s" % ("ON" if SoundManager.music_enabled else "OFF")
 
+var levelup_hidden_for_pause: bool = false
+
 func _on_pause_pressed() -> void:
 	SoundManager.play("click")
 	get_tree().paused = true
+	if level_up_panel.visible:
+		level_up_panel.visible = false
+		levelup_hidden_for_pause = true
 	pause_panel.visible = true
 
 func _on_resume_pressed() -> void:
 	SoundManager.play("click")
-	get_tree().paused = false
 	pause_panel.visible = false
+	if levelup_hidden_for_pause:
+		levelup_hidden_for_pause = false
+		level_up_panel.visible = true
+	else:
+		get_tree().paused = false
 
 func _on_weapon_list_pressed() -> void:
 	SoundManager.play("click")
