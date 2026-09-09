@@ -37,7 +37,6 @@ func _refresh_all() -> void:
 		c.queue_free()
 	for char_data in GameState.CHARACTERS:
 		grid.add_child(_build_card(char_data))
-	grid.add_child(_build_coming_soon_card())
 	_refresh_shop()
 
 func _build_card(data: Dictionary) -> Control:
@@ -97,47 +96,6 @@ func _build_card(data: Dictionary) -> Control:
 		unlock_btn.disabled = not GameState.can_unlock_character(data.id)
 		unlock_btn.pressed.connect(_on_unlock_pressed.bind(data.id))
 		vbox.add_child(unlock_btn)
-
-	return panel
-
-func _build_coming_soon_card() -> Control:
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(320, 270)
-	panel.modulate = Color(1, 1, 1, 0.75)
-
-	var vbox := VBoxContainer.new()
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.add_theme_constant_override("separation", 6)
-	panel.add_child(vbox)
-
-	var portrait := TextureRect.new()
-	portrait.texture = load("res://assets/sprites/portraits/coming_soon.png")
-	portrait.custom_minimum_size = Vector2(88, 88)
-	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	vbox.add_child(portrait)
-
-	var name_label := Label.new()
-	name_label.text = "응두니"
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_size_override("font_size", 22)
-	name_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
-	vbox.add_child(name_label)
-
-	var weapon_label := Label.new()
-	weapon_label.text = "무공 미공개"
-	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	weapon_label.add_theme_font_size_override("font_size", 15)
-	weapon_label.add_theme_color_override("font_color", Color(0.5, 0.47, 0.43, 1))
-	vbox.add_child(weapon_label)
-
-	var status_label := Label.new()
-	status_label.text = "출시 예정"
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status_label.add_theme_font_size_override("font_size", 15)
-	status_label.add_theme_color_override("font_color", Color(0.91, 0.64, 0.24, 1))
-	vbox.add_child(status_label)
 
 	return panel
 

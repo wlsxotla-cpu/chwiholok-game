@@ -105,8 +105,14 @@ func _ready() -> void:
 	if not WEAPON_DEFS.has(starting_weapon):
 		starting_weapon = "slash"
 	weapons.append({"id": starting_weapon, "level": 1, "timer": 0.0})
+	_ensure_orbit_node(starting_weapon)
 
 	stats_changed.emit()
+
+func _ensure_orbit_node(wid: String) -> void:
+	if wid == "orbit" and orbit_node == null:
+		orbit_node = preload("res://scenes/OrbitWeapon.tscn").instantiate()
+		add_child(orbit_node)
 
 func _find_joystick() -> void:
 	joystick = get_tree().get_first_node_in_group("joystick")
@@ -600,9 +606,7 @@ func apply_upgrade(id: String) -> void:
 	if id.begins_with("new_weapon:"):
 		var wid: String = id.substr("new_weapon:".length())
 		weapons.append({"id": wid, "level": 1, "timer": 0.0})
-		if wid == "orbit" and orbit_node == null:
-			orbit_node = preload("res://scenes/OrbitWeapon.tscn").instantiate()
-			add_child(orbit_node)
+		_ensure_orbit_node(wid)
 	elif id.begins_with("upgrade_weapon:"):
 		var wid: String = id.substr("upgrade_weapon:".length())
 		var w := _get_weapon(wid)

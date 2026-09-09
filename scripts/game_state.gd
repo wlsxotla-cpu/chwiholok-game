@@ -9,6 +9,7 @@ const CHARACTERS := [
 	{"id": "igyeong", "name": "이경", "weapon": "shuriken", "unlock_cost": 80, "tier": 2, "portrait": "res://assets/sprites/portraits/igyeong.png", "walk_sheet": "res://assets/sprites/igyeong_walk.png"},
 	{"id": "seongjuchang", "name": "성주창", "weapon": "pierce", "unlock_cost": 150, "tier": 3, "portrait": "res://assets/sprites/portraits/seongjuchang.png", "walk_sheet": "res://assets/sprites/seongjuchang_walk.png"},
 	{"id": "simjangbeopsa", "name": "심장법사", "weapon": "fireball", "unlock_cost": 250, "tier": 4, "portrait": "res://assets/sprites/portraits/simjangbeopsa.png", "walk_sheet": "res://assets/sprites/simjangbeopsa_walk.png"},
+	{"id": "eungduni", "name": "응두니", "weapon": "orbit", "unlock_cost": 350, "tier": 5, "portrait": "res://assets/sprites/portraits/eungduni.png", "walk_sheet": "res://assets/sprites/eungduni_walk.png"},
 ]
 
 const WEAPON_NAMES := {

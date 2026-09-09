@@ -7,6 +7,10 @@ build/
 # Autonomous loop logs (runtime output, not source)
 logs/
 
+# Loop runtime control signal (created/deleted, not versioned)
+loop/STOP
+*.bak
+
 # OS/editor cruft
 Thumbs.db
 .DS_Store
