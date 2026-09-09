@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.11.1 · 2026-09-09"
+const VERSION := "v0.11.2 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -47,7 +47,7 @@ func _ready() -> void:
 	_load_data()
 	_check_dev_mode()
 
-const DEV_KEY := "chwiho9427x"
+const DEV_KEY := "1200"
 
 func _check_dev_mode() -> void:
 	if not OS.has_feature("web"):
