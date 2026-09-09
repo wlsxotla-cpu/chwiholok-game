@@ -33,6 +33,7 @@ const META_DEFS := {
 
 var selected_character: String = "ipopol"
 var hard_mode: bool = false
+var dev_mode: bool = false
 var total_coins: int = 0
 var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0}
 var unlocked_characters: Dictionary = {}
@@ -41,6 +42,14 @@ var music_enabled: bool = true
 
 func _ready() -> void:
 	_load_data()
+	_check_dev_mode()
+
+func _check_dev_mode() -> void:
+	if not OS.has_feature("web"):
+		return
+	var query: Variant = JavaScriptBridge.eval("window.location.search", true)
+	if typeof(query) == TYPE_STRING and query.find("dev=1") != -1:
+		dev_mode = true
 
 func get_character(id: String) -> Dictionary:
 	for c in CHARACTERS:
@@ -49,6 +58,8 @@ func get_character(id: String) -> Dictionary:
 	return CHARACTERS[0]
 
 func is_character_unlocked(id: String) -> bool:
+	if dev_mode:
+		return true
 	var c := get_character(id)
 	if int(c.get("unlock_cost", 0)) <= 0:
 		return true

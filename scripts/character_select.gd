@@ -10,6 +10,14 @@ extends Control
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
 
 func _ready() -> void:
+	if GameState.dev_mode:
+		var dev_label := Label.new()
+		dev_label.text = "개발자 모드 — 모든 캐릭터 해금됨"
+		dev_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		dev_label.add_theme_font_size_override("font_size", 16)
+		dev_label.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1))
+		$Margin/VBox.add_child(dev_label)
+		$Margin/VBox.move_child(dev_label, 1)
 	shop_toggle.pressed.connect(_on_shop_toggle)
 	shop_panel.visible = false
 	normal_button.pressed.connect(_on_difficulty_pressed.bind(false))
