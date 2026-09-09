@@ -11,11 +11,14 @@ var returning: bool = false
 var owner_player: Node2D
 var hit_enemies: Dictionary = {}
 
-func setup(player: Node2D, direction: Vector2, dmg: float) -> void:
+func setup(player: Node2D, direction: Vector2, dmg: float, maxed: bool = false) -> void:
 	owner_player = player
 	dir = direction
 	damage = dmg
 	rotation = dir.angle()
+	if maxed:
+		modulate = Color(1.5, 1.0, 1.6, 1.0)
+		scale *= 1.25
 
 func _physics_process(delta: float) -> void:
 	if not returning:

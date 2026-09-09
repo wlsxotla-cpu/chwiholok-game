@@ -8,10 +8,13 @@ var lifetime: float = 1.2
 var pierce: int = 1
 var hit_count: int = 0
 
-func setup(target_pos: Vector2, dmg: float) -> void:
+func setup(target_pos: Vector2, dmg: float, maxed: bool = false) -> void:
 	damage = dmg
 	velocity = (target_pos - global_position).normalized() * 420.0
 	rotation = velocity.angle()
+	if maxed:
+		modulate = Color(1.6, 1.2, 0.4, 1.0)
+		scale *= 1.25
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta

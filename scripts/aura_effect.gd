@@ -2,9 +2,11 @@ extends Node2D
 
 var radius: float = 70.0
 var alpha: float = 1.0
+var maxed: bool = false
 
-func setup(r: float) -> void:
+func setup(r: float, is_maxed: bool = false) -> void:
 	radius = r
+	maxed = is_maxed
 	z_index = 4
 	queue_redraw()
 	var tween := create_tween()
@@ -16,5 +18,9 @@ func _set_alpha(v: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, radius, Color(0.55, 0.95, 0.65, 0.14 * alpha))
-	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(0.7, 1.0, 0.7, 0.55 * alpha), 3.0, true)
+	if maxed:
+		draw_circle(Vector2.ZERO, radius, Color(0.95, 0.75, 0.25, 0.18 * alpha))
+		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(1.0, 0.85, 0.35, 0.75 * alpha), 4.5, true)
+	else:
+		draw_circle(Vector2.ZERO, radius, Color(0.55, 0.95, 0.65, 0.14 * alpha))
+		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(0.7, 1.0, 0.7, 0.55 * alpha), 3.0, true)

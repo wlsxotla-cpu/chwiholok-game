@@ -1,11 +1,13 @@
 extends Node2D
 
 var alpha: float = 1.0
+var maxed: bool = false
 var points: PackedVector2Array = PackedVector2Array()
 var branch_a: PackedVector2Array = PackedVector2Array()
 var branch_b: PackedVector2Array = PackedVector2Array()
 
-func setup() -> void:
+func setup(is_maxed: bool = false) -> void:
+	maxed = is_maxed
 	z_index = 7
 	_build_bolt()
 	var tween := create_tween()
@@ -31,12 +33,13 @@ func _set_alpha(v: float) -> void:
 
 func _draw() -> void:
 	var core := Color(1.0, 1.0, 1.0, 0.95 * alpha)
-	var glow := Color(0.65, 0.85, 1.0, 0.6 * alpha)
-	draw_polyline(points, glow, 10.0, true)
+	var glow := Color(0.95, 0.55, 1.0, 0.7 * alpha) if maxed else Color(0.65, 0.85, 1.0, 0.6 * alpha)
+	var outer_scale: float = 1.3 if maxed else 1.0
+	draw_polyline(points, glow, 10.0 * outer_scale, true)
 	draw_polyline(points, core, 4.0, true)
-	draw_polyline(branch_a, glow, 6.0, true)
+	draw_polyline(branch_a, glow, 6.0 * outer_scale, true)
 	draw_polyline(branch_a, core, 2.5, true)
-	draw_polyline(branch_b, glow, 6.0, true)
+	draw_polyline(branch_b, glow, 6.0 * outer_scale, true)
 	draw_polyline(branch_b, core, 2.5, true)
-	draw_circle(Vector2.ZERO, 26.0, Color(0.7, 0.88, 1.0, 0.35 * alpha))
+	draw_circle(Vector2.ZERO, 26.0 * outer_scale, glow.lerp(Color(1, 1, 1, glow.a), 0.4))
 	draw_circle(Vector2.ZERO, 12.0, Color(1.0, 1.0, 1.0, 0.6 * alpha))

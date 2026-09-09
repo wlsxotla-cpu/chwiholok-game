@@ -267,6 +267,9 @@ func _weapon_stat(w: Dictionary, key: String) -> float:
 				value += float(evo.get("extra_count", 0.0))
 	return value
 
+func _is_maxed(w: Dictionary) -> bool:
+	return int(w.level) >= MAX_WEAPON_LEVEL
+
 func _facing_vector() -> Vector2:
 	match facing:
 		"up":
@@ -322,13 +325,13 @@ func _fire_heaven_blade(w: Dictionary) -> void:
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.set_radius(radius)
+	fx.set_radius(radius, _is_maxed(w))
 
 func _fire_thunder_formation(w: Dictionary) -> void:
 	if orbit_node == null:
 		orbit_node = preload("res://scenes/OrbitWeapon.tscn").instantiate()
 		add_child(orbit_node)
-	orbit_node.sync(_weapon_stat(w, "damage"), _weapon_stat(w, "radius"), int(_weapon_stat(w, "count")))
+	orbit_node.sync(_weapon_stat(w, "damage"), _weapon_stat(w, "radius"), int(_weapon_stat(w, "count")), _is_maxed(w))
 	_fire_lightning(w)
 
 func _fire_beam(w: Dictionary) -> void:
@@ -353,7 +356,7 @@ func _fire_beam(w: Dictionary) -> void:
 	var fx := preload("res://scenes/BeamEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.setup(dir, length, width, w.id == "piercing_calamity")
+	fx.setup(dir, length, width, w.id == "piercing_calamity" or _is_maxed(w))
 
 func _fire_lightning(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")
@@ -368,7 +371,7 @@ func _fire_lightning(w: Dictionary) -> void:
 		var fx := preload("res://scenes/LightningEffect.tscn").instantiate()
 		get_parent().add_child(fx)
 		fx.global_position = e.global_position
-		fx.setup()
+		fx.setup(_is_maxed(w))
 		struck += 1
 		if struck >= count:
 			break
@@ -379,7 +382,7 @@ func _fire_lightning(w: Dictionary) -> void:
 func _fire_orbit(w: Dictionary) -> void:
 	if orbit_node == null:
 		return
-	orbit_node.sync(_weapon_stat(w, "damage"), _weapon_stat(w, "radius"), int(_weapon_stat(w, "count")))
+	orbit_node.sync(_weapon_stat(w, "damage"), _weapon_stat(w, "radius"), int(_weapon_stat(w, "count")), _is_maxed(w))
 
 func _fire_boomerang(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
@@ -393,7 +396,7 @@ func _fire_boomerang(w: Dictionary) -> void:
 		var dart := preload("res://scenes/BoomerangBullet.tscn").instantiate()
 		get_parent().add_child(dart)
 		dart.global_position = global_position
-		dart.setup(self, d, damage)
+		dart.setup(self, d, damage, _is_maxed(w))
 	SoundManager.play("attack_ranged", -4.0, 1.05)
 
 func _fire_slash(w: Dictionary) -> void:
@@ -410,7 +413,7 @@ func _fire_slash(w: Dictionary) -> void:
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.set_radius(radius)
+	fx.set_radius(radius, _is_maxed(w))
 
 func _fire_pierce(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
@@ -420,7 +423,7 @@ func _fire_pierce(w: Dictionary) -> void:
 	get_parent().add_child(bullet)
 	bullet.global_position = global_position + Vector2(0, -24)
 	bullet.pierce = int(_weapon_stat(w, "pierce"))
-	bullet.setup(target.global_position, _weapon_stat(w, "damage"))
+	bullet.setup(target.global_position, _weapon_stat(w, "damage"), _is_maxed(w))
 	SoundManager.play("attack_ranged", -6.0)
 
 func _fire_fireball(w: Dictionary) -> void:
@@ -429,7 +432,7 @@ func _fire_fireball(w: Dictionary) -> void:
 	var zone := preload("res://scenes/FireZone.tscn").instantiate()
 	get_parent().add_child(zone)
 	zone.global_position = pos
-	zone.setup(_weapon_stat(w, "damage"), _weapon_stat(w, "duration"), _weapon_stat(w, "zone_radius"))
+	zone.setup(_weapon_stat(w, "damage"), _weapon_stat(w, "duration"), _weapon_stat(w, "zone_radius"), _is_maxed(w))
 	SoundManager.play("attack_fireball", -4.0)
 
 func _fire_aura(w: Dictionary) -> void:
@@ -450,7 +453,7 @@ func _fire_aura(w: Dictionary) -> void:
 	var fx := preload("res://scenes/AuraEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.setup(radius)
+	fx.setup(radius, _is_maxed(w))
 
 func _fire_shuriken(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
@@ -467,7 +470,7 @@ func _fire_shuriken(w: Dictionary) -> void:
 		get_parent().add_child(bullet)
 		bullet.global_position = global_position + Vector2(0, -24)
 		bullet.pierce = 1
-		bullet.setup(global_position + dir * 400.0, damage)
+		bullet.setup(global_position + dir * 400.0, damage, _is_maxed(w))
 	SoundManager.play("attack_ranged", -3.0, 1.15)
 
 func _get_weapon(id: String) -> Dictionary:

@@ -11,7 +11,7 @@ const FIRE_TEXTURE_OUTER_RADIUS_PX := 27.5
 
 @onready var sprite: Sprite2D = $Sprite2D
 
-func setup(dmg: float, dur: float, r: float) -> void:
+func setup(dmg: float, dur: float, r: float, maxed: bool = false) -> void:
 	damage = dmg
 	duration = dur
 	radius = r
@@ -19,6 +19,8 @@ func setup(dmg: float, dur: float, r: float) -> void:
 	shape.radius = radius
 	$CollisionShape2D.shape = shape
 
+	if maxed:
+		sprite.modulate = Color(1.0, 0.6, 1.4, 1.0)
 	sprite.scale = Vector2(0.15, 0.15)
 	var base_scale: float = radius / FIRE_TEXTURE_OUTER_RADIUS_PX
 	var land_tween := create_tween()

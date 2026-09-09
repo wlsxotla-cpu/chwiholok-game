@@ -6,21 +6,28 @@ const BLADE_HIT_RADIUS := 20.0
 var damage: float = 6.0
 var radius: float = 90.0
 var count: int = 1
+var maxed: bool = false
 var angle_offset: float = 0.0
 var blade_sprites: Array = []
 var hit_cooldowns: Dictionary = {}
 
-func sync(dmg: float, r: float, c: int) -> void:
+func sync(dmg: float, r: float, c: int, is_maxed: bool = false) -> void:
 	damage = dmg
 	radius = r
 	count = max(1, c)
+	if is_maxed != maxed:
+		maxed = is_maxed
+		for spr in blade_sprites:
+			spr.modulate = Color(1.5, 1.1, 0.4, 1.0) if maxed else Color(1, 1, 1, 1)
+			spr.scale = Vector2(0.54, 0.54) if maxed else Vector2(0.45, 0.45)
 	_ensure_blade_count()
 
 func _ensure_blade_count() -> void:
 	while blade_sprites.size() < count:
 		var spr := Sprite2D.new()
 		spr.texture = preload("res://assets/sprites/orbit_blade.png")
-		spr.scale = Vector2(0.45, 0.45)
+		spr.scale = Vector2(0.54, 0.54) if maxed else Vector2(0.45, 0.45)
+		spr.modulate = Color(1.5, 1.1, 0.4, 1.0) if maxed else Color(1, 1, 1, 1)
 		add_child(spr)
 		blade_sprites.append(spr)
 	while blade_sprites.size() > count:
