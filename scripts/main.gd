@@ -34,12 +34,16 @@ func _ready() -> void:
 	player.weapon_fused.connect(hud.show_fusion)
 	player.revived.connect(hud.show_revived)
 	player.continue_offered.connect(hud.show_continue_offer)
+	player.fusion_offered.connect(hud.show_fusion_offer)
 	hud.upgrade_chosen.connect(func(id: String) -> void: player.apply_upgrade(id))
 	hud.restart_pressed.connect(_on_restart_pressed)
 	hud.menu_pressed.connect(_on_menu_pressed)
 	hud.dev_action.connect(_on_dev_action)
 	hud.continue_confirmed.connect(player.confirm_continue)
 	hud.continue_declined.connect(player.decline_continue)
+	hud.fusion_confirmed.connect(player.confirm_fuse)
+	hud.fusion_declined.connect(player.decline_fuse)
+	hud.manual_fuse_requested.connect(player.confirm_fuse)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
 	_update_hud()
@@ -159,7 +163,13 @@ func _on_dev_action(action: String) -> void:
 			for w in player.weapons.duplicate():
 				w.level = player.MAX_WEAPON_LEVEL
 				player._try_evolve(w, w.id)
-				player._try_fuse(w.id)
+			for w in player.weapons.duplicate():
+				var fid: String = player._fusion_id_for(w.id)
+				if fid != "" and player._get_weapon(fid).is_empty():
+					var partner: String = player._fusion_partner(w.id)
+					var w_partner: Dictionary = player._get_weapon(partner)
+					if not w_partner.is_empty() and int(w_partner.level) >= player.MAX_WEAPON_LEVEL:
+						player.confirm_fuse(fid)
 			player.stats_changed.emit()
 		"gain_xp":
 			player.gain_xp(999999.0)

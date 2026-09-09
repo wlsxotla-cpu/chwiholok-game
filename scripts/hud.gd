@@ -6,6 +6,9 @@ signal menu_pressed
 signal dev_action(action: String)
 signal continue_confirmed
 signal continue_declined
+signal fusion_confirmed(fid: String)
+signal fusion_declined(fid: String)
+signal manual_fuse_requested(fid: String)
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var timer_label: Label = $TopRightInfo/TimerLabel
@@ -22,6 +25,11 @@ signal continue_declined
 @onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
 @onready var continue_confirm_button: Button = $ContinuePanel/VBox/ConfirmButton
 @onready var continue_decline_button: Button = $ContinuePanel/VBox/DeclineButton
+@onready var fusion_offer_panel: Panel = $FusionOfferPanel
+@onready var fusion_desc_label: Label = $FusionOfferPanel/VBox/DescLabel
+@onready var fusion_confirm_button: Button = $FusionOfferPanel/VBox/ConfirmButton
+@onready var fusion_decline_button: Button = $FusionOfferPanel/VBox/DeclineButton
+var pending_fusion_fid: String = ""
 @onready var restart_button: Button = $RestartButton
 @onready var menu_button: Button = $MenuButton
 @onready var pause_button: Button = $PauseButton
@@ -78,6 +86,18 @@ func _ready() -> void:
 		SoundManager.play("click")
 		continue_panel.visible = false
 		continue_declined.emit())
+
+	fusion_offer_panel.visible = false
+	fusion_confirm_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		fusion_offer_panel.visible = false
+		get_tree().paused = false
+		fusion_confirmed.emit(pending_fusion_fid))
+	fusion_decline_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		fusion_offer_panel.visible = false
+		get_tree().paused = false
+		fusion_declined.emit(pending_fusion_fid))
 	restart_button.pressed.connect(func() -> void: SoundManager.play("click"); restart_pressed.emit())
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	pause_button.pressed.connect(_on_pause_pressed)
@@ -257,11 +277,11 @@ func _add_weapon_paths_section() -> void:
 
 	for r in rows:
 		if r.kind == "fusion":
-			_add_path_row(r.a, r.b, r.b_owned, WEAPON_ICONS.get(r.result, ""), Guide.WEAPON_NAMES.get(r.result, r.result), r.status, r.ready)
+			_add_path_row(r.a, r.b, r.b_owned, WEAPON_ICONS.get(r.result, ""), Guide.WEAPON_NAMES.get(r.result, r.result), r.status, r.ready, false, r.result)
 		else:
 			_add_path_row(r.a, r.pid, r.p_owned, "", r.result, r.status, r.ready, true)
 
-func _add_path_row(a_id: String, b_id: String, b_owned: bool, result_icon_path: String, result_name: String, status_txt: String, ready: bool, b_is_passive: bool = false) -> void:
+func _add_path_row(a_id: String, b_id: String, b_owned: bool, result_icon_path: String, result_name: String, status_txt: String, ready: bool, b_is_passive: bool = false, fusion_fid: String = "") -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 4)
 	weapon_list.add_child(box)
@@ -287,6 +307,16 @@ func _add_path_row(a_id: String, b_id: String, b_owned: bool, result_icon_path: 
 	status_label.add_theme_font_size_override("font_size", 13)
 	status_label.add_theme_color_override("font_color", Color(0.47, 0.9, 0.5, 1) if ready else Color(0.65, 0.6, 0.55, 1))
 	box.add_child(status_label)
+
+	if ready and fusion_fid != "":
+		var fuse_now_btn := Button.new()
+		fuse_now_btn.text = "지금 합치기"
+		fuse_now_btn.custom_minimum_size = Vector2(0, 44)
+		fuse_now_btn.pressed.connect(func() -> void:
+			SoundManager.play("click")
+			manual_fuse_requested.emit(fusion_fid)
+			_refresh_weapon_list())
+		box.add_child(fuse_now_btn)
 
 func _path_icon(icon_path: String, owned: bool) -> TextureRect:
 	var icon := TextureRect.new()
@@ -564,8 +594,19 @@ func _on_option_pressed(id: String) -> void:
 	level_up_panel.visible = false
 	upgrade_chosen.emit(id)
 
+func show_fusion_offer(fid: String, wid: String, partner: String) -> void:
+	pending_fusion_fid = fid
+	var a_name: String = Guide.WEAPON_NAMES.get(wid, wid)
+	var b_name: String = Guide.WEAPON_NAMES.get(partner, partner)
+	var result_name: String = Guide.WEAPON_NAMES.get(fid, fid)
+	fusion_desc_label.text = "%s + %s를 합쳐서 %s로 만드시겠습니까?" % [a_name, b_name, result_name]
+	fusion_offer_panel.visible = true
+
 func show_continue_offer(cost: int, available: int) -> void:
+	var can_afford: bool = available >= cost
 	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d, 한 판당 1회)" % [cost, available]
+	continue_confirm_button.disabled = not can_afford
+	continue_confirm_button.text = "계속하기" if can_afford else "내공 부족"
 	continue_panel.visible = true
 
 func show_game_over(t: float) -> void:

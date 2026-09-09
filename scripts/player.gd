@@ -7,6 +7,7 @@ signal weapon_evolved(weapon_name: String)
 signal weapon_fused(weapon_name: String)
 signal revived
 signal continue_offered(cost: int, available: int)
+signal fusion_offered(fid: String, wid: String, partner: String)
 
 const MAX_WEAPON_LEVEL := 8
 const SOFT_CAP_LEVEL := 5
@@ -84,6 +85,8 @@ const REVIVE_INVINCIBLE_DURATION := 2.0
 const REVIVE_HEALTH_FRACTION := 0.5
 var invincible_timer: float = 0.0
 var continue_used: bool = false
+var declined_fusions: Dictionary = {}
+var pending_fusion_id: String = ""
 
 var upgrade_pool: Array = [
 	{"id": "dmg", "name": "공격력 증가", "desc": "모든 무기 공격력 +10%"},
@@ -495,16 +498,17 @@ func take_damage(amount: float) -> void:
 	_flash_hurt()
 	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
-		var available: int = GameState.total_coins + coins
-		if not continue_used and available >= GameState.CONTINUE_COST:
+		if not continue_used:
 			health = 0.0
 			get_tree().paused = true
-			continue_offered.emit(GameState.CONTINUE_COST, available)
+			continue_offered.emit(GameState.CONTINUE_COST, GameState.total_coins + coins)
 			return
 		health = 0.0
 		died.emit()
 
 func confirm_continue() -> void:
+	if GameState.total_coins + coins < GameState.CONTINUE_COST:
+		return
 	continue_used = true
 	GameState.add_run_coins(coins)
 	coins = 0
@@ -633,9 +637,9 @@ func _fusion_partner(wid: String) -> String:
 			return other
 	return ""
 
-func _try_fuse(wid: String) -> void:
+func _check_fusion_offer(wid: String) -> void:
 	var fid: String = _fusion_id_for(wid)
-	if fid == "" or not _get_weapon(fid).is_empty():
+	if fid == "" or not _get_weapon(fid).is_empty() or declined_fusions.get(fid, false) or pending_fusion_id != "":
 		return
 	var partner: String = _fusion_partner(wid)
 	var w_self := _get_weapon(wid)
@@ -644,12 +648,29 @@ func _try_fuse(wid: String) -> void:
 		return
 	if int(w_self.level) < MAX_WEAPON_LEVEL or int(w_partner.level) < MAX_WEAPON_LEVEL:
 		return
-	weapons.erase(w_self)
-	weapons.erase(w_partner)
+	pending_fusion_id = fid
+	get_tree().paused = true
+	fusion_offered.emit(fid, wid, partner)
+
+func confirm_fuse(fid: String) -> void:
+	var pair: Array = FUSION_DEFS[fid].pair
+	var w_a := _get_weapon(pair[0])
+	var w_b := _get_weapon(pair[1])
+	if w_a.is_empty() or w_b.is_empty():
+		pending_fusion_id = ""
+		return
+	weapons.erase(w_a)
+	weapons.erase(w_b)
 	weapons.append({"id": fid, "level": FUSION_START_LEVEL, "timer": 0.0})
 	SoundManager.play("levelup", 3.0, 0.5)
 	screen_shake(6.0, 0.25)
 	weapon_fused.emit(WEAPON_DEFS.get(fid, {}).get("name", fid))
+	pending_fusion_id = ""
+	stats_changed.emit()
+
+func decline_fuse(fid: String) -> void:
+	declined_fusions[fid] = true
+	pending_fusion_id = ""
 
 func apply_upgrade(id: String) -> void:
 	if id.begins_with("new_weapon:"):
@@ -662,7 +683,7 @@ func apply_upgrade(id: String) -> void:
 		if not w.is_empty():
 			w.level = min(MAX_WEAPON_LEVEL, w.level + 1)
 			_try_evolve(w, wid)
-			_try_fuse(wid)
+			_check_fusion_offer(wid)
 	elif id.begins_with("passive:"):
 		var pid: String = id.substr("passive:".length())
 		if not owned_passives.get(pid, false):
@@ -703,7 +724,8 @@ func apply_upgrade(id: String) -> void:
 				if magnet_timer <= 0.0:
 					pickup_radius = base_pickup_radius
 	stats_changed.emit()
-	get_tree().paused = false
+	if pending_fusion_id == "":
+		get_tree().paused = false
 
 func heal(amount: float) -> void:
 	health = min(max_health, health + amount)

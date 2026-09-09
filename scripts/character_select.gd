@@ -272,7 +272,7 @@ func _add_guide_note() -> void:
 	box.add_child(title)
 
 	var body := Label.new()
-	body.text = "진화는 즉시 순수 강화라 무조건 이득입니다. 융합은 만렙 무기 2개를 지우고 레벨 1짜리 새 무기로 시작하기 때문에, 합친 직후 잠깐은 이전보다 약하게 느껴질 수 있어요. 다시 8레벨까지 올리면 이전 둘을 합친 것보다 강해지고, 무기 슬롯도 1칸 남는 게 핵심 이득입니다."
+	body.text = "진화는 즉시 순수 강화라 무조건 이득입니다. 융합은 만렙 무기 2개를 지우고 레벨 5짜리 새 무기로 교체하는 거라, 조건이 되면 게임이 먼저 '합치시겠습니까?' 하고 물어봐요 - 원치 않으면 거절하고 두 무기를 그대로 유지할 수 있고, 나중에 보유 무기 화면에서 언제든 다시 합칠 수 있습니다."
 	body.autowrap_mode = TextServer.AUTOWRAP_WORD
 	body.add_theme_font_size_override("font_size", 14)
 	body.add_theme_color_override("font_color", Color(0.85, 0.8, 0.72, 1))
