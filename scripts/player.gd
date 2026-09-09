@@ -6,6 +6,7 @@ signal leveled_up(options: Array)
 signal weapon_evolved(weapon_name: String)
 signal weapon_fused(weapon_name: String)
 signal revived
+signal continue_offered(cost: int)
 
 const MAX_WEAPON_LEVEL := 8
 const SOFT_CAP_LEVEL := 5
@@ -82,7 +83,7 @@ const INVINCIBLE_DURATION := 0.5
 const REVIVE_INVINCIBLE_DURATION := 2.0
 const REVIVE_HEALTH_FRACTION := 0.5
 var invincible_timer: float = 0.0
-var revives_left: int = 0
+var continue_used: bool = false
 
 var upgrade_pool: Array = [
 	{"id": "dmg", "name": "공격력 증가", "desc": "모든 무기 공격력 +10%"},
@@ -131,7 +132,6 @@ func _apply_meta_upgrades() -> void:
 	global_damage_mult *= (1.0 + 0.07 * float(meta.get("dmg", 0)))
 	speed *= (1.0 + 0.06 * float(meta.get("move", 0)))
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)))
-	revives_left = int(meta.get("revive", 0))
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))
@@ -274,7 +274,7 @@ func _weapon_stat(w: Dictionary, key: String) -> float:
 	return value
 
 func _is_maxed(w: Dictionary) -> bool:
-	return int(w.level) >= MAX_WEAPON_LEVEL
+	return int(w.level) >= MAX_WEAPON_LEVEL or FUSION_DEFS.has(w.id)
 
 func _facing_vector() -> Vector2:
 	match facing:
@@ -495,15 +495,26 @@ func take_damage(amount: float) -> void:
 	_flash_hurt()
 	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
-		if revives_left > 0:
-			revives_left -= 1
-			health = max_health * REVIVE_HEALTH_FRACTION
-			invincible_timer = REVIVE_INVINCIBLE_DURATION
-			stats_changed.emit()
-			revived.emit()
+		if not continue_used and GameState.total_coins >= GameState.CONTINUE_COST:
+			health = 0.0
+			get_tree().paused = true
+			continue_offered.emit(GameState.CONTINUE_COST)
 			return
 		health = 0.0
 		died.emit()
+
+func confirm_continue() -> void:
+	continue_used = true
+	GameState.spend_coins(GameState.CONTINUE_COST)
+	health = max_health * REVIVE_HEALTH_FRACTION
+	invincible_timer = REVIVE_INVINCIBLE_DURATION
+	stats_changed.emit()
+	revived.emit()
+	get_tree().paused = false
+
+func decline_continue() -> void:
+	get_tree().paused = false
+	died.emit()
 
 func _flash_hurt() -> void:
 	anim.modulate = Color(1.6, 0.55, 0.55, 1.0)
@@ -521,7 +532,7 @@ func gain_xp(amount: float) -> void:
 	if xp >= xp_to_level:
 		xp -= xp_to_level
 		level += 1
-		xp_to_level *= 1.25
+		xp_to_level *= 1.13
 		_offer_level_up()
 
 func _offer_level_up() -> void:
@@ -534,9 +545,10 @@ func _offer_level_up() -> void:
 		for wid in WEAPON_DEFS.keys():
 			if not owned_ids.has(wid) and not FUSION_DEFS.has(wid):
 				pool.append({"kind": "new_weapon", "wid": wid})
-				pool.append({"kind": "new_weapon", "wid": wid})
 	for w in weapons:
 		if w.level < MAX_WEAPON_LEVEL:
+			pool.append({"kind": "upgrade_weapon", "wid": w.id})
+			pool.append({"kind": "upgrade_weapon", "wid": w.id})
 			pool.append({"kind": "upgrade_weapon", "wid": w.id})
 	if owned_passives.size() < PASSIVE_SLOTS:
 		for pid in PASSIVE_DEFS.keys():

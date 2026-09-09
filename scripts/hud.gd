@@ -4,6 +4,8 @@ signal upgrade_chosen(id: String)
 signal restart_pressed
 signal menu_pressed
 signal dev_action(action: String)
+signal continue_confirmed
+signal continue_declined
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var timer_label: Label = $TopRightInfo/TimerLabel
@@ -16,6 +18,10 @@ signal dev_action(action: String)
 	$LevelUpPanel/VBox/Option3,
 ]
 @onready var end_label: Label = $EndLabel
+@onready var continue_panel: Panel = $ContinuePanel
+@onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
+@onready var continue_confirm_button: Button = $ContinuePanel/VBox/ConfirmButton
+@onready var continue_decline_button: Button = $ContinuePanel/VBox/DeclineButton
 @onready var restart_button: Button = $RestartButton
 @onready var menu_button: Button = $MenuButton
 @onready var pause_button: Button = $PauseButton
@@ -63,6 +69,15 @@ func _ready() -> void:
 	restart_button.visible = false
 	menu_button.visible = false
 	pause_panel.visible = false
+	continue_panel.visible = false
+	continue_confirm_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		continue_panel.visible = false
+		continue_confirmed.emit())
+	continue_decline_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		continue_panel.visible = false
+		continue_declined.emit())
 	restart_button.pressed.connect(func() -> void: SoundManager.play("click"); restart_pressed.emit())
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	pause_button.pressed.connect(_on_pause_pressed)
@@ -548,6 +563,10 @@ func _on_option_pressed(id: String) -> void:
 	SoundManager.play("click")
 	level_up_panel.visible = false
 	upgrade_chosen.emit(id)
+
+func show_continue_offer(cost: int) -> void:
+	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d, 한 판당 1회)" % [cost, GameState.total_coins]
+	continue_panel.visible = true
 
 func show_game_over(t: float) -> void:
 	end_label.text = "쓰러졌다...\n생존 시간 %02d:%02d" % [int(t) / 60, int(t) % 60]

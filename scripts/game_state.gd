@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.10.5 · 2026-09-09"
+const VERSION := "v0.11.0 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -30,14 +30,15 @@ const META_DEFS := {
 	"dmg": {"name": "공격력 강화", "desc": "전체 공격력 +7%", "base_cost": 18, "max_level": 10},
 	"move": {"name": "이동속도 강화", "desc": "이동속도 +6%", "base_cost": 15, "max_level": 8},
 	"pickup": {"name": "수집 반경 강화", "desc": "픽업 반경 +10%", "base_cost": 12, "max_level": 8},
-	"revive": {"name": "환생술", "desc": "사망 시 자동 부활 +1회 (체력 절반으로 부활)", "base_cost": 250, "max_level": 3},
 }
+
+const CONTINUE_COST := 300
 
 var selected_character: String = "ipopol"
 var hard_mode: bool = false
 var dev_mode: bool = false
 var total_coins: int = 0
-var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0, "revive": 0}
+var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0}
 var unlocked_characters: Dictionary = {}
 var sfx_enabled: bool = true
 var music_enabled: bool = true
@@ -108,6 +109,10 @@ func buy_upgrade(id: String) -> bool:
 
 func add_run_coins(amount: int) -> void:
 	total_coins += amount
+	_save_data()
+
+func spend_coins(amount: int) -> void:
+	total_coins = max(0, total_coins - amount)
 	_save_data()
 
 func set_sfx_enabled(v: bool) -> void:
