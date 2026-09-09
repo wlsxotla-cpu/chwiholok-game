@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/character_select.gd" id="1"]
 [ext_resource type="FontFile" path="res://assets/fonts/BlackHanSans-Regular.ttf" id="2"]
+[ext_resource type="Texture2D" path="res://assets/ui/menu_bg.png" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shop_normal"]
 bg_color = Color(0.91, 0.71, 0.24, 1)
@@ -24,6 +25,54 @@ corner_radius_top_right = 10
 corner_radius_bottom_right = 10
 corner_radius_bottom_left = 10
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_guide_normal"]
+bg_color = Color(0.42, 0.09, 0.09, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.6, 0.28, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_guide_hover"]
+bg_color = Color(0.56, 0.13, 0.13, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9, 0.72, 0.35, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_diff_normal"]
+bg_color = Color(0.16, 0.08, 0.06, 0.85)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.3, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_diff_selected"]
+bg_color = Color(0.55, 0.14, 0.1, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.68, 0.32, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="CharacterSelect" type="Control"]
 layout_mode = 3
 anchors_preset = 15
@@ -33,14 +82,25 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.055, 0.043, 0.031, 1)
+texture = ExtResource("3")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="BackgroundOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.03, 0.025, 0.42)
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -63,8 +123,10 @@ layout_mode = 2
 horizontal_alignment = 1
 text = "취호록"
 theme_override_fonts/font = ExtResource("2")
-theme_override_font_sizes/font_size = 40
-theme_override_colors/font_color = Color(0.93, 0.89, 0.81, 1)
+theme_override_font_sizes/font_size = 44
+theme_override_colors/font_color = Color(0.95, 0.87, 0.68, 1)
+theme_override_colors/font_outline_color = Color(0.35, 0.06, 0.06, 1)
+theme_override_constants/outline_size = 8
 
 [node name="Subtitle" type="Label" parent="Margin/VBox"]
 layout_mode = 2
@@ -85,6 +147,9 @@ size_flags_horizontal = 3
 toggle_mode = true
 button_pressed = true
 theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_diff_selected")
 text = "일반"
 
 [node name="HardButton" type="Button" parent="Margin/VBox/DifficultyRow"]
@@ -93,6 +158,9 @@ custom_minimum_size = Vector2(0, 56)
 size_flags_horizontal = 3
 toggle_mode = true
 theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_diff_selected")
 text = "하드"
 
 [node name="DifficultyDesc" type="Label" parent="Margin/VBox"]
@@ -128,11 +196,18 @@ text = "상점"
 
 [node name="GuideToggle" type="Button" parent="Margin/VBox/CoinsRow"]
 layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(0.95, 0.87, 0.75, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_guide_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_guide_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_guide_hover")
 text = "무기 도감"
 
 [node name="ShopPanel" type="PanelContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_diff_normal")
 
 [node name="ShopList" type="VBoxContainer" parent="Margin/VBox/ShopPanel"]
 layout_mode = 2
@@ -142,6 +217,7 @@ theme_override_constants/separation = 10
 visible = false
 layout_mode = 2
 custom_minimum_size = Vector2(0, 320)
+theme_override_styles/panel = SubResource("StyleBoxFlat_diff_normal")
 
 [node name="GuideScroll" type="ScrollContainer" parent="Margin/VBox/GuidePanel"]
 layout_mode = 2

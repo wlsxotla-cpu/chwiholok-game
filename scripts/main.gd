@@ -1,13 +1,13 @@
 extends Node2D
 
-@export var spawn_interval: float = 2.3
+@export var spawn_interval: float = 1.4
 @export var min_spawn_interval: float = 0.16
-@export var difficulty_ramp: float = 0.992
+@export var difficulty_ramp: float = 0.988
 
 const BOSS_INTERVAL := 150.0
 const HORDE_INTERVAL := 50.0
 const FIRST_HORDE_DELAY := 110.0
-const OVERLORD_TIME := 1800.0
+const OVERLORD_TIME := 1200.0
 const SAFETY_ENEMY_CEILING := 320
 
 var elapsed: float = 0.0

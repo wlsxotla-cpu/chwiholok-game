@@ -79,8 +79,6 @@ func _on_difficulty_pressed(hard: bool) -> void:
 func _refresh_difficulty_buttons() -> void:
 	normal_button.button_pressed = not GameState.hard_mode
 	hard_button.button_pressed = GameState.hard_mode
-	normal_button.modulate = Color(1.3, 1.15, 0.7, 1) if not GameState.hard_mode else Color(0.6, 0.58, 0.55, 1)
-	hard_button.modulate = Color(1.4, 0.55, 0.5, 1) if GameState.hard_mode else Color(0.6, 0.58, 0.55, 1)
 	if GameState.hard_mode:
 		difficulty_desc.text = "몬스터 스폰 속도·최대 마릿수 증가, 강한 몬스터 훨씬 빨리 등장, 시간에 따른 강화 폭도 더 큼 (대신 내공 +30%, 경험치 +15%)"
 	else:
@@ -96,6 +94,19 @@ func _refresh_all() -> void:
 func _build_card(data: Dictionary) -> Control:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(320, 270)
+	var unlocked: bool = GameState.is_character_unlocked(data.id)
+	var card_style := StyleBoxFlat.new()
+	card_style.bg_color = Color(0.16, 0.08, 0.06, 0.88) if unlocked else Color(0.1, 0.08, 0.07, 0.8)
+	card_style.border_width_left = 2
+	card_style.border_width_top = 2
+	card_style.border_width_right = 2
+	card_style.border_width_bottom = 2
+	card_style.border_color = Color(0.78, 0.6, 0.28, 1) if unlocked else Color(0.35, 0.3, 0.25, 1)
+	card_style.corner_radius_top_left = 12
+	card_style.corner_radius_top_right = 12
+	card_style.corner_radius_bottom_right = 12
+	card_style.corner_radius_bottom_left = 12
+	panel.add_theme_stylebox_override("panel", card_style)
 
 	var vbox := VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -108,7 +119,6 @@ func _build_card(data: Dictionary) -> Control:
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	var unlocked: bool = GameState.is_character_unlocked(data.id)
 	if not unlocked:
 		portrait.modulate = Color(0.45, 0.43, 0.4, 1)
 	vbox.add_child(portrait)
