@@ -55,13 +55,7 @@ const Guide = preload("res://scripts/weapon_guide_data.gd")
 const WEAPON_ICONS := Guide.WEAPON_ICONS
 const PASSIVE_ICONS := Guide.PASSIVE_ICONS
 
-const PASSIVE_NAMES := {
-	"power_scroll": "파산도결",
-	"body_scroll": "철갑신공",
-	"agility_scroll": "비연신법",
-	"haste_scroll": "연격지결",
-	"gather_scroll": "채기흡자결",
-}
+const PASSIVE_NAMES := Guide.PASSIVE_NAMES
 
 func _ready() -> void:
 	level_up_panel.visible = false
@@ -192,6 +186,110 @@ func _refresh_weapon_list() -> void:
 			if not current_passives.get(pid, false):
 				continue
 			_add_passive_list_row(pid, PASSIVE_NAMES.get(pid, pid))
+
+	_add_weapon_paths_section()
+
+func _add_weapon_paths_section() -> void:
+	var owned: Dictionary = {}
+	for w in current_weapons:
+		owned[w.id] = w
+
+	var shown_fusions: Dictionary = {}
+	var rows: Array = []
+
+	for w in current_weapons:
+		for fused_id in Guide.FUSION_PAIRS.keys():
+			var pair: Array = Guide.FUSION_PAIRS[fused_id]
+			if pair.has(w.id) and not shown_fusions.has(fused_id):
+				shown_fusions[fused_id] = true
+				var partner_id: String = pair[1] if pair[0] == w.id else pair[0]
+				var partner_owned: bool = owned.has(partner_id)
+				var mine_maxed: bool = int(w.level) >= MAX_WEAPON_LEVEL
+				var status: String
+				var ready: bool = false
+				if not partner_owned:
+					status = "%s 획득 필요" % Guide.WEAPON_NAMES.get(partner_id, partner_id)
+				elif not (mine_maxed and int(owned[partner_id].level) >= MAX_WEAPON_LEVEL):
+					status = "둘 다 만렙(8) 필요"
+				else:
+					status = "합체 조건 충족!"
+					ready = true
+				rows.append({"kind": "fusion", "a": w.id, "b": partner_id, "b_owned": partner_owned, "result": fused_id, "status": status, "ready": ready})
+
+		if Guide.EVOLUTION_PASSIVE.has(w.id) and not w.get("evolved", false):
+			var pid: String = Guide.EVOLUTION_PASSIVE[w.id]
+			var passive_owned: bool = current_passives.get(pid, false)
+			var mine_maxed2: bool = int(w.level) >= MAX_WEAPON_LEVEL
+			var status2: String
+			var ready2: bool = false
+			if not passive_owned:
+				status2 = "%s 비급 필요" % PASSIVE_NAMES.get(pid, pid)
+			elif not mine_maxed2:
+				status2 = "만렙(8) 필요"
+			else:
+				status2 = "진화 조건 충족!"
+				ready2 = true
+			rows.append({"kind": "evolution", "a": w.id, "pid": pid, "p_owned": passive_owned, "result": Guide.EVOLVED_NAMES.get(w.id, w.id), "status": status2, "ready": ready2})
+
+	if rows.is_empty():
+		return
+
+	var sep2 := Label.new()
+	sep2.text = "융합·진화 경로"
+	sep2.add_theme_font_size_override("font_size", 18)
+	sep2.add_theme_color_override("font_color", Color(0.93, 0.89, 0.81, 1))
+	weapon_list.add_child(sep2)
+
+	for r in rows:
+		if r.kind == "fusion":
+			_add_path_row(r.a, r.b, r.b_owned, WEAPON_ICONS.get(r.result, ""), Guide.WEAPON_NAMES.get(r.result, r.result), r.status, r.ready)
+		else:
+			_add_path_row(r.a, r.pid, r.p_owned, "", r.result, r.status, r.ready, true)
+
+func _add_path_row(a_id: String, b_id: String, b_owned: bool, result_icon_path: String, result_name: String, status_txt: String, ready: bool, b_is_passive: bool = false) -> void:
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 4)
+	weapon_list.add_child(box)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	box.add_child(row)
+
+	row.add_child(_path_icon(WEAPON_ICONS.get(a_id, ""), true))
+	row.add_child(_path_plus_label())
+	row.add_child(_path_icon(PASSIVE_ICONS.get(b_id, "") if b_is_passive else WEAPON_ICONS.get(b_id, ""), b_owned))
+	row.add_child(_path_plus_label("="))
+	if result_icon_path != "":
+		row.add_child(_path_icon(result_icon_path, true))
+	var result_label := Label.new()
+	result_label.text = result_name
+	result_label.add_theme_font_size_override("font_size", 15)
+	result_label.add_theme_color_override("font_color", Color(0.98, 0.82, 0.35, 1) if ready else Color(0.75, 0.7, 0.65, 1))
+	row.add_child(result_label)
+
+	var status_label := Label.new()
+	status_label.text = status_txt
+	status_label.add_theme_font_size_override("font_size", 13)
+	status_label.add_theme_color_override("font_color", Color(0.47, 0.9, 0.5, 1) if ready else Color(0.65, 0.6, 0.55, 1))
+	box.add_child(status_label)
+
+func _path_icon(icon_path: String, owned: bool) -> TextureRect:
+	var icon := TextureRect.new()
+	if icon_path != "":
+		icon.texture = load(icon_path)
+	icon.custom_minimum_size = Vector2(30, 30)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if not owned:
+		icon.modulate = Color(0.4, 0.4, 0.4, 1)
+	return icon
+
+func _path_plus_label(txt: String = "+") -> Label:
+	var l := Label.new()
+	l.text = txt
+	l.add_theme_font_size_override("font_size", 15)
+	l.add_theme_color_override("font_color", Color(0.6, 0.58, 0.55, 1))
+	return l
 
 func _add_weapon_list_row(wid: String, name_txt: String, status_txt: String, name_color: Color) -> void:
 	var row := HBoxContainer.new()

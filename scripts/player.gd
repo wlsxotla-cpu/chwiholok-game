@@ -509,7 +509,12 @@ func _flash_hurt() -> void:
 	var tween := create_tween()
 	tween.tween_property(anim, "modulate", Color(1, 1, 1, 1), 0.18)
 
+const HARD_MODE_COIN_MULT := 1.3
+const HARD_MODE_XP_MULT := 1.15
+
 func gain_xp(amount: float) -> void:
+	if GameState.hard_mode:
+		amount *= HARD_MODE_XP_MULT
 	xp += amount
 	stats_changed.emit()
 	if xp >= xp_to_level:
@@ -689,6 +694,8 @@ func heal(amount: float) -> void:
 	stats_changed.emit()
 
 func add_coins(amount: int) -> void:
+	if GameState.hard_mode:
+		amount = int(round(amount * HARD_MODE_COIN_MULT))
 	coins += amount
 	stats_changed.emit()
 

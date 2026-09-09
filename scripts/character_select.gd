@@ -72,7 +72,7 @@ func _refresh_difficulty_buttons() -> void:
 	normal_button.modulate = Color(1.3, 1.15, 0.7, 1) if not GameState.hard_mode else Color(0.6, 0.58, 0.55, 1)
 	hard_button.modulate = Color(1.4, 0.55, 0.5, 1) if GameState.hard_mode else Color(0.6, 0.58, 0.55, 1)
 	if GameState.hard_mode:
-		difficulty_desc.text = "몬스터 스폰 속도·최대 마릿수 증가, 강한 몬스터 훨씬 빨리 등장, 시간에 따른 강화 폭도 더 큼"
+		difficulty_desc.text = "몬스터 스폰 속도·최대 마릿수 증가, 강한 몬스터 훨씬 빨리 등장, 시간에 따른 강화 폭도 더 큼 (대신 내공 +30%, 경험치 +15%)"
 	else:
 		difficulty_desc.text = "기본 난이도"
 

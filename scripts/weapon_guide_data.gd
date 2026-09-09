@@ -40,6 +40,33 @@ const WEAPON_NAMES := {
 	"thunder_formation": "뇌검진",
 }
 
+const PASSIVE_NAMES := {
+	"power_scroll": "파산도결",
+	"body_scroll": "철갑신공",
+	"agility_scroll": "비연신법",
+	"haste_scroll": "연격지결",
+	"gather_scroll": "채기흡자결",
+}
+
+const FUSION_PAIRS := {
+	"heaven_blade": ["slash", "aura"],
+	"piercing_calamity": ["pierce", "beam"],
+	"whirl_storm": ["shuriken", "boomerang"],
+	"thunder_formation": ["orbit", "lightning"],
+}
+
+const EVOLUTION_PASSIVE := {
+	"slash": "power_scroll",
+	"aura": "body_scroll",
+	"pierce": "power_scroll",
+	"fireball": "gather_scroll",
+	"shuriken": "agility_scroll",
+	"orbit": "power_scroll",
+	"boomerang": "agility_scroll",
+	"beam": "haste_scroll",
+	"lightning": "body_scroll",
+}
+
 const EVOLVED_NAMES := {
 	"slash": "폭풍베기",
 	"aura": "파극호신강기",
