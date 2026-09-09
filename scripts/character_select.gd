@@ -306,6 +306,8 @@ func _current_bonus_text(id: String, lvl: int) -> String:
 			return "이동속도 +%d%%" % (6 * lvl)
 		"pickup":
 			return "수집 반경 +%d%%" % (10 * lvl)
+		"revive":
+			return "부활 %d회" % lvl
 		_:
 			return ""
 

@@ -361,6 +361,9 @@ func show_overlord_warning() -> void:
 func show_overlord_defeated() -> void:
 	_show_banner("천마 격파! 천하제일이 되었다!", Color(1.0, 0.85, 0.3, 1))
 
+func show_revived() -> void:
+	_show_banner("환생!", Color(0.55, 0.9, 1.0, 1))
+
 func _show_banner(text: String, color: Color) -> void:
 	evolve_label.text = text
 	evolve_label.add_theme_color_override("font_color", color)

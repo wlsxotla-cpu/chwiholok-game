@@ -5,6 +5,7 @@ signal stats_changed
 signal leveled_up(options: Array)
 signal weapon_evolved(weapon_name: String)
 signal weapon_fused(weapon_name: String)
+signal revived
 
 const MAX_WEAPON_LEVEL := 8
 const SOFT_CAP_LEVEL := 5
@@ -77,7 +78,10 @@ var shake_time: float = 0.0
 var shake_strength: float = 0.0
 
 const INVINCIBLE_DURATION := 0.5
+const REVIVE_INVINCIBLE_DURATION := 2.0
+const REVIVE_HEALTH_FRACTION := 0.5
 var invincible_timer: float = 0.0
+var revives_left: int = 0
 
 var upgrade_pool: Array = [
 	{"id": "dmg", "name": "공격력 증가", "desc": "모든 무기 공격력 +10%"},
@@ -126,6 +130,7 @@ func _apply_meta_upgrades() -> void:
 	global_damage_mult *= (1.0 + 0.07 * float(meta.get("dmg", 0)))
 	speed *= (1.0 + 0.06 * float(meta.get("move", 0)))
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)))
+	revives_left = int(meta.get("revive", 0))
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))
@@ -489,6 +494,13 @@ func take_damage(amount: float) -> void:
 	_flash_hurt()
 	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
+		if revives_left > 0:
+			revives_left -= 1
+			health = max_health * REVIVE_HEALTH_FRACTION
+			invincible_timer = REVIVE_INVINCIBLE_DURATION
+			stats_changed.emit()
+			revived.emit()
+			return
 		health = 0.0
 		died.emit()
 

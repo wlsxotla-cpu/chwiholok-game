@@ -32,6 +32,7 @@ func _ready() -> void:
 	player.stats_changed.connect(_update_hud)
 	player.weapon_evolved.connect(hud.show_evolution)
 	player.weapon_fused.connect(hud.show_fusion)
+	player.revived.connect(hud.show_revived)
 	hud.upgrade_chosen.connect(func(id: String) -> void: player.apply_upgrade(id))
 	hud.restart_pressed.connect(_on_restart_pressed)
 	hud.menu_pressed.connect(_on_menu_pressed)
