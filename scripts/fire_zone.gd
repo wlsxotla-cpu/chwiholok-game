@@ -20,7 +20,7 @@ func setup(dmg: float, dur: float, r: float, maxed: bool = false) -> void:
 	$CollisionShape2D.shape = shape
 
 	if maxed:
-		sprite.modulate = Color(1.0, 0.6, 1.4, 1.0)
+		sprite.modulate = Color(0.6, 1.2, 1.7, 1.0)
 	sprite.scale = Vector2(0.15, 0.15)
 	var base_scale: float = radius / FIRE_TEXTURE_OUTER_RADIUS_PX
 	var land_tween := create_tween()

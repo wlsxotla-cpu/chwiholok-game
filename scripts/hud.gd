@@ -213,6 +213,21 @@ func _add_weapon_paths_section() -> void:
 	var rows: Array = []
 
 	for w in current_weapons:
+		if Guide.EVOLUTION_PASSIVE.has(w.id) and not w.get("evolved", false):
+			var pid: String = Guide.EVOLUTION_PASSIVE[w.id]
+			var passive_owned: bool = current_passives.get(pid, false)
+			var mine_maxed2: bool = int(w.level) >= MAX_WEAPON_LEVEL
+			var status2: String
+			var ready2: bool = false
+			if not passive_owned:
+				status2 = "%s 비급 필요" % PASSIVE_NAMES.get(pid, pid)
+			elif not mine_maxed2:
+				status2 = "만렙(8) 필요"
+			else:
+				status2 = "진화 조건 충족!"
+				ready2 = true
+			rows.append({"kind": "evolution", "a": w.id, "pid": pid, "p_owned": passive_owned, "result": Guide.EVOLVED_NAMES.get(w.id, w.id), "status": status2, "ready": ready2})
+
 		for fused_id in Guide.FUSION_PAIRS.keys():
 			var pair: Array = Guide.FUSION_PAIRS[fused_id]
 			if pair.has(w.id) and not shown_fusions.has(fused_id):
@@ -231,26 +246,11 @@ func _add_weapon_paths_section() -> void:
 					ready = true
 				rows.append({"kind": "fusion", "a": w.id, "b": partner_id, "b_owned": partner_owned, "result": fused_id, "status": status, "ready": ready})
 
-		if Guide.EVOLUTION_PASSIVE.has(w.id) and not w.get("evolved", false):
-			var pid: String = Guide.EVOLUTION_PASSIVE[w.id]
-			var passive_owned: bool = current_passives.get(pid, false)
-			var mine_maxed2: bool = int(w.level) >= MAX_WEAPON_LEVEL
-			var status2: String
-			var ready2: bool = false
-			if not passive_owned:
-				status2 = "%s 비급 필요" % PASSIVE_NAMES.get(pid, pid)
-			elif not mine_maxed2:
-				status2 = "만렙(8) 필요"
-			else:
-				status2 = "진화 조건 충족!"
-				ready2 = true
-			rows.append({"kind": "evolution", "a": w.id, "pid": pid, "p_owned": passive_owned, "result": Guide.EVOLVED_NAMES.get(w.id, w.id), "status": status2, "ready": ready2})
-
 	if rows.is_empty():
 		return
 
 	var sep2 := Label.new()
-	sep2.text = "융합·진화 경로"
+	sep2.text = "진화·융합(보너스) 경로"
 	sep2.add_theme_font_size_override("font_size", 18)
 	sep2.add_theme_color_override("font_color", Color(0.93, 0.89, 0.81, 1))
 	weapon_list.add_child(sep2)
@@ -359,13 +359,13 @@ func _build_ingame_guide() -> void:
 	for entry in Guide.BASE_WEAPON_GUIDE:
 		_add_guide_weapon_row(entry[0], entry[1], entry[2], Color(0.91, 0.71, 0.24, 1))
 
-	_add_guide_header("무기 융합 — 두 무기 각각 만렙(8) 시 하나로 합쳐짐")
-	for entry in Guide.FUSION_GUIDE:
-		_add_guide_weapon_row(entry[0], entry[1], "%s\n%s" % [entry[2], entry[3]], Color(0.82, 0.59, 0.92, 1))
-
 	_add_guide_header("무기 진화 — 무기 만렙(8) + 대응 비급 보유 시 진화")
 	for entry in Guide.EVOLUTION_GUIDE:
 		_add_guide_text_row(entry[0], entry[1], entry[2])
+
+	_add_guide_header("무기 융합 (보너스) — 몰라도 무방한 히든 콘텐츠")
+	for entry in Guide.FUSION_GUIDE:
+		_add_guide_weapon_row(entry[0], entry[1], "%s\n%s" % [entry[2], entry[3]], Color(0.82, 0.59, 0.92, 1))
 
 func _add_guide_header(text: String) -> void:
 	var label := Label.new()
@@ -564,8 +564,8 @@ func _on_option_pressed(id: String) -> void:
 	level_up_panel.visible = false
 	upgrade_chosen.emit(id)
 
-func show_continue_offer(cost: int) -> void:
-	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d, 한 판당 1회)" % [cost, GameState.total_coins]
+func show_continue_offer(cost: int, available: int) -> void:
+	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d, 한 판당 1회)" % [cost, available]
 	continue_panel.visible = true
 
 func show_game_over(t: float) -> void:

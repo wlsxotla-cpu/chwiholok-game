@@ -6,7 +6,7 @@ signal leveled_up(options: Array)
 signal weapon_evolved(weapon_name: String)
 signal weapon_fused(weapon_name: String)
 signal revived
-signal continue_offered(cost: int)
+signal continue_offered(cost: int, available: int)
 
 const MAX_WEAPON_LEVEL := 8
 const SOFT_CAP_LEVEL := 5
@@ -495,16 +495,19 @@ func take_damage(amount: float) -> void:
 	_flash_hurt()
 	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
-		if not continue_used and GameState.total_coins >= GameState.CONTINUE_COST:
+		var available: int = GameState.total_coins + coins
+		if not continue_used and available >= GameState.CONTINUE_COST:
 			health = 0.0
 			get_tree().paused = true
-			continue_offered.emit(GameState.CONTINUE_COST)
+			continue_offered.emit(GameState.CONTINUE_COST, available)
 			return
 		health = 0.0
 		died.emit()
 
 func confirm_continue() -> void:
 	continue_used = true
+	GameState.add_run_coins(coins)
+	coins = 0
 	GameState.spend_coins(GameState.CONTINUE_COST)
 	health = max_health * REVIVE_HEALTH_FRACTION
 	invincible_timer = REVIVE_INVINCIBLE_DURATION

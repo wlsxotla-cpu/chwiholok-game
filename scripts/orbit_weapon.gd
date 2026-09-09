@@ -19,16 +19,16 @@ func sync(dmg: float, r: float, c: int, is_maxed: bool = false) -> void:
 	if is_maxed != maxed:
 		maxed = is_maxed
 		for spr in blade_sprites:
-			spr.modulate = Color(1.5, 1.1, 0.4, 1.0) if maxed else Color(1, 1, 1, 1)
-			spr.scale = Vector2(0.54, 0.54) if maxed else Vector2(0.45, 0.45)
+			spr.modulate = Color(1.0, 1.8, 2.3, 1.0) if maxed else Color(1, 1, 1, 1)
+			spr.scale = Vector2(0.68, 0.68) if maxed else Vector2(0.45, 0.45)
 	_ensure_blade_count()
 
 func _ensure_blade_count() -> void:
 	while blade_sprites.size() < count:
 		var spr := Sprite2D.new()
 		spr.texture = preload("res://assets/sprites/orbit_blade.png")
-		spr.scale = Vector2(0.54, 0.54) if maxed else Vector2(0.45, 0.45)
-		spr.modulate = Color(1.5, 1.1, 0.4, 1.0) if maxed else Color(1, 1, 1, 1)
+		spr.scale = Vector2(0.68, 0.68) if maxed else Vector2(0.45, 0.45)
+		spr.modulate = Color(1.0, 1.8, 2.3, 1.0) if maxed else Color(1, 1, 1, 1)
 		add_child(spr)
 		blade_sprites.append(spr)
 	while blade_sprites.size() > count:

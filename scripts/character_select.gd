@@ -51,6 +51,16 @@ func _ready() -> void:
 			_refresh_all())
 		$Margin/VBox.add_child(dev_max_btn)
 		$Margin/VBox.move_child(dev_max_btn, 3)
+
+		var dev_off_btn := Button.new()
+		dev_off_btn.text = "[테스트] 관리자 모드 해제"
+		dev_off_btn.pressed.connect(func() -> void:
+			GameState.dev_mode = false
+			if OS.has_feature("web"):
+				JavaScriptBridge.eval("try { localStorage.removeItem('chwiholok_admin_v2'); } catch(e) {}", true)
+			get_tree().reload_current_scene())
+		$Margin/VBox.add_child(dev_off_btn)
+		$Margin/VBox.move_child(dev_off_btn, 4)
 	shop_toggle.pressed.connect(_on_shop_toggle)
 	shop_panel.visible = false
 	guide_toggle.pressed.connect(_on_guide_toggle)
@@ -170,20 +180,20 @@ func _build_guide() -> void:
 	for entry in Guide.BASE_WEAPON_GUIDE:
 		_add_guide_weapon_row(entry[0], entry[1], entry[2], Color(0.91, 0.71, 0.24, 1))
 
-	_add_guide_header("무기 융합 — 두 무기 각각 만렙(8) 시 하나로 합쳐짐")
-	for entry in Guide.FUSION_GUIDE:
-		var wid: String = entry[0]
-		var name_txt: String = entry[1]
-		var pair_txt: String = entry[2]
-		var desc_txt: String = entry[3]
-		_add_guide_weapon_row(wid, name_txt, "%s\n%s" % [pair_txt, desc_txt], Color(0.82, 0.59, 0.92, 1))
-
 	_add_guide_header("무기 진화 — 무기 만렙(8) + 대응 비급 보유 시 진화")
 	for entry in Guide.EVOLUTION_GUIDE:
 		var pname: String = entry[0]
 		var effect: String = entry[1]
 		var mapping: String = entry[2]
 		_add_guide_text_row(pname, effect, mapping, Color(0.47, 0.82, 0.51, 1))
+
+	_add_guide_header("무기 융합 (보너스) — 몰라도 무방한 히든 콘텐츠")
+	for entry in Guide.FUSION_GUIDE:
+		var wid: String = entry[0]
+		var name_txt: String = entry[1]
+		var pair_txt: String = entry[2]
+		var desc_txt: String = entry[3]
+		_add_guide_weapon_row(wid, name_txt, "%s\n%s" % [pair_txt, desc_txt], Color(0.82, 0.59, 0.92, 1))
 
 	_add_guide_note()
 
