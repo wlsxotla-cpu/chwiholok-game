@@ -47,6 +47,34 @@ func _ready() -> void:
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
 	_update_hud()
+	_spawn_map_props()
+
+const GRASS_PROP_COUNT := 26
+const CHEST_COUNT := 4
+
+func _spawn_map_props() -> void:
+	for i in range(GRASS_PROP_COUNT):
+		var prop := preload("res://scenes/GrassProp.tscn").instantiate()
+		prop.global_position = _random_arena_pos(100.0)
+		add_child(prop)
+	for i in range(CHEST_COUNT):
+		var chest := preload("res://scenes/TreasureChest.tscn").instantiate()
+		chest.global_position = _random_arena_pos(300.0)
+		add_child(chest)
+
+func _random_arena_pos(min_dist_from_center: float) -> Vector2:
+	var margin: float = 80.0
+	var pos: Vector2
+	var tries: int = 0
+	while tries < 10:
+		pos = Vector2(
+			randf_range(-GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin),
+			randf_range(-GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
+		)
+		if pos.length() >= min_dist_from_center:
+			break
+		tries += 1
+	return pos
 
 func _process(delta: float) -> void:
 	if run_over:
