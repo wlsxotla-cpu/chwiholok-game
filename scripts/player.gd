@@ -84,7 +84,8 @@ const INVINCIBLE_DURATION := 0.5
 const REVIVE_INVINCIBLE_DURATION := 2.0
 const REVIVE_HEALTH_FRACTION := 0.5
 var invincible_timer: float = 0.0
-var continue_used: bool = false
+var continues_used: int = 0
+var max_continues: int = 1
 var declined_fusions: Dictionary = {}
 var pending_fusion_id: String = ""
 
@@ -135,6 +136,7 @@ func _apply_meta_upgrades() -> void:
 	global_damage_mult *= (1.0 + 0.07 * float(meta.get("dmg", 0)))
 	speed *= (1.0 + 0.06 * float(meta.get("move", 0)))
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)))
+	max_continues = 1 + int(meta.get("revive_slots", 0))
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))
@@ -348,7 +350,9 @@ func _fire_beam(w: Dictionary) -> void:
 	var dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
 	var length: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
-	var width: float = 36.0
+	var width: float = 90.0 if w.id == "piercing_calamity" else 36.0
+	if _is_maxed(w):
+		width *= 1.6
 	var hit_any := false
 	for e in get_tree().get_nodes_in_group("enemies"):
 		var to_e: Vector2 = e.global_position - global_position
@@ -501,7 +505,7 @@ func take_damage(amount: float) -> void:
 	_flash_hurt()
 	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
-		if not continue_used:
+		if continues_used < max_continues:
 			health = 0.0
 			get_tree().paused = true
 			continue_offered.emit(GameState.CONTINUE_COST, GameState.total_coins + coins)
@@ -512,7 +516,7 @@ func take_damage(amount: float) -> void:
 func confirm_continue() -> void:
 	if GameState.total_coins + coins < GameState.CONTINUE_COST:
 		return
-	continue_used = true
+	continues_used += 1
 	GameState.add_run_coins(coins)
 	coins = 0
 	GameState.spend_coins(GameState.CONTINUE_COST)

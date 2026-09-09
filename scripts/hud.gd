@@ -604,7 +604,7 @@ func show_fusion_offer(fid: String, wid: String, partner: String) -> void:
 
 func show_continue_offer(cost: int, available: int) -> void:
 	var can_afford: bool = available >= cost
-	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d, 한 판당 1회)" % [cost, available]
+	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d)" % [cost, available]
 	continue_confirm_button.disabled = not can_afford
 	continue_confirm_button.text = "계속하기" if can_afford else "내공 부족"
 	continue_panel.visible = true

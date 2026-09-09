@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.17.2 · 2026-09-09"
+const VERSION := "v0.18.0 · 2026-09-09"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -30,6 +30,7 @@ const META_DEFS := {
 	"dmg": {"name": "공격력 강화", "desc": "전체 공격력 +7%", "base_cost": 18, "max_level": 10},
 	"move": {"name": "이동속도 강화", "desc": "이동속도 +6%", "base_cost": 15, "max_level": 8},
 	"pickup": {"name": "수집 반경 강화", "desc": "픽업 반경 +10%", "base_cost": 12, "max_level": 8},
+	"revive_slots": {"name": "환생술", "desc": "판당 계속하기 가능 횟수 +1 (내공은 그때그때 별도 지불)", "base_cost": 500, "max_level": 3},
 }
 
 const CONTINUE_COST := 300
@@ -38,7 +39,7 @@ var selected_character: String = "ipopol"
 var hard_mode: bool = false
 var dev_mode: bool = false
 var total_coins: int = 0
-var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0}
+var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0, "revive_slots": 0}
 var unlocked_characters: Dictionary = {}
 var sfx_enabled: bool = true
 var music_enabled: bool = true
