@@ -15,12 +15,16 @@ extends Control
 const Guide = preload("res://scripts/weapon_guide_data.gd")
 
 func _ready() -> void:
-	var version_label := Label.new()
+	var version_label := Button.new()
 	version_label.text = GameState.VERSION
+	version_label.flat = true
+	version_label.focus_mode = Control.FOCUS_NONE
 	version_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	version_label.position = Vector2(6, 4)
 	version_label.add_theme_font_size_override("font_size", 11)
 	version_label.add_theme_color_override("font_color", Color(0.6, 0.58, 0.55, 0.7))
+	version_label.add_theme_color_override("font_hover_color", Color(0.6, 0.58, 0.55, 0.7))
+	version_label.pressed.connect(_show_admin_prompt)
 	add_child(version_label)
 	if GameState.dev_mode:
 		var dev_label := Label.new()
@@ -327,6 +331,67 @@ func _current_bonus_text(id: String, lvl: int) -> String:
 			return "부활 %d회" % lvl
 		_:
 			return ""
+
+func _show_admin_prompt() -> void:
+	if GameState.dev_mode:
+		return
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.6)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(overlay)
+
+	var box := PanelContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.position = Vector2(-140, -70)
+	box.custom_minimum_size = Vector2(280, 140)
+	overlay.add_child(box)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	box.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "관리자 비밀번호"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(title)
+
+	var input := LineEdit.new()
+	input.secret = true
+	input.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(input)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	vbox.add_child(row)
+
+	var confirm_btn := Button.new()
+	confirm_btn.text = "확인"
+	confirm_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(confirm_btn)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "취소"
+	cancel_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(cancel_btn)
+
+	cancel_btn.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		overlay.queue_free())
+	var try_submit := func() -> void:
+		SoundManager.play("click")
+		if input.text == GameState.DEV_KEY:
+			GameState.dev_mode = true
+			if OS.has_feature("web"):
+				JavaScriptBridge.eval("try { localStorage.setItem('chwiholok_admin_v2', '1'); } catch(e) {}", true)
+			overlay.queue_free()
+			_refresh_all()
+			_show_toast("관리자 모드 활성화됨")
+		else:
+			_show_toast("비밀번호가 틀렸습니다")
+	confirm_btn.pressed.connect(try_submit)
+	input.text_submitted.connect(func(_t: String) -> void: try_submit.call())
+	input.grab_focus()
 
 func _on_buy_pressed(id: String) -> void:
 	SoundManager.play("click")
