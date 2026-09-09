@@ -41,8 +41,12 @@ func _ready() -> void:
 	hud.dev_action.connect(_on_dev_action)
 	hud.continue_confirmed.connect(player.confirm_continue)
 	hud.continue_declined.connect(player.decline_continue)
-	hud.fusion_confirmed.connect(player.confirm_fuse)
-	hud.fusion_declined.connect(player.decline_fuse)
+	hud.fusion_confirmed.connect(func(fid: String) -> void:
+		player.confirm_fuse(fid)
+		player.invincible_timer = max(player.invincible_timer, player.LEVEL_UP_RESUME_INVINCIBLE))
+	hud.fusion_declined.connect(func(fid: String) -> void:
+		player.decline_fuse(fid)
+		player.invincible_timer = max(player.invincible_timer, player.LEVEL_UP_RESUME_INVINCIBLE))
 	hud.manual_fuse_requested.connect(player.confirm_fuse)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)

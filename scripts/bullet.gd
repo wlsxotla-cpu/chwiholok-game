@@ -7,22 +7,38 @@ var damage: float = 10.0
 var lifetime: float = 1.2
 var pierce: int = 1
 var hit_count: int = 0
+var rocket: bool = false
+var smoke_timer: float = 0.0
 
-func setup(target_pos: Vector2, dmg: float, maxed: bool = false) -> void:
+func setup(target_pos: Vector2, dmg: float, maxed: bool = false, is_rocket: bool = false) -> void:
 	damage = dmg
 	velocity = (target_pos - global_position).normalized() * 420.0
 	rotation = velocity.angle()
+	rocket = is_rocket and maxed
 	if maxed:
 		modulate = Color(1.0, 1.9, 2.4, 1.0)
-		scale *= 1.5
+		scale *= 2.2 if rocket else 1.5
 
 func _physics_process(delta: float) -> void:
 	position += velocity * delta
 	if spin:
 		rotation += delta * 20.0
+	if rocket:
+		smoke_timer -= delta
+		if smoke_timer <= 0.0:
+			smoke_timer = 0.035
+			_spawn_smoke()
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()
+
+func _spawn_smoke() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var puff := preload("res://scenes/SmokePuff.tscn").instantiate()
+	parent.add_child(puff)
+	puff.global_position = global_position - velocity.normalized() * 16.0 + Vector2(randf_range(-3.0, 3.0), randf_range(-3.0, 3.0))
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("enemies") and body.has_method("take_damage"):

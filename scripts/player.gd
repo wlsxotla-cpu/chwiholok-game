@@ -81,6 +81,7 @@ var shake_time: float = 0.0
 var shake_strength: float = 0.0
 
 const INVINCIBLE_DURATION := 0.5
+const LEVEL_UP_RESUME_INVINCIBLE := 1.0
 const REVIVE_INVINCIBLE_DURATION := 2.0
 const REVIVE_HEALTH_FRACTION := 0.5
 var invincible_timer: float = 0.0
@@ -436,7 +437,7 @@ func _fire_pierce(w: Dictionary) -> void:
 	get_parent().add_child(bullet)
 	bullet.global_position = global_position + Vector2(0, -24)
 	bullet.pierce = int(_weapon_stat(w, "pierce"))
-	bullet.setup(target.global_position, _weapon_stat(w, "damage"), _is_maxed(w))
+	bullet.setup(target.global_position, _weapon_stat(w, "damage"), _is_maxed(w), true)
 	SoundManager.play("attack_ranged", -6.0)
 
 func _fire_fireball(w: Dictionary) -> void:
@@ -742,6 +743,7 @@ func apply_upgrade(id: String) -> void:
 	stats_changed.emit()
 	if pending_fusion_id == "":
 		get_tree().paused = false
+		invincible_timer = max(invincible_timer, LEVEL_UP_RESUME_INVINCIBLE)
 
 func heal(amount: float) -> void:
 	health = min(max_health, health + amount)
