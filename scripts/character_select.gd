@@ -380,7 +380,7 @@ func _show_admin_prompt() -> void:
 		overlay.queue_free())
 	var try_submit := func() -> void:
 		SoundManager.play("click")
-		if input.text == GameState.DEV_KEY:
+		if input.text.strip_edges().to_lower() == GameState.DEV_KEY.to_lower():
 			GameState.dev_mode = true
 			if OS.has_feature("web"):
 				JavaScriptBridge.eval("try { localStorage.setItem('chwiholok_admin_v2', '1'); } catch(e) {}", true)
