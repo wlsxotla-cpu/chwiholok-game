@@ -1,11 +1,12 @@
 extends Node2D
 
-const HIT_INTERVAL := 0.5
-const BLADE_HIT_RADIUS := 20.0
+const HIT_INTERVAL := 0.35
+const BLADE_HIT_RADIUS := 32.0
+const SPIN_SPEED := 3.4
 
-var damage: float = 6.0
-var radius: float = 90.0
-var count: int = 1
+var damage: float = 8.0
+var radius: float = 65.0
+var count: int = 2
 var maxed: bool = false
 var angle_offset: float = 0.0
 var blade_sprites: Array = []
@@ -35,7 +36,7 @@ func _ensure_blade_count() -> void:
 		spr.queue_free()
 
 func _physics_process(delta: float) -> void:
-	angle_offset += delta * 2.2
+	angle_offset += delta * SPIN_SPEED
 	for i in range(blade_sprites.size()):
 		var a: float = angle_offset + TAU * i / float(blade_sprites.size())
 		var pos: Vector2 = Vector2(cos(a), sin(a)) * radius

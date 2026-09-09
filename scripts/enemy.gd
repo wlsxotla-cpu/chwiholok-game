@@ -10,12 +10,19 @@ const DEFS := {
 	Type.BOMBER: {"texture": "res://assets/sprites/enemy_bomber.png", "speed": 115.0, "health": 15.0, "contact_damage": 22.0, "xp": 10.0},
 	Type.STRIKER: {"texture": "res://assets/sprites/enemy_striker.png", "speed": 145.0, "health": 14.0, "contact_damage": 10.0, "xp": 7.0},
 	Type.BOSS: {"texture": "res://assets/sprites/enemy_boss.png", "speed": 55.0, "health": 380.0, "contact_damage": 26.0, "xp": 60.0},
-	Type.OVERLORD: {"texture": "res://assets/sprites/enemy_overlord.png", "speed": 50.0, "health": 900.0, "contact_damage": 40.0, "xp": 150.0},
+	Type.OVERLORD: {"texture": "res://assets/sprites/enemy_overlord.png", "speed": 300.0, "health": 1600.0, "contact_damage": 60.0, "xp": 150.0},
 }
 
 const BOSS_SLAM_RANGE := 110.0
 const BOSS_SLAM_DAMAGE := 30.0
 const BOSS_SLAM_INTERVAL := 3.5
+const OVERLORD_SLAM_RANGE := 220.0
+const OVERLORD_SLAM_DAMAGE := 55.0
+const OVERLORD_SLAM_INTERVAL := 2.6
+
+signal overlord_defeated
+
+var aura_timer: float = 0.0
 
 @export var type: Type = Type.GRUNT
 @export var difficulty_mult: float = 1.0
@@ -51,7 +58,11 @@ func _ready() -> void:
 		var shape := CircleShape2D.new()
 		shape.radius = 42.0 if type == Type.OVERLORD else 30.0
 		$CollisionShape2D.shape = shape
-		slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
+		if type == Type.OVERLORD:
+			sprite.modulate = Color(0.75, 0.35, 1.0, 1.0)
+			slam_timer = OVERLORD_SLAM_INTERVAL * randf_range(0.5, 1.0)
+		else:
+			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
 	else:
 		_apply_rank_tint()
 
@@ -159,19 +170,37 @@ func _explode() -> void:
 
 func _process_boss(delta: float) -> void:
 	_process_chase(delta)
+	if type == Type.OVERLORD:
+		_process_overlord_aura(delta)
 	slam_timer -= delta
 	if slam_timer <= 0.0:
-		slam_timer = BOSS_SLAM_INTERVAL
+		slam_timer = OVERLORD_SLAM_INTERVAL if type == Type.OVERLORD else BOSS_SLAM_INTERVAL
 		_boss_slam()
 
 func _boss_slam() -> void:
-	if global_position.distance_to(player.global_position) <= BOSS_SLAM_RANGE:
-		player.take_damage(BOSS_SLAM_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
-	SoundManager.play("explosion", -2.0, 0.7)
+	var is_overlord: bool = type == Type.OVERLORD
+	var slam_range: float = OVERLORD_SLAM_RANGE if is_overlord else BOSS_SLAM_RANGE
+	var base_damage: float = OVERLORD_SLAM_DAMAGE if is_overlord else BOSS_SLAM_DAMAGE
+	if global_position.distance_to(player.global_position) <= slam_range:
+		player.take_damage(base_damage * (1.0 + (difficulty_mult - 1.0) * 0.6))
+	SoundManager.play("explosion", -2.0, 0.55 if is_overlord else 0.7)
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.set_radius(BOSS_SLAM_RANGE)
+	fx.set_radius(slam_range, is_overlord)
+
+func _process_overlord_aura(delta: float) -> void:
+	sprite.modulate = Color(0.75, 0.35, 1.0, 1.0).lerp(Color(1.1, 0.5, 1.3, 1.0), (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5)
+	aura_timer -= delta
+	if aura_timer <= 0.0:
+		aura_timer = 0.12
+		var parent := get_parent()
+		if parent == null:
+			return
+		var spark := preload("res://scenes/HitSpark.tscn").instantiate()
+		parent.add_child(spark)
+		spark.global_position = global_position + Vector2(randf_range(-30.0, 30.0), randf_range(-30.0, 30.0))
+		spark.modulate = Color(0.8, 0.4, 1.0, 1.0)
 
 func apply_knockback(v: Vector2) -> void:
 	knockback_timer = 0.25
@@ -183,6 +212,8 @@ func take_damage(amount: float) -> void:
 	if health <= 0.0:
 		SoundManager.play("death", -4.0, randf_range(0.9, 1.1))
 		_drop_loot()
+		if type == Type.OVERLORD:
+			overlord_defeated.emit()
 		queue_free()
 	else:
 		SoundManager.play("hit", -8.0, randf_range(0.9, 1.1))

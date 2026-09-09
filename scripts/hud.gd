@@ -25,34 +25,30 @@ signal menu_pressed
 @onready var char_stats_label: Label = $Margin/VBox/CharInfo/StatsLabel
 @onready var sfx_button: Button = $PausePanel/VBox/SfxButton
 @onready var music_button: Button = $PausePanel/VBox/MusicButton
+@onready var weapon_list_button: Button = $PausePanel/VBox/WeaponListButton
+@onready var guide_button: Button = $PausePanel/VBox/GuideButton
+@onready var weapon_list_panel: Panel = $WeaponListPanel
+@onready var weapon_list: VBoxContainer = $WeaponListPanel/VBox/Scroll/List
+@onready var weapon_list_close: Button = $WeaponListPanel/VBox/CloseButton
+@onready var ingame_guide_panel: Panel = $InGameGuidePanel
+@onready var ingame_guide_list: VBoxContainer = $InGameGuidePanel/VBox/Scroll/List
+@onready var ingame_guide_close: Button = $InGameGuidePanel/VBox/CloseButton
 @onready var weapon_row: HBoxContainer = $Margin/VBox/WeaponRow
 @onready var passive_row: HBoxContainer = $Margin/VBox/PassiveRow
 @onready var evolve_label: Label = $EvolveLabel
 
 const MAX_WEAPON_LEVEL := 8
 
-const WEAPON_ICONS := {
-	"slash": "res://assets/ui/weapon_icons/slash.png",
-	"aura": "res://assets/ui/weapon_icons/aura.png",
-	"pierce": "res://assets/ui/weapon_icons/pierce.png",
-	"shuriken": "res://assets/ui/weapon_icons/shuriken.png",
-	"fireball": "res://assets/ui/weapon_icons/fireball.png",
-	"orbit": "res://assets/ui/weapon_icons/orbit.png",
-	"boomerang": "res://assets/ui/weapon_icons/boomerang.png",
-	"beam": "res://assets/ui/weapon_icons/beam.png",
-	"lightning": "res://assets/ui/weapon_icons/lightning.png",
-	"heaven_blade": "res://assets/ui/weapon_icons/heaven_blade.png",
-	"piercing_calamity": "res://assets/ui/weapon_icons/piercing_calamity.png",
-	"whirl_storm": "res://assets/ui/weapon_icons/whirl_storm.png",
-	"thunder_formation": "res://assets/ui/weapon_icons/thunder_formation.png",
-}
+const Guide = preload("res://scripts/weapon_guide_data.gd")
+const WEAPON_ICONS := Guide.WEAPON_ICONS
+const PASSIVE_ICONS := Guide.PASSIVE_ICONS
 
-const PASSIVE_ICONS := {
-	"power_scroll": "res://assets/ui/passive_icons/power_scroll.png",
-	"body_scroll": "res://assets/ui/passive_icons/body_scroll.png",
-	"agility_scroll": "res://assets/ui/passive_icons/agility_scroll.png",
-	"haste_scroll": "res://assets/ui/passive_icons/haste_scroll.png",
-	"gather_scroll": "res://assets/ui/passive_icons/gather_scroll.png",
+const PASSIVE_NAMES := {
+	"power_scroll": "파산도결",
+	"body_scroll": "철갑신공",
+	"agility_scroll": "비연신법",
+	"haste_scroll": "연격지결",
+	"gather_scroll": "채기흡자결",
 }
 
 func _ready() -> void:
@@ -68,6 +64,13 @@ func _ready() -> void:
 	pause_menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	sfx_button.pressed.connect(_on_sfx_toggle)
 	music_button.pressed.connect(_on_music_toggle)
+	weapon_list_button.pressed.connect(_on_weapon_list_pressed)
+	guide_button.pressed.connect(_on_guide_pressed)
+	weapon_list_close.pressed.connect(_on_weapon_list_close)
+	ingame_guide_close.pressed.connect(_on_ingame_guide_close)
+	weapon_list_panel.visible = false
+	ingame_guide_panel.visible = false
+	_build_ingame_guide()
 	_refresh_sound_buttons()
 
 func _on_sfx_toggle() -> void:
@@ -94,6 +97,183 @@ func _on_resume_pressed() -> void:
 	get_tree().paused = false
 	pause_panel.visible = false
 
+func _on_weapon_list_pressed() -> void:
+	SoundManager.play("click")
+	pause_panel.visible = false
+	_refresh_weapon_list()
+	weapon_list_panel.visible = true
+
+func _on_weapon_list_close() -> void:
+	SoundManager.play("click")
+	weapon_list_panel.visible = false
+	pause_panel.visible = true
+
+func _on_guide_pressed() -> void:
+	SoundManager.play("click")
+	pause_panel.visible = false
+	ingame_guide_panel.visible = true
+
+func _on_ingame_guide_close() -> void:
+	SoundManager.play("click")
+	ingame_guide_panel.visible = false
+	pause_panel.visible = true
+
+func _refresh_weapon_list() -> void:
+	for c in weapon_list.get_children():
+		c.queue_free()
+	if current_weapons.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "보유 무기 없음"
+		weapon_list.add_child(empty_label)
+	for w in current_weapons:
+		var evolved: bool = w.get("evolved", false)
+		var name_txt: String = Guide.EVOLVED_NAMES.get(w.id, Guide.WEAPON_NAMES.get(w.id, w.id)) if evolved else Guide.WEAPON_NAMES.get(w.id, w.id)
+		var maxed: bool = int(w.level) >= MAX_WEAPON_LEVEL
+		var status: String
+		if evolved:
+			status = "진화 완료"
+		elif maxed:
+			status = "만렙 (8)"
+		else:
+			status = "Lv.%d / 8" % int(w.level)
+		_add_weapon_list_row(w.id, name_txt, status, Color(0.98, 0.82, 0.35, 1) if evolved else Color(0.9, 0.87, 0.8, 1))
+
+	if not current_passives.is_empty():
+		var sep := Label.new()
+		sep.text = "보유 비급"
+		sep.add_theme_font_size_override("font_size", 18)
+		sep.add_theme_color_override("font_color", Color(0.93, 0.89, 0.81, 1))
+		weapon_list.add_child(sep)
+		for pid in PASSIVE_ICONS.keys():
+			if not current_passives.get(pid, false):
+				continue
+			_add_passive_list_row(pid, PASSIVE_NAMES.get(pid, pid))
+
+func _add_weapon_list_row(wid: String, name_txt: String, status_txt: String, name_color: Color) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	weapon_list.add_child(row)
+
+	var icon := TextureRect.new()
+	if WEAPON_ICONS.has(wid):
+		icon.texture = load(WEAPON_ICONS[wid])
+	icon.custom_minimum_size = Vector2(44, 44)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+
+	var name_label := Label.new()
+	name_label.text = name_txt
+	name_label.add_theme_font_size_override("font_size", 18)
+	name_label.add_theme_color_override("font_color", name_color)
+	info.add_child(name_label)
+
+	var status_label := Label.new()
+	status_label.text = status_txt
+	status_label.add_theme_font_size_override("font_size", 14)
+	status_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	info.add_child(status_label)
+
+func _add_passive_list_row(pid: String, name_txt: String) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	weapon_list.add_child(row)
+
+	var icon := TextureRect.new()
+	if PASSIVE_ICONS.has(pid):
+		icon.texture = load(PASSIVE_ICONS[pid])
+	icon.custom_minimum_size = Vector2(32, 32)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var name_label := Label.new()
+	name_label.text = name_txt
+	name_label.add_theme_font_size_override("font_size", 16)
+	name_label.add_theme_color_override("font_color", Color(0.47, 0.82, 0.51, 1))
+	row.add_child(name_label)
+
+func _build_ingame_guide() -> void:
+	_add_guide_header("기본 무기")
+	for entry in Guide.BASE_WEAPON_GUIDE:
+		_add_guide_weapon_row(entry[0], entry[1], entry[2], Color(0.91, 0.71, 0.24, 1))
+
+	_add_guide_header("무기 융합 — 두 무기 각각 만렙(8) 시 하나로 합쳐짐")
+	for entry in Guide.FUSION_GUIDE:
+		_add_guide_weapon_row(entry[0], entry[1], "%s\n%s" % [entry[2], entry[3]], Color(0.82, 0.59, 0.92, 1))
+
+	_add_guide_header("무기 진화 — 무기 만렙(8) + 대응 비급 보유 시 진화")
+	for entry in Guide.EVOLUTION_GUIDE:
+		_add_guide_text_row(entry[0], entry[1], entry[2])
+
+func _add_guide_header(text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 18)
+	label.add_theme_color_override("font_color", Color(0.93, 0.89, 0.81, 1))
+	ingame_guide_list.add_child(label)
+
+func _add_guide_weapon_row(wid: String, name_txt: String, desc_txt: String, name_color: Color) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	ingame_guide_list.add_child(row)
+
+	var icon := TextureRect.new()
+	if WEAPON_ICONS.has(wid):
+		icon.texture = load(WEAPON_ICONS[wid])
+	icon.custom_minimum_size = Vector2(40, 40)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+
+	var name_label := Label.new()
+	name_label.text = name_txt
+	name_label.add_theme_font_size_override("font_size", 16)
+	name_label.add_theme_color_override("font_color", name_color)
+	info.add_child(name_label)
+
+	var desc_label := Label.new()
+	desc_label.text = desc_txt
+	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc_label.add_theme_font_size_override("font_size", 13)
+	desc_label.add_theme_color_override("font_color", Color(0.75, 0.7, 0.65, 1))
+	info.add_child(desc_label)
+
+func _add_guide_text_row(name_txt: String, effect_txt: String, mapping_txt: String) -> void:
+	var box := VBoxContainer.new()
+	ingame_guide_list.add_child(box)
+
+	var header := HBoxContainer.new()
+	header.add_theme_constant_override("separation", 10)
+	box.add_child(header)
+
+	var name_label := Label.new()
+	name_label.text = name_txt
+	name_label.add_theme_font_size_override("font_size", 15)
+	name_label.add_theme_color_override("font_color", Color(0.47, 0.82, 0.51, 1))
+	header.add_child(name_label)
+
+	var effect_label := Label.new()
+	effect_label.text = effect_txt
+	effect_label.add_theme_font_size_override("font_size", 13)
+	effect_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	header.add_child(effect_label)
+
+	var mapping_label := Label.new()
+	mapping_label.text = mapping_txt
+	mapping_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	mapping_label.add_theme_font_size_override("font_size", 12)
+	mapping_label.add_theme_color_override("font_color", Color(0.75, 0.7, 0.65, 1))
+	box.add_child(mapping_label)
+
 func set_xp(cur: float, needed: float, level: int) -> void:
 	xp_bar.max_value = needed
 	xp_bar.value = cur
@@ -108,7 +288,11 @@ func set_character_name(n: String) -> void:
 func set_stats(max_hp: float, dmg_mult: float) -> void:
 	char_stats_label.text = "HP %d · 공격 x%.2f" % [int(max_hp), dmg_mult]
 
+var current_weapons: Array = []
+var current_passives: Dictionary = {}
+
 func set_weapons(weapons: Array) -> void:
+	current_weapons = weapons
 	for c in weapon_row.get_children():
 		c.queue_free()
 	for w in weapons:
@@ -146,6 +330,7 @@ func set_weapons(weapons: Array) -> void:
 		weapon_row.add_child(slot)
 
 func set_passives(owned_passives: Dictionary) -> void:
+	current_passives = owned_passives
 	for c in passive_row.get_children():
 		c.queue_free()
 	for pid in PASSIVE_ICONS.keys():
@@ -172,6 +357,9 @@ func show_horde_warning() -> void:
 
 func show_overlord_warning() -> void:
 	_show_banner("천마 강림!!", Color(0.85, 0.4, 1.0, 1))
+
+func show_overlord_defeated() -> void:
+	_show_banner("천마 격파! 천하제일이 되었다!", Color(1.0, 0.85, 0.3, 1))
 
 func _show_banner(text: String, color: Color) -> void:
 	evolve_label.text = text

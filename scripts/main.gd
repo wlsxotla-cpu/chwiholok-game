@@ -134,10 +134,17 @@ func _spawn_overlord() -> void:
 	pos.x = clamp(pos.x, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	overlord.global_position = pos
+	overlord.overlord_defeated.connect(_on_overlord_defeated)
 	add_child(overlord)
 	hud.show_overlord_warning()
 	SoundManager.play("levelup", 4.0, 0.45)
 	screen_shake_all()
+
+func _on_overlord_defeated() -> void:
+	hud.show_overlord_defeated()
+	SoundManager.play("levelup", 5.0, 0.35)
+	if player.has_method("screen_shake"):
+		player.screen_shake(14.0, 0.6)
 
 func screen_shake_all() -> void:
 	if player.has_method("screen_shake"):

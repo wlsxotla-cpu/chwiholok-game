@@ -18,7 +18,7 @@ const WEAPON_DEFS := {
 	"fireball": {"name": "화염구 장판", "cooldown": 2.2, "damage": 5.0, "duration": 2.0, "zone_radius": 75.0},
 	"aura": {"name": "호신강기", "cooldown": 0.45, "damage": 5.0, "radius": 70.0, "knockback": 70.0},
 	"shuriken": {"name": "표창난사", "cooldown": 1.2, "damage": 6.0, "count": 2.0},
-	"orbit": {"name": "어검비행", "cooldown": 0.2, "damage": 6.0, "radius": 90.0, "count": 1.0},
+	"orbit": {"name": "어검비행", "cooldown": 0.2, "damage": 8.0, "radius": 65.0, "count": 2.0},
 	"boomerang": {"name": "회류표", "cooldown": 1.4, "damage": 8.0, "count": 1.0},
 	"beam": {"name": "일자검기", "cooldown": 1.6, "damage": 14.0, "radius": 260.0},
 	"lightning": {"name": "뇌전장", "cooldown": 1.8, "damage": 7.0, "count": 2.0},

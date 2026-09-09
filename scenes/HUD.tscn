@@ -171,11 +171,127 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 56)
 text = "음악: ON"
 
+[node name="WeaponListButton" type="Button" parent="PausePanel/VBox"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+text = "보유 무기"
+
+[node name="GuideButton" type="Button" parent="PausePanel/VBox"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+text = "무기 도감"
+
 [node name="MenuButton" type="Button" parent="PausePanel/VBox"]
 process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
 text = "선택 화면으로"
+
+[node name="WeaponListPanel" type="Panel" parent="."]
+process_mode = 3
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 60.0
+offset_right = -30.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="WeaponListPanel"]
+process_mode = 3
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="WeaponListPanel/VBox"]
+process_mode = 3
+layout_mode = 2
+horizontal_alignment = 1
+text = "보유 무기 · 비급"
+theme_override_font_sizes/font_size = 26
+
+[node name="Scroll" type="ScrollContainer" parent="WeaponListPanel/VBox"]
+process_mode = 3
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="List" type="VBoxContainer" parent="WeaponListPanel/VBox/Scroll"]
+process_mode = 3
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="CloseButton" type="Button" parent="WeaponListPanel/VBox"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+text = "닫기"
+
+[node name="InGameGuidePanel" type="Panel" parent="."]
+process_mode = 3
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 60.0
+offset_right = -30.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="InGameGuidePanel"]
+process_mode = 3
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="InGameGuidePanel/VBox"]
+process_mode = 3
+layout_mode = 2
+horizontal_alignment = 1
+text = "무기 도감"
+theme_override_font_sizes/font_size = 26
+
+[node name="Scroll" type="ScrollContainer" parent="InGameGuidePanel/VBox"]
+process_mode = 3
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="List" type="VBoxContainer" parent="InGameGuidePanel/VBox/Scroll"]
+process_mode = 3
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="CloseButton" type="Button" parent="InGameGuidePanel/VBox"]
+process_mode = 3
+layout_mode = 2
+custom_minimum_size = Vector2(0, 60)
+text = "닫기"
 
 [node name="LevelUpPanel" type="Panel" parent="."]
 process_mode = 3

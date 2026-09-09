@@ -12,48 +12,7 @@ extends Control
 @onready var hard_button: Button = $Margin/VBox/DifficultyRow/HardButton
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
 
-const WEAPON_ICONS := {
-	"slash": "res://assets/ui/weapon_icons/slash.png",
-	"aura": "res://assets/ui/weapon_icons/aura.png",
-	"pierce": "res://assets/ui/weapon_icons/pierce.png",
-	"shuriken": "res://assets/ui/weapon_icons/shuriken.png",
-	"fireball": "res://assets/ui/weapon_icons/fireball.png",
-	"orbit": "res://assets/ui/weapon_icons/orbit.png",
-	"boomerang": "res://assets/ui/weapon_icons/boomerang.png",
-	"beam": "res://assets/ui/weapon_icons/beam.png",
-	"lightning": "res://assets/ui/weapon_icons/lightning.png",
-	"heaven_blade": "res://assets/ui/weapon_icons/heaven_blade.png",
-	"piercing_calamity": "res://assets/ui/weapon_icons/piercing_calamity.png",
-	"whirl_storm": "res://assets/ui/weapon_icons/whirl_storm.png",
-	"thunder_formation": "res://assets/ui/weapon_icons/thunder_formation.png",
-}
-
-const BASE_WEAPON_GUIDE := [
-	["slash", "회전베기", "자기 주변 원형 범위를 주기적으로 베어냄. 기본 광역 근접기."],
-	["aura", "호신강기", "아주 짧은 주기로 주변을 밀쳐내며 데미지. 밀집한 적 처리에 강함."],
-	["pierce", "관통시", "가장 가까운 적에게 관통탄 발사. 레벨업할수록 관통 수 증가."],
-	["fireball", "화염구 장판", "적 위치에 불바다 장판을 소환해 지속 데미지."],
-	["shuriken", "표창난사", "가까운 적 방향으로 표창 여러 개를 부채꼴로 발사."],
-	["orbit", "어검비행", "검이 캐릭터 주위를 계속 회전하며 스치는 적에게 데미지."],
-	["boomerang", "회류표", "던지면 날아갔다 돌아오는 표창. 왕복 경로의 적을 다시 타격."],
-	["beam", "일자검기", "정면으로 긴 직선 검기 발사, 일직선상의 모든 적 관통."],
-	["lightning", "뇌전장", "주변 적 중 무작위로 여러 명에게 번개 낙뢰."],
-]
-
-const FUSION_GUIDE := [
-	["heaven_blade", "천지개벽검", "회전베기 + 호신강기", "더 크고 강한 범위 베기 + 강력한 넉백"],
-	["piercing_calamity", "멸겁관천검", "관통시 + 일자검기", "사거리 훨씬 긴 초강력 관통 검기"],
-	["whirl_storm", "선풍만리표", "표창난사 + 회류표", "훨씬 많은 표창을 동시에 투척"],
-	["thunder_formation", "뇌검진", "어검비행 + 뇌전장", "회전검 + 번개 낙뢰를 동시 운용하는 복합 무기"],
-]
-
-const EVOLUTION_GUIDE := [
-	["파산도결", "공격력 +12%", "회전베기→폭풍베기 / 관통시→만천화우시 / 어검비행→천검진"],
-	["철갑신공", "최대체력 +25", "호신강기→파극호신강기 / 뇌전장→천둔뇌영"],
-	["비연신법", "이동속도 +10%", "표창난사→만화표창진 / 회류표→만리회선표"],
-	["연격지결", "공격속도 +10%", "일자검기→무형검기"],
-	["채기흡자결", "수집 반경 +15%", "화염구 장판→겁화지옥진"],
-]
+const Guide = preload("res://scripts/weapon_guide_data.gd")
 
 func _ready() -> void:
 	var version_label := Label.new()
@@ -187,11 +146,11 @@ func _on_guide_toggle() -> void:
 
 func _build_guide() -> void:
 	_add_guide_header("기본 무기")
-	for entry in BASE_WEAPON_GUIDE:
+	for entry in Guide.BASE_WEAPON_GUIDE:
 		_add_guide_weapon_row(entry[0], entry[1], entry[2], Color(0.91, 0.71, 0.24, 1))
 
 	_add_guide_header("무기 융합 — 두 무기 각각 만렙(8) 시 하나로 합쳐짐")
-	for entry in FUSION_GUIDE:
+	for entry in Guide.FUSION_GUIDE:
 		var wid: String = entry[0]
 		var name_txt: String = entry[1]
 		var pair_txt: String = entry[2]
@@ -199,7 +158,7 @@ func _build_guide() -> void:
 		_add_guide_weapon_row(wid, name_txt, "%s\n%s" % [pair_txt, desc_txt], Color(0.82, 0.59, 0.92, 1))
 
 	_add_guide_header("무기 진화 — 무기 만렙(8) + 대응 비급 보유 시 진화")
-	for entry in EVOLUTION_GUIDE:
+	for entry in Guide.EVOLUTION_GUIDE:
 		var pname: String = entry[0]
 		var effect: String = entry[1]
 		var mapping: String = entry[2]
@@ -220,8 +179,8 @@ func _add_guide_weapon_row(wid: String, name_txt: String, desc_txt: String, name
 	guide_list.add_child(row)
 
 	var icon := TextureRect.new()
-	if WEAPON_ICONS.has(wid):
-		icon.texture = load(WEAPON_ICONS[wid])
+	if Guide.WEAPON_ICONS.has(wid):
+		icon.texture = load(Guide.WEAPON_ICONS[wid])
 	icon.custom_minimum_size = Vector2(48, 48)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
