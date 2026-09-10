@@ -657,7 +657,7 @@ func gain_xp(amount: float) -> void:
 	if xp >= xp_to_level:
 		xp -= xp_to_level
 		level += 1
-		xp_to_level *= 1.20
+		xp_to_level *= 1.17
 		_offer_level_up()
 
 func _offer_level_up() -> void:
@@ -701,7 +701,7 @@ func _offer_level_up() -> void:
 			continue
 		seen.append(key)
 		chosen.append(_describe_option(entry))
-		if chosen.size() >= 3:
+		if chosen.size() >= 4:
 			break
 
 	get_tree().paused = true

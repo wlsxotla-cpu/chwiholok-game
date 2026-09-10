@@ -22,6 +22,7 @@ signal manual_fuse_requested(fid: String)
 	$LevelUpPanel/VBox/Option1,
 	$LevelUpPanel/VBox/Option2,
 	$LevelUpPanel/VBox/Option3,
+	$LevelUpPanel/VBox/Option4,
 ]
 @onready var end_label: Label = $EndLabel
 @onready var continue_panel: Panel = $ContinuePanel
@@ -595,9 +596,13 @@ const KIND_TINTS := {
 }
 
 func show_level_up(options: Array) -> void:
-	for i in range(3):
-		var opt: Dictionary = options[i]
+	for i in range(option_buttons.size()):
 		var btn: Button = option_buttons[i]
+		if i >= options.size():
+			btn.visible = false
+			continue
+		btn.visible = true
+		var opt: Dictionary = options[i]
 		btn.text = "%s\n%s" % [opt["name"], opt["desc"]]
 		btn.modulate = KIND_TINTS.get(opt.get("kind", "stat"), Color(1, 1, 1, 1))
 		for c in btn.pressed.get_connections():
