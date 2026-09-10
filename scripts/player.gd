@@ -574,6 +574,7 @@ func _fire_swordshield(w: Dictionary) -> void:
 	get_parent().add_child(fx)
 	fx.global_position = global_position
 	fx.setup(50.0, maxed)
+	fx.modulate = bolt_tint
 
 func _fire_rapier(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
