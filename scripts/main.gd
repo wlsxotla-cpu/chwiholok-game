@@ -23,6 +23,7 @@ var run_over: bool = false
 @onready var hud: CanvasLayer = $HUD
 
 func _ready() -> void:
+	_apply_map_theme()
 	if GameState.hard_mode:
 		spawn_interval *= 0.7
 		min_spawn_interval *= 0.7
@@ -52,6 +53,17 @@ func _ready() -> void:
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
 	_update_hud()
 	_spawn_map_props()
+
+func _apply_map_theme() -> void:
+	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
+	var ground: Sprite2D = $Ground
+	ground.texture = load(map_data.floor)
+	var env: Environment = $WorldEnvironment.environment
+	env.background_color = map_data.bg_color
+	var wall_tint: Color = map_data.wall_tint
+	for wall_name in ["WallTop", "WallBottom", "WallLeft", "WallRight"]:
+		var glow: Sprite2D = $Walls.get_node(wall_name + "/Glow")
+		glow.modulate = wall_tint
 
 const GRASS_PROP_COUNT := 26
 const CHEST_COUNT := 4

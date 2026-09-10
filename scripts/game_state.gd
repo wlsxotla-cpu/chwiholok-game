@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.21.0 · 2026-09-10"
+const VERSION := "v0.22.0 · 2026-09-10"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -17,6 +17,19 @@ const CHARACTERS := [
 	{"id": "jinak", "name": "진악", "weapon": "halberd", "unlock_cost": 950, "tier": 9, "portrait": "res://assets/sprites/portraits/jinak.png", "walk_sheet": "res://assets/sprites/jinak_walk.png"},
 	{"id": "samahoek", "name": "사마획", "weapon": "curse", "unlock_cost": 1100, "tier": 10, "portrait": "res://assets/sprites/portraits/samahoek.png", "walk_sheet": "res://assets/sprites/samahoek_walk.png"},
 ]
+
+const MAPS := [
+	{"id": "plains", "name": "야지", "desc": "흙바닥과 잡초가 있는 평범한 강호의 벌판", "floor": "res://assets/sprites/floor.png", "bg_color": Color(0.055, 0.043, 0.031, 1), "wall_tint": Color(1.0, 1.0, 1.0, 1.0)},
+	{"id": "cheonmagung", "name": "천마궁", "desc": "천마가 다스리는 마교의 소굴. 용암이 흐르는 검은 돌바닥", "floor": "res://assets/sprites/floor_cheonmagung.png", "bg_color": Color(0.03, 0.012, 0.012, 1), "wall_tint": Color(1.7, 0.55, 0.4, 1.0)},
+]
+
+var selected_map: String = "plains"
+
+func get_map(id: String) -> Dictionary:
+	for m in MAPS:
+		if m.id == id:
+			return m
+	return MAPS[0]
 
 const WEAPON_NAMES := {
 	"slash": "회전베기",

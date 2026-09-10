@@ -11,6 +11,8 @@ extends Control
 @onready var normal_button: Button = $Margin/VBox/DifficultyRow/NormalButton
 @onready var hard_button: Button = $Margin/VBox/DifficultyRow/HardButton
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
+@onready var map_row: HBoxContainer = $Margin/VBox/MapRow
+@onready var map_desc: Label = $Margin/VBox/MapDesc
 
 const Guide = preload("res://scripts/weapon_guide_data.gd")
 
@@ -69,7 +71,37 @@ func _ready() -> void:
 	normal_button.pressed.connect(_on_difficulty_pressed.bind(false))
 	hard_button.pressed.connect(_on_difficulty_pressed.bind(true))
 	_refresh_difficulty_buttons()
+	_build_map_buttons()
 	_refresh_all()
+
+func _build_map_buttons() -> void:
+	for c in map_row.get_children():
+		c.queue_free()
+	var group := ButtonGroup.new()
+	for map_data in GameState.MAPS:
+		var btn := Button.new()
+		btn.text = map_data.name
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.custom_minimum_size = Vector2(0, 48)
+		btn.size_flags_horizontal = SIZE_EXPAND_FILL
+		btn.add_theme_font_size_override("font_size", 18)
+		btn.add_theme_stylebox_override("normal", normal_button.get_theme_stylebox("normal"))
+		btn.add_theme_stylebox_override("hover", normal_button.get_theme_stylebox("hover"))
+		btn.add_theme_stylebox_override("pressed", normal_button.get_theme_stylebox("pressed"))
+		btn.button_pressed = map_data.id == GameState.selected_map
+		btn.pressed.connect(_on_map_pressed.bind(map_data.id))
+		map_row.add_child(btn)
+	_refresh_map_desc()
+
+func _on_map_pressed(id: String) -> void:
+	SoundManager.play("click")
+	GameState.selected_map = id
+	_refresh_map_desc()
+
+func _refresh_map_desc() -> void:
+	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
+	map_desc.text = map_data.desc
 
 func _on_difficulty_pressed(hard: bool) -> void:
 	SoundManager.play("click")
