@@ -34,7 +34,37 @@ func _ready() -> void:
 	log_btn.pressed.connect(func() -> void: _show_changelog_popup(true))
 	add_child(log_btn)
 
+	if GameState.has_run_save():
+		_build_resume_button()
+
 	_check_update_notice()
+
+func _build_resume_button() -> void:
+	var resume_btn := Button.new()
+	resume_btn.text = "이어하기"
+	resume_btn.focus_mode = Control.FOCUS_NONE
+	resume_btn.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	resume_btn.position = Vector2(-90, 90)
+	resume_btn.size = Vector2(180, 46)
+	resume_btn.add_theme_font_size_override("font_size", 18)
+	resume_btn.add_theme_color_override("font_color", Color(0.93, 0.89, 0.81, 1))
+	resume_btn.pressed.connect(_on_resume_pressed)
+	add_child(resume_btn)
+
+func _on_resume_pressed() -> void:
+	if going or pending_update:
+		return
+	var data: Dictionary = GameState.load_run_state()
+	if data.is_empty():
+		return
+	going = true
+	SoundManager.play("click")
+	GameState.selected_character = String(data.get("character", GameState.selected_character))
+	GameState.selected_map = String(data.get("map", GameState.selected_map))
+	GameState.hard_mode = bool(data.get("hard_mode", false))
+	GameState.pending_run_data = data
+	GameState.resuming_run = true
+	get_tree().change_scene_to_file("res://scenes/Main.tscn")
 
 func _check_update_notice() -> void:
 	_show_changelog_popup(false)

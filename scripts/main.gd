@@ -21,11 +21,25 @@ var run_over: bool = false
 var tracked_boss: Node = null
 var has_tracked_boss: bool = false
 var current_overlord_name: String = "천마"
+const AUTOSAVE_INTERVAL := 15.0
+var autosave_timer: float = AUTOSAVE_INTERVAL
 
 @onready var player: CharacterBody2D = $Player
 @onready var hud: CanvasLayer = $HUD
 
 func _ready() -> void:
+	var was_resuming: bool = GameState.resuming_run
+	var resume_data: Dictionary = GameState.pending_run_data
+	if was_resuming:
+		elapsed = float(resume_data.get("elapsed", 0.0))
+		boss_spawn_timer = float(resume_data.get("boss_spawn_timer", BOSS_INTERVAL))
+		horde_timer = float(resume_data.get("horde_timer", HORDE_INTERVAL))
+		boss_count = int(resume_data.get("boss_count", 0))
+		overlord_spawned = bool(resume_data.get("overlord_spawned", false))
+		grass_broken_count = int(resume_data.get("grass_broken_count", 0))
+		chests_opened_count = int(resume_data.get("chests_opened_count", 0))
+		GameState.resuming_run = false
+		GameState.pending_run_data = {}
 	_apply_map_theme()
 	if GameState.hard_mode:
 		spawn_interval *= 0.7
@@ -34,7 +48,8 @@ func _ready() -> void:
 	player.died.connect(_on_player_died)
 	player.leveled_up.connect(func(options: Array) -> void:
 		hud.show_level_up(options)
-		hud.set_reroll_state(player.can_reroll_level_up(), player.REROLL_COST))
+		hud.set_reroll_state(player.can_reroll_level_up(), player.REROLL_COST)
+		_autosave())
 	hud.reroll_requested.connect(player.reroll_level_up)
 	player.stats_changed.connect(_update_hud)
 	player.weapon_evolved.connect(hud.show_evolution)
@@ -59,6 +74,7 @@ func _ready() -> void:
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
 	_update_hud()
 	_spawn_map_props()
+	hud.set_prop_counts(chests_opened_count, grass_broken_count)
 
 func _apply_map_theme() -> void:
 	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
@@ -72,13 +88,15 @@ func _apply_map_theme() -> void:
 		glow.modulate = wall_tint
 
 const GRASS_PROP_COUNT := 26
+const CORRIDOR_PROP_COUNT := 14
 const CHEST_COUNT := 4
 const COIN_ALTAR_COUNT := 2
 const CORRIDOR_DIVISIONS := 5
 const CORRIDOR_GAP_WIDTH := 220.0
 const CORRIDOR_WALL_THICKNESS := 48.0
 const CORRIDOR_NUB_LENGTH := 90.0
-const CORRIDOR_PILLAR_COUNT := 8
+const CORRIDOR_NUB_CHANCE := 0.35
+const CORRIDOR_PILLAR_COUNT := 6
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0
@@ -92,7 +110,8 @@ func _spawn_map_props() -> void:
 
 	var prop_scene: PackedScene = preload("res://scenes/PalaceVaseProp.tscn") if in_corridors else preload("res://scenes/GrassProp.tscn")
 	var prop_break_color: Color = Color(0.75, 0.6, 1.0, 1.0) if in_corridors else Color(0.55, 1.0, 0.5, 1.0)
-	for i in range(GRASS_PROP_COUNT):
+	var prop_count: int = CORRIDOR_PROP_COUNT if in_corridors else GRASS_PROP_COUNT
+	for i in range(prop_count):
 		var prop := prop_scene.instantiate()
 		prop.global_position = _random_cell_safe_pos(100.0) if in_corridors else _random_arena_pos(100.0)
 		prop.break_spark_color = prop_break_color
@@ -137,18 +156,13 @@ func _wall_segments_with_gaps(start: float, end: float, gap_centers: Array, gap_
 		segments.append([cursor, end])
 	return segments
 
-func _spawn_wall_rect(center: Vector2, size: Vector2) -> void:
-	var wall := StaticBody2D.new()
-	wall.collision_layer = 32
-	wall.collision_mask = 0
-	wall.global_position = center
-	add_child(wall)
-
+func _add_wall_shape(walls_body: StaticBody2D, center: Vector2, size: Vector2) -> void:
 	var shape := RectangleShape2D.new()
 	shape.size = size
 	var col := CollisionShape2D.new()
 	col.shape = shape
-	wall.add_child(col)
+	col.position = center
+	walls_body.add_child(col)
 
 	var sprite := Sprite2D.new()
 	sprite.texture = preload("res://assets/sprites/palace_wall.png")
@@ -156,9 +170,16 @@ func _spawn_wall_rect(center: Vector2, size: Vector2) -> void:
 	sprite.region_enabled = true
 	sprite.region_rect = Rect2(0, 0, size.x, size.y)
 	sprite.centered = true
-	wall.add_child(sprite)
+	sprite.position = center
+	walls_body.add_child(sprite)
 
 func _spawn_palace_corridors() -> void:
+	var walls_body := StaticBody2D.new()
+	walls_body.collision_layer = 32
+	walls_body.collision_mask = 0
+	walls_body.name = "CorridorWalls"
+	add_child(walls_body)
+
 	var half: float = GameState.ARENA_HALF_SIZE
 	var cell: float = (half * 2.0) / CORRIDOR_DIVISIONS
 	var lines: Array = []
@@ -175,20 +196,20 @@ func _spawn_palace_corridors() -> void:
 		for seg in _wall_segments_with_gaps(-half, half, cell_centers, CORRIDOR_GAP_WIDTH):
 			var seg_len: float = seg[1] - seg[0]
 			var seg_center_x: float = (seg[0] + seg[1]) / 2.0
-			_spawn_wall_rect(Vector2(seg_center_x, y), Vector2(seg_len, CORRIDOR_WALL_THICKNESS))
-			if seg_len > CORRIDOR_GAP_WIDTH:
+			_add_wall_shape(walls_body, Vector2(seg_center_x, y), Vector2(seg_len, CORRIDOR_WALL_THICKNESS))
+			if seg_len > CORRIDOR_GAP_WIDTH and randf() < CORRIDOR_NUB_CHANCE:
 				nub_toggle = not nub_toggle
 				var nub_dir: float = 1.0 if nub_toggle else -1.0
-				_spawn_wall_rect(Vector2(seg_center_x, y + nub_dir * CORRIDOR_NUB_LENGTH / 2.0), Vector2(CORRIDOR_WALL_THICKNESS, CORRIDOR_NUB_LENGTH))
+				_add_wall_shape(walls_body, Vector2(seg_center_x, y + nub_dir * CORRIDOR_NUB_LENGTH / 2.0), Vector2(CORRIDOR_WALL_THICKNESS, CORRIDOR_NUB_LENGTH))
 	for x in lines:
 		for seg in _wall_segments_with_gaps(-half, half, cell_centers, CORRIDOR_GAP_WIDTH):
 			var seg_len2: float = seg[1] - seg[0]
 			var seg_center_y: float = (seg[0] + seg[1]) / 2.0
-			_spawn_wall_rect(Vector2(x, seg_center_y), Vector2(CORRIDOR_WALL_THICKNESS, seg_len2))
-			if seg_len2 > CORRIDOR_GAP_WIDTH:
+			_add_wall_shape(walls_body, Vector2(x, seg_center_y), Vector2(CORRIDOR_WALL_THICKNESS, seg_len2))
+			if seg_len2 > CORRIDOR_GAP_WIDTH and randf() < CORRIDOR_NUB_CHANCE:
 				nub_toggle = not nub_toggle
 				var nub_dir2: float = 1.0 if nub_toggle else -1.0
-				_spawn_wall_rect(Vector2(x + nub_dir2 * CORRIDOR_NUB_LENGTH / 2.0, seg_center_y), Vector2(CORRIDOR_NUB_LENGTH, CORRIDOR_WALL_THICKNESS))
+				_add_wall_shape(walls_body, Vector2(x + nub_dir2 * CORRIDOR_NUB_LENGTH / 2.0, seg_center_y), Vector2(CORRIDOR_NUB_LENGTH, CORRIDOR_WALL_THICKNESS))
 
 	for i in range(CORRIDOR_PILLAR_COUNT):
 		var cx: float = cell_centers[randi() % cell_centers.size()]
@@ -200,6 +221,22 @@ func _spawn_palace_corridors() -> void:
 		var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
 		obstacle.global_position = pos
 		add_child(obstacle)
+
+func _autosave() -> void:
+	if run_over:
+		return
+	var data: Dictionary = player.serialize_state()
+	data["character"] = GameState.selected_character
+	data["map"] = GameState.selected_map
+	data["hard_mode"] = GameState.hard_mode
+	data["elapsed"] = elapsed
+	data["boss_spawn_timer"] = boss_spawn_timer
+	data["horde_timer"] = horde_timer
+	data["boss_count"] = boss_count
+	data["overlord_spawned"] = overlord_spawned
+	data["grass_broken_count"] = grass_broken_count
+	data["chests_opened_count"] = chests_opened_count
+	GameState.save_run_state(data)
 
 func _on_grass_broken() -> void:
 	grass_broken_count += 1
@@ -228,6 +265,11 @@ func _process(delta: float) -> void:
 		return
 	elapsed += delta
 	hud.set_timer(elapsed)
+
+	autosave_timer -= delta
+	if autosave_timer <= 0.0:
+		autosave_timer = AUTOSAVE_INTERVAL
+		_autosave()
 
 	spawn_timer -= delta
 	if spawn_timer <= 0.0:
@@ -332,6 +374,8 @@ func _spawn_overlord() -> void:
 	if GameState.selected_map == "cheonmagung":
 		overlord.boss_texture_override = GameState.get_character("jinak").portrait
 		current_overlord_name = "진악"
+		overlord.use_halberd_barrage = true
+		overlord.speed_override = 140.0
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	overlord.difficulty_mult = base_mult * 1.3
 	var angle: float = randf() * TAU
@@ -393,6 +437,7 @@ func _on_overlord_defeated() -> void:
 		player.screen_shake(14.0, 0.6)
 	run_over = true
 	GameState.add_run_coins(player.coins)
+	GameState.clear_run_state()
 	get_tree().paused = true
 	hud.show_victory(elapsed, current_overlord_name)
 
@@ -432,6 +477,7 @@ func _update_hud() -> void:
 func _on_player_died() -> void:
 	run_over = true
 	GameState.add_run_coins(player.coins)
+	GameState.clear_run_state()
 	get_tree().paused = true
 	hud.show_game_over(elapsed)
 

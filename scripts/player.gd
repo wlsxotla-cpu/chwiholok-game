@@ -126,21 +126,85 @@ func _ready() -> void:
 	add_to_group("player")
 	call_deferred("_find_joystick")
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
-	_apply_meta_upgrades()
-	_apply_character_tier_bonus(char_data)
-	health = max_health
-	pickup_radius = base_pickup_radius
 
 	anim.sprite_frames = _build_sprite_frames(char_data.walk_sheet)
 	anim.play("walk_down")
 	anim.stop()
-	var starting_weapon: String = char_data.get("weapon", "slash")
-	if not WEAPON_DEFS.has(starting_weapon):
-		starting_weapon = "slash"
-	weapons.append({"id": starting_weapon, "level": 1, "timer": 0.0})
-	_ensure_orbit_node(starting_weapon)
+
+	if GameState.resuming_run:
+		restore_state(GameState.pending_run_data)
+	else:
+		_apply_meta_upgrades()
+		_apply_character_tier_bonus(char_data)
+		health = max_health
+		pickup_radius = base_pickup_radius
+		var starting_weapon: String = char_data.get("weapon", "slash")
+		if not WEAPON_DEFS.has(starting_weapon):
+			starting_weapon = "slash"
+		weapons.append({"id": starting_weapon, "level": 1, "timer": 0.0})
+		_ensure_orbit_node(starting_weapon)
 
 	stats_changed.emit()
+
+func serialize_state() -> Dictionary:
+	return {
+		"level": level,
+		"xp": xp,
+		"xp_to_level": xp_to_level,
+		"health": health,
+		"max_health": max_health,
+		"speed": speed,
+		"base_pickup_radius": base_pickup_radius,
+		"pickup_radius": pickup_radius,
+		"global_damage_mult": global_damage_mult,
+		"global_cooldown_mult": global_cooldown_mult,
+		"coins": coins,
+		"continues_used": continues_used,
+		"max_continues": max_continues,
+		"weapons": weapons.duplicate(true),
+		"owned_passives": owned_passives.duplicate(true),
+		"declined_fusions": declined_fusions.duplicate(true),
+		"pos_x": global_position.x,
+		"pos_y": global_position.y,
+	}
+
+func restore_state(data: Dictionary) -> void:
+	level = int(data.get("level", 1))
+	xp = float(data.get("xp", 0.0))
+	xp_to_level = float(data.get("xp_to_level", 20.0))
+	max_health = float(data.get("max_health", max_health))
+	health = float(data.get("health", max_health))
+	speed = float(data.get("speed", speed))
+	base_pickup_radius = float(data.get("base_pickup_radius", base_pickup_radius))
+	pickup_radius = float(data.get("pickup_radius", pickup_radius))
+	global_damage_mult = float(data.get("global_damage_mult", 1.0))
+	global_cooldown_mult = float(data.get("global_cooldown_mult", 1.0))
+	coins = int(data.get("coins", 0))
+	continues_used = int(data.get("continues_used", 0))
+	max_continues = int(data.get("max_continues", max_continues))
+
+	weapons.clear()
+	for w in data.get("weapons", []):
+		var nw: Dictionary = {
+			"id": str(w.get("id", "")),
+			"level": int(w.get("level", 1)),
+			"timer": float(w.get("timer", 0.0)),
+		}
+		if w.get("evolved", false):
+			nw["evolved"] = true
+		weapons.append(nw)
+		_ensure_orbit_node(nw.id)
+
+	owned_passives.clear()
+	for k in data.get("owned_passives", {}).keys():
+		owned_passives[k] = bool(data.owned_passives[k])
+
+	declined_fusions.clear()
+	for k in data.get("declined_fusions", {}).keys():
+		declined_fusions[k] = bool(data.declined_fusions[k])
+
+	if data.has("pos_x") and data.has("pos_y"):
+		global_position = Vector2(float(data.pos_x), float(data.pos_y))
 
 func _ensure_orbit_node(wid: String) -> void:
 	if wid == "orbit" and orbit_node == null:

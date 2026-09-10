@@ -1,8 +1,9 @@
 extends Node
 
 const SAVE_PATH := "user://save.json"
+const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.30.1 · 2026-09-10"
+const VERSION := "v0.31.0 · 2026-09-10"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -66,6 +67,8 @@ var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0, "rev
 var unlocked_characters: Dictionary = {}
 var sfx_enabled: bool = true
 var music_enabled: bool = true
+var resuming_run: bool = false
+var pending_run_data: Dictionary = {}
 
 func _ready() -> void:
 	_load_data()
@@ -159,6 +162,37 @@ func set_sfx_enabled(v: bool) -> void:
 func set_music_enabled(v: bool) -> void:
 	music_enabled = v
 	_save_data()
+
+func has_run_save() -> bool:
+	if dev_mode:
+		return false
+	return FileAccess.file_exists(RUN_SAVE_PATH)
+
+func save_run_state(data: Dictionary) -> void:
+	if dev_mode:
+		return
+	var f := FileAccess.open(RUN_SAVE_PATH, FileAccess.WRITE)
+	if f == null:
+		return
+	f.store_string(JSON.stringify(data))
+	f.close()
+
+func load_run_state() -> Dictionary:
+	if not FileAccess.file_exists(RUN_SAVE_PATH):
+		return {}
+	var f := FileAccess.open(RUN_SAVE_PATH, FileAccess.READ)
+	if f == null:
+		return {}
+	var text := f.get_as_text()
+	f.close()
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) == TYPE_DICTIONARY:
+		return parsed
+	return {}
+
+func clear_run_state() -> void:
+	if FileAccess.file_exists(RUN_SAVE_PATH):
+		DirAccess.remove_absolute(RUN_SAVE_PATH)
 
 func _load_data() -> void:
 	if not FileAccess.file_exists(SAVE_PATH):

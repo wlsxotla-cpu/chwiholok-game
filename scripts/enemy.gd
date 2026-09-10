@@ -28,6 +28,12 @@ const OVERLORD_SLAM_RANGE := 220.0
 const OVERLORD_SLAM_DAMAGE := 55.0
 const OVERLORD_SLAM_INTERVAL := 2.6
 
+const HALBERD_BARRAGE_COUNT := 7
+const HALBERD_BARRAGE_DAMAGE := 22.0
+const HALBERD_BARRAGE_INTERVAL := 2.4
+const HALBERD_BARRAGE_SPREAD_DEG := 50.0
+const HALBERD_BOLT_SPEED_MULT := 1.35
+
 signal overlord_defeated
 
 var aura_timer: float = 0.0
@@ -36,6 +42,8 @@ var aura_timer: float = 0.0
 @export var difficulty_mult: float = 1.0
 var boss_texture_override: String = ""
 var use_curse_attack: bool = false
+var use_halberd_barrage: bool = false
+var speed_override: float = -1.0
 var use_cheonmagung_skin: bool = false
 var slam_timer: float = 0.0
 
@@ -56,7 +64,7 @@ var exploded: bool = false
 
 func _ready() -> void:
 	var def: Dictionary = DEFS[type]
-	speed = def.speed
+	speed = def.speed if speed_override < 0.0 else speed_override
 	max_health = def.health * difficulty_mult
 	contact_damage = def.contact_damage * (1.0 + (difficulty_mult - 1.0) * 0.6)
 	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5)
@@ -78,7 +86,7 @@ func _ready() -> void:
 		if type == Type.OVERLORD:
 			if boss_texture_override == "":
 				sprite.modulate = Color(0.75, 0.35, 1.0, 1.0)
-			slam_timer = OVERLORD_SLAM_INTERVAL * randf_range(0.5, 1.0)
+			slam_timer = (HALBERD_BARRAGE_INTERVAL if use_halberd_barrage else OVERLORD_SLAM_INTERVAL) * randf_range(0.5, 1.0)
 		else:
 			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
 	else:
@@ -192,11 +200,15 @@ func _process_boss(delta: float) -> void:
 		_process_overlord_aura(delta)
 	slam_timer -= delta
 	if slam_timer <= 0.0:
-		slam_timer = OVERLORD_SLAM_INTERVAL if type == Type.OVERLORD else BOSS_SLAM_INTERVAL
-		if use_curse_attack:
-			_curse_bolt()
+		if use_halberd_barrage:
+			slam_timer = HALBERD_BARRAGE_INTERVAL
+			_halberd_barrage()
 		else:
-			_boss_slam()
+			slam_timer = OVERLORD_SLAM_INTERVAL if type == Type.OVERLORD else BOSS_SLAM_INTERVAL
+			if use_curse_attack:
+				_curse_bolt()
+			else:
+				_boss_slam()
 
 func _boss_slam() -> void:
 	var is_overlord: bool = type == Type.OVERLORD
@@ -224,6 +236,27 @@ func _curse_bolt() -> void:
 		bolt.setup(aim, BOSS_SLAM_DAMAGE * 0.55 * (1.0 + (difficulty_mult - 1.0) * 0.6))
 		bolt.modulate = Color(1.3, 0.5, 1.5, 1.0)
 		bolt.scale *= 1.6
+
+func _halberd_barrage() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	SoundManager.play("attack_fireball", -1.0, 0.55)
+	var to_player: Vector2 = player.global_position - global_position
+	var base_angle: float = to_player.angle()
+	var spread_rad: float = deg_to_rad(HALBERD_BARRAGE_SPREAD_DEG)
+	for i in range(HALBERD_BARRAGE_COUNT):
+		var t: float = float(i) / float(HALBERD_BARRAGE_COUNT - 1) - 0.5
+		var angle: float = base_angle + t * spread_rad
+		var bolt := preload("res://scenes/EnemyBullet.tscn").instantiate()
+		parent.add_child(bolt)
+		bolt.global_position = global_position
+		var aim: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * 400.0
+		bolt.setup(aim, HALBERD_BARRAGE_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
+		bolt.velocity *= HALBERD_BOLT_SPEED_MULT
+		bolt.rotation = bolt.velocity.angle()
+		bolt.modulate = Color(1.6, 0.95, 0.35, 1.0)
+		bolt.scale *= 1.5
 
 func _process_overlord_aura(delta: float) -> void:
 	sprite.modulate = Color(0.75, 0.35, 1.0, 1.0).lerp(Color(1.1, 0.5, 1.3, 1.0), (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5)
