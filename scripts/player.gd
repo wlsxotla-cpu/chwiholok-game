@@ -31,7 +31,7 @@ const WEAPON_DEFS := {
 	"whirl_storm": {"name": "선풍만리표", "cooldown": 1.2, "damage": 12.0, "count": 5.0},
 	"thunder_formation": {"name": "뇌검진", "cooldown": 1.0, "damage": 9.0, "radius": 100.0, "count": 3.0},
 	"halberd": {"name": "패왕할버드", "cooldown": 1.5, "damage": 16.0, "radius": 100.0, "knockback": 140.0},
-	"swordshield": {"name": "호심검방", "cooldown": 1.4, "damage": 10.0, "radius": 80.0, "knockback": 150.0},
+	"swordshield": {"name": "호심검방", "cooldown": 1.5, "damage": 9.0, "radius": 260.0, "count": 6.0},
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 12.0, "radius": 220.0, "width": 30.0},
 	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "count": 2.0},
@@ -61,7 +61,7 @@ const EVOLUTION_DEFS := {
 	"beam": {"name": "무형검기", "damage_mult": 1.3, "radius_mult": 1.3},
 	"lightning": {"name": "천둔뇌영", "damage_mult": 1.25, "extra_count": 2.0},
 	"halberd": {"name": "파천할버드", "damage_mult": 1.3, "radius_mult": 1.25, "knockback_mult": 1.3},
-	"swordshield": {"name": "금강불괴검방", "damage_mult": 1.2, "radius_mult": 1.2, "knockback_mult": 1.4},
+	"swordshield": {"name": "금강불괴검방", "damage_mult": 1.25, "radius_mult": 1.2, "extra_count": 3.0},
 	"rapier": {"name": "만검자류", "damage_mult": 1.25, "extra_count": 2.0},
 	"spear": {"name": "관천금창", "damage_mult": 1.3, "radius_mult": 1.3},
 	"curse": {"name": "만귀곡성", "damage_mult": 1.25, "extra_count": 2.0},
@@ -546,25 +546,24 @@ func _fire_halberd(w: Dictionary) -> void:
 	fx.set_radius(radius, _is_maxed(w))
 
 func _fire_swordshield(w: Dictionary) -> void:
-	var radius: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
-	var knockback: float = _weapon_stat(w, "knockback")
-	var hit_any := false
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var to_e: Vector2 = e.global_position - global_position
-		var dist: float = to_e.length()
-		if dist <= radius and dist > 0.001:
-			e.take_damage(damage)
-			if e.has_method("apply_knockback"):
-				e.apply_knockback(to_e.normalized() * knockback)
-			hit_any = true
-	if hit_any:
-		screen_shake(3.5, 0.14)
-	SoundManager.play("attack_melee", -2.0, 0.8)
+	var travel: float = _weapon_stat(w, "radius")
+	var count: int = int(_weapon_stat(w, "count"))
+	var maxed: bool = _is_maxed(w)
+	for i in range(count):
+		var angle: float = TAU * float(i) / float(count)
+		var dir: Vector2 = Vector2.RIGHT.rotated(angle)
+		var bullet := preload("res://scenes/Bullet.tscn").instantiate()
+		get_parent().add_child(bullet)
+		bullet.global_position = global_position
+		bullet.pierce = 2
+		bullet.setup(global_position + dir * travel, damage, maxed)
+		bullet.modulate = Color(0.6, 0.85, 1.35, 1.0)
+	SoundManager.play("attack_melee", -2.0, 0.85)
 	var fx := preload("res://scenes/ShieldBashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.setup(radius, _is_maxed(w))
+	fx.setup(50.0, maxed)
 
 func _fire_rapier(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()

@@ -70,6 +70,8 @@ func _apply_map_theme() -> void:
 
 const GRASS_PROP_COUNT := 26
 const CHEST_COUNT := 4
+const OBSTACLE_COUNT := 16
+const OBSTACLE_MIN_SPACING := 170.0
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0
@@ -85,6 +87,28 @@ func _spawn_map_props() -> void:
 		chest.global_position = _random_arena_pos(300.0)
 		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
+	if GameState.selected_map == "cheonmagung":
+		_spawn_obstacles()
+
+func _spawn_obstacles() -> void:
+	var placed: Array = []
+	for i in range(OBSTACLE_COUNT):
+		var pos: Vector2 = Vector2.ZERO
+		var tries: int = 0
+		while tries < 12:
+			pos = _random_arena_pos(260.0)
+			var ok := true
+			for p in placed:
+				if pos.distance_to(p) < OBSTACLE_MIN_SPACING:
+					ok = false
+					break
+			if ok:
+				break
+			tries += 1
+		placed.append(pos)
+		var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
+		obstacle.global_position = pos
+		add_child(obstacle)
 
 func _on_grass_broken() -> void:
 	grass_broken_count += 1
@@ -151,16 +175,11 @@ func _process(delta: float) -> void:
 func _difficulty_divisor() -> float:
 	return 130.0 if GameState.hard_mode else 170.0
 
-func _map_enemy_tint() -> Color:
-	if GameState.selected_map == "cheonmagung":
-		return Color(1.3, 0.55, 0.6, 1.0)
-	return Color(1.0, 1.0, 1.0, 1.0)
-
 func _spawn_enemy() -> void:
 	var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 	enemy.type = _pick_enemy_type()
 	enemy.difficulty_mult = 1.0 + elapsed / _difficulty_divisor()
-	enemy.map_tint = _map_enemy_tint()
+	enemy.use_cheonmagung_skin = GameState.selected_map == "cheonmagung"
 	var angle: float = randf() * TAU
 	var dist: float = 420.0
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
@@ -203,7 +222,7 @@ func _spawn_horde() -> void:
 		var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 		enemy.type = _pick_enemy_type()
 		enemy.difficulty_mult = base_mult
-		enemy.map_tint = _map_enemy_tint()
+		enemy.use_cheonmagung_skin = GameState.selected_map == "cheonmagung"
 		var angle: float = TAU * i / float(count)
 		var dist: float = 420.0 if i % 2 == 0 else 560.0
 		var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist

@@ -13,6 +13,14 @@ const DEFS := {
 	Type.OVERLORD: {"texture": "res://assets/sprites/enemy_overlord.png", "speed": 300.0, "health": 1600.0, "contact_damage": 60.0, "xp": 150.0},
 }
 
+const CHEONMAGUNG_TEXTURES := {
+	Type.GRUNT: "res://assets/sprites/enemy_grunt_cheonmagung.png",
+	Type.BRUTE: "res://assets/sprites/enemy_brute_cheonmagung.png",
+	Type.ARCHER: "res://assets/sprites/enemy_archer_cheonmagung.png",
+	Type.BOMBER: "res://assets/sprites/enemy_bomber_cheonmagung.png",
+	Type.STRIKER: "res://assets/sprites/enemy_striker_cheonmagung.png",
+}
+
 const BOSS_SLAM_RANGE := 110.0
 const BOSS_SLAM_DAMAGE := 30.0
 const BOSS_SLAM_INTERVAL := 3.5
@@ -28,7 +36,7 @@ var aura_timer: float = 0.0
 @export var difficulty_mult: float = 1.0
 var boss_texture_override: String = ""
 var use_curse_attack: bool = false
-var map_tint: Color = Color(1.0, 1.0, 1.0, 1.0)
+var use_cheonmagung_skin: bool = false
 var slam_timer: float = 0.0
 
 var speed: float
@@ -53,7 +61,12 @@ func _ready() -> void:
 	contact_damage = def.contact_damage * (1.0 + (difficulty_mult - 1.0) * 0.6)
 	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5)
 	health = max_health
-	sprite.texture = load(boss_texture_override) if boss_texture_override != "" else load(def.texture)
+	var texture_path: String = def.texture
+	if boss_texture_override != "":
+		texture_path = boss_texture_override
+	elif use_cheonmagung_skin and CHEONMAGUNG_TEXTURES.has(type):
+		texture_path = CHEONMAGUNG_TEXTURES[type]
+	sprite.texture = load(texture_path)
 	fire_timer = float(def.get("fire_cooldown", 0.0)) * randf_range(0.4, 1.0)
 
 	if type == Type.BOSS or type == Type.OVERLORD:
@@ -70,7 +83,6 @@ func _ready() -> void:
 			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
 	else:
 		_apply_rank_tint()
-		sprite.modulate *= map_tint
 
 	add_to_group("enemies")
 	player = get_tree().get_first_node_in_group("player")
