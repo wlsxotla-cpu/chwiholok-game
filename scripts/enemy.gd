@@ -36,6 +36,7 @@ const HALBERD_BOLT_LIFETIME := 3.4
 const HALBERD_BOLT_SCALE := 1.9
 
 signal overlord_defeated
+signal samahoek_defeated
 
 var aura_timer: float = 0.0
 
@@ -281,6 +282,8 @@ func take_damage(amount: float) -> void:
 		_drop_loot()
 		if type == Type.OVERLORD:
 			overlord_defeated.emit()
+		elif type == Type.BOSS and use_curse_attack:
+			samahoek_defeated.emit()
 		queue_free()
 	else:
 		SoundManager.play("hit", -8.0, randf_range(0.9, 1.1))

@@ -41,10 +41,6 @@ func _ready() -> void:
 		GameState.resuming_run = false
 		GameState.pending_run_data = {}
 	_apply_map_theme()
-	if GameState.hard_mode:
-		spawn_interval *= 0.7
-		min_spawn_interval *= 0.7
-		difficulty_ramp = 0.988
 	player.died.connect(_on_player_died)
 	player.leveled_up.connect(func(options: Array) -> void:
 		hud.show_level_up(options)
@@ -331,6 +327,7 @@ func _spawn_boss() -> void:
 		boss.boss_texture_override = GameState.get_character("samahoek").portrait
 		boss.use_curse_attack = true
 		boss_name = "사마획"
+		boss.samahoek_defeated.connect(func() -> void: GameState.record_samahoek_kill())
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	boss.difficulty_mult = base_mult * (1.0 + (boss_count - 1) * 0.45)
 	var angle: float = randf() * TAU
@@ -432,6 +429,8 @@ func _on_overlord_defeated() -> void:
 	has_tracked_boss = false
 	hud.hide_boss_health()
 	hud.show_overlord_defeated(current_overlord_name)
+	if GameState.selected_map == "cheonmagung":
+		GameState.unlock_jinak_by_clear()
 	SoundManager.play("levelup", 5.0, 0.35)
 	if player.has_method("screen_shake"):
 		player.screen_shake(14.0, 0.6)

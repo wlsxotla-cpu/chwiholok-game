@@ -39,6 +39,7 @@ const WEAPON_DEFS := {
 	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "count": 2.0},
 	"sky_piercer": {"name": "관천쾌섬창", "cooldown": 1.0, "damage": 34.0, "radius": 150.0},
 	"flame_guard": {"name": "염화호신진", "cooldown": 1.1, "damage": 15.0, "radius": 320.0, "count": 8.0},
+	"cataclysm_fury": {"name": "패왕귀멸진", "cooldown": 1.4, "damage": 24.0, "radius": 130.0, "knockback": 150.0, "count": 3.0},
 }
 
 const FUSION_DEFS := {
@@ -48,6 +49,7 @@ const FUSION_DEFS := {
 	"thunder_formation": {"pair": ["orbit", "lightning"]},
 	"sky_piercer": {"pair": ["rapier", "spear"]},
 	"flame_guard": {"pair": ["swordshield", "fireball"]},
+	"cataclysm_fury": {"pair": ["halberd", "curse"]},
 }
 
 const EVOLUTION_DEFS := {
@@ -415,6 +417,8 @@ func _fire_weapon(w: Dictionary) -> void:
 			_fire_spear(w)
 		"flame_guard":
 			_fire_swordshield(w)
+		"cataclysm_fury":
+			_fire_cataclysm_fury(w)
 
 func _fire_heaven_blade(w: Dictionary) -> void:
 	var radius: float = _weapon_stat(w, "radius")
@@ -680,6 +684,47 @@ func _fire_curse(w: Dictionary) -> void:
 	if struck > 0:
 		SoundManager.play("attack_fireball", -2.0, 0.8)
 		screen_shake(2.0, 0.08)
+
+func _fire_cataclysm_fury(w: Dictionary) -> void:
+	var radius: float = _weapon_stat(w, "radius")
+	var damage: float = _weapon_stat(w, "damage")
+	var knockback: float = _weapon_stat(w, "knockback")
+	var count: int = int(_weapon_stat(w, "count"))
+	var maxed: bool = _is_maxed(w)
+	var hit_any := false
+	for e in get_tree().get_nodes_in_group("enemies"):
+		var to_e: Vector2 = e.global_position - global_position
+		if to_e.length() <= radius:
+			e.take_damage(damage)
+			if e.has_method("apply_knockback") and to_e.length() > 0.001:
+				e.apply_knockback(to_e.normalized() * knockback)
+			hit_any = true
+	if hit_any:
+		screen_shake(6.0, 0.2)
+	SoundManager.play("attack_melee", -1.0, 0.55)
+	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
+	get_parent().add_child(fx)
+	fx.global_position = global_position
+	fx.modulate = Color(1.3, 0.55, 1.6, 1.0)
+	fx.set_radius(radius, maxed)
+
+	var far_enemies: Array = get_tree().get_nodes_in_group("enemies").filter(
+		func(e: Node) -> bool:
+			var d: float = global_position.distance_to(e.global_position)
+			return d > radius and d <= TARGET_SEARCH_RANGE
+	)
+	far_enemies.shuffle()
+	var struck: int = 0
+	for e in far_enemies:
+		e.take_damage(damage * 0.6)
+		var curse_fx := preload("res://scenes/LightningEffect.tscn").instantiate()
+		get_parent().add_child(curse_fx)
+		curse_fx.global_position = e.global_position
+		curse_fx.setup(maxed)
+		curse_fx.modulate = Color(1.2, 0.5, 1.55, 1.0)
+		struck += 1
+		if struck >= count:
+			break
 
 func _get_weapon(id: String) -> Dictionary:
 	for w in weapons:

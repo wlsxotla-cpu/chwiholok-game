@@ -1,6 +1,6 @@
 extends RefCounted
 
-const HIDDEN_WEAPONS := ["halberd", "curse"]
+const HIDDEN_WEAPONS := []
 
 const WEAPON_ICONS := {
 	"slash": "res://assets/ui/weapon_icons/slash.png",
@@ -23,6 +23,7 @@ const WEAPON_ICONS := {
 	"curse": "res://assets/ui/weapon_icons/curse.png",
 	"sky_piercer": "res://assets/ui/weapon_icons/sky_piercer.png",
 	"flame_guard": "res://assets/ui/weapon_icons/flame_guard.png",
+	"cataclysm_fury": "res://assets/ui/weapon_icons/cataclysm_fury.png",
 }
 
 const PASSIVE_ICONS := {
@@ -57,6 +58,7 @@ const WEAPON_NAMES := {
 	"curse": "귀곡저주",
 	"sky_piercer": "관천쾌섬창",
 	"flame_guard": "염화호신진",
+	"cataclysm_fury": "패왕귀멸진",
 }
 
 const PASSIVE_NAMES := {
@@ -77,6 +79,7 @@ const FUSION_PAIRS := {
 	"thunder_formation": ["orbit", "lightning"],
 	"sky_piercer": ["rapier", "spear"],
 	"flame_guard": ["swordshield", "fireball"],
+	"cataclysm_fury": ["halberd", "curse"],
 }
 
 const EVOLUTION_PASSIVE := {
@@ -126,6 +129,8 @@ const BASE_WEAPON_GUIDE := [
 	["swordshield", "호심검방", "검기를 사방으로 여러 발 흩뿌려 발사. 레벨이 오를수록 받는 피해도 줄여줌. 소운 전용 시작 무기."],
 	["rapier", "연환자검", "가장 가까운 적 한 명에게 빠르게 연속 찌르기. 민서 전용 시작 무기."],
 	["spear", "만금창", "가장 가까운 적에게 창을 투척, 명중 지점에 폭발 범위 피해. 만냥 전용 시작 무기."],
+	["halberd", "패왕할버드", "자기 주변 넓은 범위를 강하게 후려쳐 넉백. 진악 전용 시작 무기."],
+	["curse", "귀곡저주", "사거리 내 무작위 적 여러 명에게 저주 낙뢰. 사마획 전용 시작 무기."],
 ]
 
 const FUSION_GUIDE := [
@@ -135,6 +140,7 @@ const FUSION_GUIDE := [
 	["thunder_formation", "뇌검진", "어검비행 + 뇌전장", "회전검 + 번개 낙뢰를 동시 운용하는 복합 무기"],
 	["sky_piercer", "관천쾌섬창", "연환자검 + 만금창", "훨씬 강력한 투창을 던져 넓은 범위에 폭발 피해"],
 	["flame_guard", "염화호신진", "호심검방 + 화염구 장판", "불타는 검기를 사방으로 훨씬 많이 흩뿌리는 화염 방어진"],
+	["cataclysm_fury", "패왕귀멸진", "패왕할버드 + 귀곡저주", "주변을 강타하는 광역 후려치기 + 원거리 무작위 적에게 저주 낙뢰를 동시에 퍼붓는 합공진"],
 ]
 
 const EVOLUTION_GUIDE := [
@@ -143,6 +149,7 @@ const EVOLUTION_GUIDE := [
 	["비연신법", "이동속도 +10%", "표창난사→만화표창진 / 회류표→만리회선표"],
 	["연격지결", "공격속도 +10%", "일자검기→무형검기"],
 	["채기흡자결", "수집 반경 +15%", "화염구 장판→겁화지옥진"],
-	["패왕비급", "공격력 +12%", "호심검방→금강불괴검방"],
+	["패왕비급", "공격력 +12%", "패왕할버드→파천할버드 / 호심검방→금강불괴검방"],
 	["쾌검비급", "이동속도 +10%", "연환자검→만검자류 / 만금창→관천금창"],
+	["귀곡비급", "수집 반경 +15%", "귀곡저주→만귀곡성"],
 ]

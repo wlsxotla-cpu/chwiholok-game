@@ -121,7 +121,7 @@ func _refresh_difficulty_buttons() -> void:
 	normal_button.button_pressed = not GameState.hard_mode
 	hard_button.button_pressed = GameState.hard_mode
 	if GameState.hard_mode:
-		difficulty_desc.text = "몬스터 스폰 속도·최대 마릿수 증가, 강한 몬스터 훨씬 빨리 등장, 시간에 따른 강화 폭도 더 큼 (대신 내공 +30%, 경험치 +15%)"
+		difficulty_desc.text = "적/보스 스탯이 시간에 따라 훨씬 빠르게 강해짐, 강한 몬스터 종류도 더 일찍 등장, 무리 이벤트 물량도 더 많음 (스폰 속도 자체는 기본과 동일)"
 	else:
 		difficulty_desc.text = "기본 난이도"
 
@@ -212,15 +212,23 @@ func _build_card(data: Dictionary) -> Control:
 		play_btn.pressed.connect(_on_card_pressed.bind(data.id))
 		panel.add_child(play_btn)
 	else:
-		var cost: int = int(data.get("unlock_cost", 0))
-		status_label.text = "내공 %d 필요" % cost
-		status_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+		var unlock_type: String = data.get("unlock_type", "")
+		if unlock_type == "jinak_clear":
+			status_label.text = "천마궁에서 진악 처치 시 해금"
+			status_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+		elif unlock_type == "samahoek_kills":
+			status_label.text = "천마궁에서 사마획 처치 (%d/%d)" % [GameState.samahoek_kills, GameState.SAMAHOEK_KILL_TARGET]
+			status_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
+		else:
+			var cost: int = int(data.get("unlock_cost", 0))
+			status_label.text = "내공 %d 필요" % cost
+			status_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
 
-		var unlock_btn := Button.new()
-		unlock_btn.text = "해금 (%d)" % cost
-		unlock_btn.disabled = not GameState.can_unlock_character(data.id)
-		unlock_btn.pressed.connect(_on_unlock_pressed.bind(data.id))
-		vbox.add_child(unlock_btn)
+			var unlock_btn := Button.new()
+			unlock_btn.text = "해금 (%d)" % cost
+			unlock_btn.disabled = not GameState.can_unlock_character(data.id)
+			unlock_btn.pressed.connect(_on_unlock_pressed.bind(data.id))
+			vbox.add_child(unlock_btn)
 
 	return panel
 
