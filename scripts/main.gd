@@ -323,7 +323,7 @@ func _spawn_overlord() -> void:
 		overlord.boss_texture_override = GameState.get_character("jinak").portrait
 		current_overlord_name = "진악"
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
-	overlord.difficulty_mult = base_mult * 3.0
+	overlord.difficulty_mult = base_mult * 1.3
 	var angle: float = randf() * TAU
 	var dist: float = 550.0
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist

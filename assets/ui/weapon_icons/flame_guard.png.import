@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://qo8tx8gyocqg"
-path="res://.godot/imported/hellcurse_flame.png-83e325e6f1df1a9d7bd44329504cccf9.ctex"
+uid="uid://c4rttfvinwtg0"
+path="res://.godot/imported/flame_guard.png-339d5f82f6a39e24dfa2aa56b4e5a089.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/weapon_icons/hellcurse_flame.png"
-dest_files=["res://.godot/imported/hellcurse_flame.png-83e325e6f1df1a9d7bd44329504cccf9.ctex"]
+source_file="res://assets/ui/weapon_icons/flame_guard.png"
+dest_files=["res://.godot/imported/flame_guard.png-339d5f82f6a39e24dfa2aa56b4e5a089.ctex"]
 
 [params]
 

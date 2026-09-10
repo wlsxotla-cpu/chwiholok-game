@@ -37,9 +37,8 @@ const WEAPON_DEFS := {
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 20.0, "radius": 90.0},
 	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "count": 2.0},
-	"cataclysm_guard": {"name": "패왕진천격", "cooldown": 1.3, "damage": 26.0, "radius": 150.0, "knockback": 220.0},
 	"sky_piercer": {"name": "관천쾌섬창", "cooldown": 1.0, "damage": 34.0, "radius": 150.0},
-	"hellcurse_flame": {"name": "귀화망령진", "cooldown": 1.5, "damage": 14.0, "count": 4.0},
+	"flame_guard": {"name": "염화호신진", "cooldown": 1.1, "damage": 15.0, "radius": 320.0, "count": 8.0},
 }
 
 const FUSION_DEFS := {
@@ -47,9 +46,8 @@ const FUSION_DEFS := {
 	"piercing_calamity": {"pair": ["pierce", "beam"]},
 	"whirl_storm": {"pair": ["shuriken", "boomerang"]},
 	"thunder_formation": {"pair": ["orbit", "lightning"]},
-	"cataclysm_guard": {"pair": ["swordshield", "halberd"]},
 	"sky_piercer": {"pair": ["rapier", "spear"]},
-	"hellcurse_flame": {"pair": ["curse", "fireball"]},
+	"flame_guard": {"pair": ["swordshield", "fireball"]},
 }
 
 const EVOLUTION_DEFS := {
@@ -349,12 +347,10 @@ func _fire_weapon(w: Dictionary) -> void:
 			_fire_spear(w)
 		"curse":
 			_fire_curse(w)
-		"cataclysm_guard":
-			_fire_halberd(w)
 		"sky_piercer":
 			_fire_spear(w)
-		"hellcurse_flame":
-			_fire_curse(w)
+		"flame_guard":
+			_fire_swordshield(w)
 
 func _fire_heaven_blade(w: Dictionary) -> void:
 	var radius: float = _weapon_stat(w, "radius")
@@ -562,6 +558,8 @@ func _fire_swordshield(w: Dictionary) -> void:
 	var travel: float = _weapon_stat(w, "radius")
 	var count: int = int(_weapon_stat(w, "count"))
 	var maxed: bool = _is_maxed(w)
+	var is_flame: bool = w.id == "flame_guard"
+	var bolt_tint: Color = Color(1.7, 0.75, 0.35, 1.0) if is_flame else Color(0.6, 0.85, 1.35, 1.0)
 	for i in range(count):
 		var angle: float = TAU * float(i) / float(count)
 		var dir: Vector2 = Vector2.RIGHT.rotated(angle)
@@ -570,7 +568,7 @@ func _fire_swordshield(w: Dictionary) -> void:
 		bullet.global_position = global_position
 		bullet.pierce = 2
 		bullet.setup(global_position + dir * travel, damage, maxed)
-		bullet.modulate = Color(0.6, 0.85, 1.35, 1.0)
+		bullet.modulate = bolt_tint
 	SoundManager.play("attack_melee", -2.0, 0.85)
 	var fx := preload("res://scenes/ShieldBashEffect.tscn").instantiate()
 	get_parent().add_child(fx)

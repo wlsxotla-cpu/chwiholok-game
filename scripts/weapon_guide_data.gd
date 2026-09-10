@@ -1,6 +1,6 @@
 extends RefCounted
 
-const HIDDEN_WEAPONS := ["halberd", "curse", "cataclysm_guard", "hellcurse_flame"]
+const HIDDEN_WEAPONS := ["halberd", "curse"]
 
 const WEAPON_ICONS := {
 	"slash": "res://assets/ui/weapon_icons/slash.png",
@@ -21,9 +21,8 @@ const WEAPON_ICONS := {
 	"rapier": "res://assets/ui/weapon_icons/rapier.png",
 	"spear": "res://assets/ui/weapon_icons/spear.png",
 	"curse": "res://assets/ui/weapon_icons/curse.png",
-	"cataclysm_guard": "res://assets/ui/weapon_icons/cataclysm_guard.png",
 	"sky_piercer": "res://assets/ui/weapon_icons/sky_piercer.png",
-	"hellcurse_flame": "res://assets/ui/weapon_icons/hellcurse_flame.png",
+	"flame_guard": "res://assets/ui/weapon_icons/flame_guard.png",
 }
 
 const PASSIVE_ICONS := {
@@ -56,9 +55,8 @@ const WEAPON_NAMES := {
 	"rapier": "연환자검",
 	"spear": "만금창",
 	"curse": "귀곡저주",
-	"cataclysm_guard": "패왕진천격",
 	"sky_piercer": "관천쾌섬창",
-	"hellcurse_flame": "귀화망령진",
+	"flame_guard": "염화호신진",
 }
 
 const PASSIVE_NAMES := {
@@ -77,9 +75,8 @@ const FUSION_PAIRS := {
 	"piercing_calamity": ["pierce", "beam"],
 	"whirl_storm": ["shuriken", "boomerang"],
 	"thunder_formation": ["orbit", "lightning"],
-	"cataclysm_guard": ["swordshield", "halberd"],
 	"sky_piercer": ["rapier", "spear"],
-	"hellcurse_flame": ["curse", "fireball"],
+	"flame_guard": ["swordshield", "fireball"],
 }
 
 const EVOLUTION_PASSIVE := {
@@ -137,6 +134,7 @@ const FUSION_GUIDE := [
 	["whirl_storm", "선풍만리표", "표창난사 + 회류표", "훨씬 많은 표창을 동시에 투척"],
 	["thunder_formation", "뇌검진", "어검비행 + 뇌전장", "회전검 + 번개 낙뢰를 동시 운용하는 복합 무기"],
 	["sky_piercer", "관천쾌섬창", "연환자검 + 만금창", "훨씬 강력한 투창을 던져 넓은 범위에 폭발 피해"],
+	["flame_guard", "염화호신진", "호심검방 + 화염구 장판", "불타는 검기를 사방으로 훨씬 많이 흩뿌리는 화염 방어진"],
 ]
 
 const EVOLUTION_GUIDE := [
