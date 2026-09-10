@@ -78,20 +78,39 @@ const CORRIDOR_PILLAR_COUNT := 8
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0
+var corridor_cell_centers: Array = []
+var corridor_cell_size: float = 0.0
 
 func _spawn_map_props() -> void:
+	var in_corridors: bool = GameState.selected_map == "cheonmagung"
+	if in_corridors:
+		_spawn_palace_corridors()
+
+	var prop_scene: PackedScene = preload("res://scenes/PalaceVaseProp.tscn") if in_corridors else preload("res://scenes/GrassProp.tscn")
+	var prop_break_color: Color = Color(0.75, 0.6, 1.0, 1.0) if in_corridors else Color(0.55, 1.0, 0.5, 1.0)
 	for i in range(GRASS_PROP_COUNT):
-		var prop := preload("res://scenes/GrassProp.tscn").instantiate()
-		prop.global_position = _random_arena_pos(100.0)
+		var prop := prop_scene.instantiate()
+		prop.global_position = _random_cell_safe_pos(100.0) if in_corridors else _random_arena_pos(100.0)
+		prop.break_spark_color = prop_break_color
 		prop.broken_prop.connect(_on_grass_broken)
 		add_child(prop)
 	for i in range(CHEST_COUNT):
 		var chest := preload("res://scenes/TreasureChest.tscn").instantiate()
-		chest.global_position = _random_arena_pos(300.0)
+		chest.global_position = _random_cell_safe_pos(300.0) if in_corridors else _random_arena_pos(300.0)
 		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
-	if GameState.selected_map == "cheonmagung":
-		_spawn_palace_corridors()
+
+func _random_cell_safe_pos(min_dist_from_center: float) -> Vector2:
+	var tries: int = 0
+	while tries < 15:
+		var cx: float = corridor_cell_centers[randi() % corridor_cell_centers.size()]
+		var cy: float = corridor_cell_centers[randi() % corridor_cell_centers.size()]
+		var jitter := Vector2(randf_range(-corridor_cell_size * 0.3, corridor_cell_size * 0.3), randf_range(-corridor_cell_size * 0.3, corridor_cell_size * 0.3))
+		var pos := Vector2(cx, cy) + jitter
+		if pos.length() >= min_dist_from_center:
+			return pos
+		tries += 1
+	return Vector2(corridor_cell_centers[0], corridor_cell_centers[0])
 
 func _wall_segments_with_gaps(start: float, end: float, gap_centers: Array, gap_width: float) -> Array:
 	var cuts: Array = []
@@ -138,6 +157,8 @@ func _spawn_palace_corridors() -> void:
 	var cell_centers: Array = []
 	for i in range(CORRIDOR_DIVISIONS):
 		cell_centers.append(-half + cell * (i + 0.5))
+	corridor_cell_centers = cell_centers
+	corridor_cell_size = cell
 
 	var nub_toggle := false
 	for y in lines:

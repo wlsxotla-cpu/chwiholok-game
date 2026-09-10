@@ -4,6 +4,7 @@ signal broken_prop
 
 @onready var sprite: Sprite2D = $Sprite2D
 
+@export var break_spark_color: Color = Color(0.55, 1.0, 0.5, 1.0)
 var broken: bool = false
 
 func _ready() -> void:
@@ -26,7 +27,7 @@ func _break() -> void:
 	var spark := preload("res://scenes/HitSpark.tscn").instantiate()
 	parent.add_child(spark)
 	spark.global_position = global_position
-	spark.modulate = Color(0.55, 1.0, 0.5, 1.0)
+	spark.modulate = break_spark_color
 	broken_prop.emit()
 
 	if randf() < 0.15:
