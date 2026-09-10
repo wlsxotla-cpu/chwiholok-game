@@ -14,6 +14,11 @@ const WEAPON_ICONS := {
 	"piercing_calamity": "res://assets/ui/weapon_icons/piercing_calamity.png",
 	"whirl_storm": "res://assets/ui/weapon_icons/whirl_storm.png",
 	"thunder_formation": "res://assets/ui/weapon_icons/thunder_formation.png",
+	"halberd": "res://assets/ui/weapon_icons/halberd.png",
+	"swordshield": "res://assets/ui/weapon_icons/swordshield.png",
+	"rapier": "res://assets/ui/weapon_icons/rapier.png",
+	"spear": "res://assets/ui/weapon_icons/spear.png",
+	"curse": "res://assets/ui/weapon_icons/curse.png",
 }
 
 const PASSIVE_ICONS := {
@@ -22,6 +27,9 @@ const PASSIVE_ICONS := {
 	"agility_scroll": "res://assets/ui/passive_icons/agility_scroll.png",
 	"haste_scroll": "res://assets/ui/passive_icons/haste_scroll.png",
 	"gather_scroll": "res://assets/ui/passive_icons/gather_scroll.png",
+	"vanguard_scroll": "res://assets/ui/passive_icons/vanguard_scroll.png",
+	"finesse_scroll": "res://assets/ui/passive_icons/finesse_scroll.png",
+	"curse_scroll": "res://assets/ui/passive_icons/curse_scroll.png",
 }
 
 const WEAPON_NAMES := {
