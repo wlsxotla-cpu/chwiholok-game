@@ -70,8 +70,11 @@ func _apply_map_theme() -> void:
 
 const GRASS_PROP_COUNT := 26
 const CHEST_COUNT := 4
-const OBSTACLE_COUNT := 16
-const OBSTACLE_MIN_SPACING := 170.0
+const CORRIDOR_DIVISIONS := 5
+const CORRIDOR_GAP_WIDTH := 220.0
+const CORRIDOR_WALL_THICKNESS := 48.0
+const CORRIDOR_NUB_LENGTH := 90.0
+const CORRIDOR_PILLAR_COUNT := 8
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0
@@ -88,24 +91,81 @@ func _spawn_map_props() -> void:
 		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
 	if GameState.selected_map == "cheonmagung":
-		_spawn_obstacles()
+		_spawn_palace_corridors()
 
-func _spawn_obstacles() -> void:
-	var placed: Array = []
-	for i in range(OBSTACLE_COUNT):
-		var pos: Vector2 = Vector2.ZERO
-		var tries: int = 0
-		while tries < 12:
-			pos = _random_arena_pos(260.0)
-			var ok := true
-			for p in placed:
-				if pos.distance_to(p) < OBSTACLE_MIN_SPACING:
-					ok = false
-					break
-			if ok:
-				break
-			tries += 1
-		placed.append(pos)
+func _wall_segments_with_gaps(start: float, end: float, gap_centers: Array, gap_width: float) -> Array:
+	var cuts: Array = []
+	for gc in gap_centers:
+		cuts.append([gc - gap_width / 2.0, gc + gap_width / 2.0])
+	cuts.sort_custom(func(a, b): return a[0] < b[0])
+	var segments: Array = []
+	var cursor: float = start
+	for cut in cuts:
+		if cut[0] > cursor:
+			segments.append([cursor, cut[0]])
+		cursor = max(cursor, cut[1])
+	if cursor < end:
+		segments.append([cursor, end])
+	return segments
+
+func _spawn_wall_rect(center: Vector2, size: Vector2) -> void:
+	var wall := StaticBody2D.new()
+	wall.collision_layer = 32
+	wall.collision_mask = 0
+	wall.global_position = center
+	add_child(wall)
+
+	var shape := RectangleShape2D.new()
+	shape.size = size
+	var col := CollisionShape2D.new()
+	col.shape = shape
+	wall.add_child(col)
+
+	var sprite := Sprite2D.new()
+	sprite.texture = preload("res://assets/sprites/palace_wall.png")
+	sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	sprite.region_enabled = true
+	sprite.region_rect = Rect2(0, 0, size.x, size.y)
+	sprite.centered = true
+	wall.add_child(sprite)
+
+func _spawn_palace_corridors() -> void:
+	var half: float = GameState.ARENA_HALF_SIZE
+	var cell: float = (half * 2.0) / CORRIDOR_DIVISIONS
+	var lines: Array = []
+	for i in range(1, CORRIDOR_DIVISIONS):
+		lines.append(-half + cell * i)
+	var cell_centers: Array = []
+	for i in range(CORRIDOR_DIVISIONS):
+		cell_centers.append(-half + cell * (i + 0.5))
+
+	var nub_toggle := false
+	for y in lines:
+		for seg in _wall_segments_with_gaps(-half, half, cell_centers, CORRIDOR_GAP_WIDTH):
+			var seg_len: float = seg[1] - seg[0]
+			var seg_center_x: float = (seg[0] + seg[1]) / 2.0
+			_spawn_wall_rect(Vector2(seg_center_x, y), Vector2(seg_len, CORRIDOR_WALL_THICKNESS))
+			if seg_len > CORRIDOR_GAP_WIDTH:
+				nub_toggle = not nub_toggle
+				var nub_dir: float = 1.0 if nub_toggle else -1.0
+				_spawn_wall_rect(Vector2(seg_center_x, y + nub_dir * CORRIDOR_NUB_LENGTH / 2.0), Vector2(CORRIDOR_WALL_THICKNESS, CORRIDOR_NUB_LENGTH))
+	for x in lines:
+		for seg in _wall_segments_with_gaps(-half, half, cell_centers, CORRIDOR_GAP_WIDTH):
+			var seg_len2: float = seg[1] - seg[0]
+			var seg_center_y: float = (seg[0] + seg[1]) / 2.0
+			_spawn_wall_rect(Vector2(x, seg_center_y), Vector2(CORRIDOR_WALL_THICKNESS, seg_len2))
+			if seg_len2 > CORRIDOR_GAP_WIDTH:
+				nub_toggle = not nub_toggle
+				var nub_dir2: float = 1.0 if nub_toggle else -1.0
+				_spawn_wall_rect(Vector2(x + nub_dir2 * CORRIDOR_NUB_LENGTH / 2.0, seg_center_y), Vector2(CORRIDOR_NUB_LENGTH, CORRIDOR_WALL_THICKNESS))
+
+	for i in range(CORRIDOR_PILLAR_COUNT):
+		var cx: float = cell_centers[randi() % cell_centers.size()]
+		var cy: float = cell_centers[randi() % cell_centers.size()]
+		var jitter := Vector2(randf_range(-cell * 0.25, cell * 0.25), randf_range(-cell * 0.25, cell * 0.25))
+		var pos := Vector2(cx, cy) + jitter
+		if pos.length() < 260.0:
+			continue
 		var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
 		obstacle.global_position = pos
 		add_child(obstacle)
