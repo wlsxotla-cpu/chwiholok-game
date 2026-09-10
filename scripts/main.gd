@@ -260,6 +260,10 @@ func _on_overlord_defeated() -> void:
 	SoundManager.play("levelup", 5.0, 0.35)
 	if player.has_method("screen_shake"):
 		player.screen_shake(14.0, 0.6)
+	run_over = true
+	GameState.add_run_coins(player.coins)
+	get_tree().paused = true
+	hud.show_victory(elapsed, current_overlord_name)
 
 func screen_shake_all() -> void:
 	if player.has_method("screen_shake"):

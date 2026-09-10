@@ -636,3 +636,10 @@ func show_game_over(t: float) -> void:
 	restart_button.visible = true
 	menu_button.visible = true
 	pause_button.visible = false
+
+func show_victory(t: float, boss_name: String) -> void:
+	end_label.text = "%s 격파! 천하제일이 되었다!\n클리어 시간 %02d:%02d" % [boss_name, int(t) / 60, int(t) % 60]
+	end_label.visible = true
+	restart_button.visible = true
+	menu_button.visible = true
+	pause_button.visible = false
