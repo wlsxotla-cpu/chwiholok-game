@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.24.0 · 2026-09-10"
+const VERSION := "v0.25.0 · 2026-09-10"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -70,6 +70,19 @@ var music_enabled: bool = true
 func _ready() -> void:
 	_load_data()
 	_check_dev_mode()
+	_trap_back_button()
+
+func _trap_back_button() -> void:
+	if not OS.has_feature("web"):
+		return
+	JavaScriptBridge.eval("""
+		try {
+			history.pushState(null, '', location.href);
+			window.addEventListener('popstate', function(e) {
+				history.pushState(null, '', location.href);
+			});
+		} catch (e) {}
+	""", true)
 
 const DEV_KEY := "1200"
 

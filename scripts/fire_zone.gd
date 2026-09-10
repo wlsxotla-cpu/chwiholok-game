@@ -34,6 +34,11 @@ func setup(dmg: float, dur: float, r: float, maxed: bool = false) -> void:
 	pulse.set_loops()
 	pulse.tween_property(sprite, "scale", Vector2(base_scale * 1.08, base_scale * 1.08), 0.35).set_trans(Tween.TRANS_SINE)
 	pulse.tween_property(sprite, "scale", Vector2(base_scale * 0.96, base_scale * 0.96), 0.35).set_trans(Tween.TRANS_SINE)
+	queue_redraw()
+
+func _draw() -> void:
+	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(1.0, 0.65, 0.25, 0.9), 3.5, true)
+	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(0.15, 0.05, 0.0, 0.6), 1.0, true)
 
 func _physics_process(delta: float) -> void:
 	duration -= delta

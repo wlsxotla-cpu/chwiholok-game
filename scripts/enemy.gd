@@ -27,6 +27,8 @@ var aura_timer: float = 0.0
 @export var type: Type = Type.GRUNT
 @export var difficulty_mult: float = 1.0
 var boss_texture_override: String = ""
+var use_curse_attack: bool = false
+var map_tint: Color = Color(1.0, 1.0, 1.0, 1.0)
 var slam_timer: float = 0.0
 
 var speed: float
@@ -55,9 +57,10 @@ func _ready() -> void:
 	fire_timer = float(def.get("fire_cooldown", 0.0)) * randf_range(0.4, 1.0)
 
 	if type == Type.BOSS or type == Type.OVERLORD:
-		sprite.scale *= 2.6 if type == Type.OVERLORD else 1.9
+		var override_size_bonus: float = 1.3 if boss_texture_override != "" else 1.0
+		sprite.scale *= (2.6 if type == Type.OVERLORD else 1.9) * override_size_bonus
 		var shape := CircleShape2D.new()
-		shape.radius = 42.0 if type == Type.OVERLORD else 30.0
+		shape.radius = (42.0 if type == Type.OVERLORD else 30.0) * override_size_bonus
 		$CollisionShape2D.shape = shape
 		if type == Type.OVERLORD:
 			if boss_texture_override == "":
@@ -67,6 +70,7 @@ func _ready() -> void:
 			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
 	else:
 		_apply_rank_tint()
+		sprite.modulate *= map_tint
 
 	add_to_group("enemies")
 	player = get_tree().get_first_node_in_group("player")
@@ -177,7 +181,10 @@ func _process_boss(delta: float) -> void:
 	slam_timer -= delta
 	if slam_timer <= 0.0:
 		slam_timer = OVERLORD_SLAM_INTERVAL if type == Type.OVERLORD else BOSS_SLAM_INTERVAL
-		_boss_slam()
+		if use_curse_attack:
+			_curse_bolt()
+		else:
+			_boss_slam()
 
 func _boss_slam() -> void:
 	var is_overlord: bool = type == Type.OVERLORD
@@ -190,6 +197,21 @@ func _boss_slam() -> void:
 	get_parent().add_child(fx)
 	fx.global_position = global_position
 	fx.set_radius(slam_range, is_overlord)
+
+func _curse_bolt() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	SoundManager.play("attack_fireball", -2.0, 0.7)
+	for i in range(3):
+		var bolt := preload("res://scenes/EnemyBullet.tscn").instantiate()
+		parent.add_child(bolt)
+		bolt.global_position = global_position
+		var spread: float = deg_to_rad(float(i - 1) * 12.0)
+		var aim: Vector2 = (player.global_position - global_position).rotated(spread) + global_position
+		bolt.setup(aim, BOSS_SLAM_DAMAGE * 0.55 * (1.0 + (difficulty_mult - 1.0) * 0.6))
+		bolt.modulate = Color(1.3, 0.5, 1.5, 1.0)
+		bolt.scale *= 1.6
 
 func _process_overlord_aura(delta: float) -> void:
 	sprite.modulate = Color(0.75, 0.35, 1.0, 1.0).lerp(Color(1.1, 0.5, 1.3, 1.0), (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5)

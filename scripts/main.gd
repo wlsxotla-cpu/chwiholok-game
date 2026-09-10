@@ -71,15 +71,28 @@ func _apply_map_theme() -> void:
 const GRASS_PROP_COUNT := 26
 const CHEST_COUNT := 4
 
+var grass_broken_count: int = 0
+var chests_opened_count: int = 0
+
 func _spawn_map_props() -> void:
 	for i in range(GRASS_PROP_COUNT):
 		var prop := preload("res://scenes/GrassProp.tscn").instantiate()
 		prop.global_position = _random_arena_pos(100.0)
+		prop.broken_prop.connect(_on_grass_broken)
 		add_child(prop)
 	for i in range(CHEST_COUNT):
 		var chest := preload("res://scenes/TreasureChest.tscn").instantiate()
 		chest.global_position = _random_arena_pos(300.0)
+		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
+
+func _on_grass_broken() -> void:
+	grass_broken_count += 1
+	hud.set_prop_counts(chests_opened_count, grass_broken_count)
+
+func _on_chest_opened() -> void:
+	chests_opened_count += 1
+	hud.set_prop_counts(chests_opened_count, grass_broken_count)
 
 func _random_arena_pos(min_dist_from_center: float) -> Vector2:
 	var margin: float = 80.0
@@ -138,10 +151,16 @@ func _process(delta: float) -> void:
 func _difficulty_divisor() -> float:
 	return 130.0 if GameState.hard_mode else 170.0
 
+func _map_enemy_tint() -> Color:
+	if GameState.selected_map == "cheonmagung":
+		return Color(1.3, 0.55, 0.6, 1.0)
+	return Color(1.0, 1.0, 1.0, 1.0)
+
 func _spawn_enemy() -> void:
 	var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 	enemy.type = _pick_enemy_type()
 	enemy.difficulty_mult = 1.0 + elapsed / _difficulty_divisor()
+	enemy.map_tint = _map_enemy_tint()
 	var angle: float = randf() * TAU
 	var dist: float = 420.0
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
@@ -158,6 +177,7 @@ func _spawn_boss() -> void:
 	var boss_name := "보스"
 	if GameState.selected_map == "cheonmagung":
 		boss.boss_texture_override = GameState.get_character("samahoek").portrait
+		boss.use_curse_attack = true
 		boss_name = "사마획"
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	boss.difficulty_mult = base_mult * (1.0 + (boss_count - 1) * 0.45)
@@ -183,6 +203,7 @@ func _spawn_horde() -> void:
 		var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 		enemy.type = _pick_enemy_type()
 		enemy.difficulty_mult = base_mult
+		enemy.map_tint = _map_enemy_tint()
 		var angle: float = TAU * i / float(count)
 		var dist: float = 420.0 if i % 2 == 0 else 560.0
 		var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist

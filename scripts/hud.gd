@@ -15,6 +15,7 @@ signal manual_fuse_requested(fid: String)
 @onready var boss_name_label: Label = $BossHealthPanel/BossNameLabel
 @onready var boss_health_bar: ProgressBar = $BossHealthPanel/BossHealthBar
 @onready var timer_label: Label = $TopRightInfo/TimerLabel
+@onready var prop_label: Label = $TopRightInfo/PropLabel
 @onready var level_label: Label = $Margin/VBox/CharInfo/NameRow/LevelLabel
 @onready var coin_label: Label = $TopRightInfo/CoinLabel
 @onready var level_up_panel: Panel = $LevelUpPanel
@@ -472,6 +473,9 @@ func set_xp(cur: float, needed: float, level: int) -> void:
 
 func set_coins(amount: int) -> void:
 	coin_label.text = "내공 %d" % amount
+
+func set_prop_counts(chests: int, grass: int) -> void:
+	prop_label.text = "상자 %d · 풀숲 %d" % [chests, grass]
 
 func set_character_name(n: String) -> void:
 	char_name_label.text = n

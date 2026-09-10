@@ -35,6 +35,9 @@ const WEAPON_DEFS := {
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 12.0, "radius": 220.0, "width": 30.0},
 	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "count": 2.0},
+	"cataclysm_guard": {"name": "패왕진천격", "cooldown": 1.3, "damage": 26.0, "radius": 150.0, "knockback": 220.0},
+	"sky_piercer": {"name": "관천쾌섬창", "cooldown": 1.0, "damage": 20.0, "radius": 300.0, "width": 45.0},
+	"hellcurse_flame": {"name": "귀화망령진", "cooldown": 1.5, "damage": 14.0, "count": 4.0},
 }
 
 const FUSION_DEFS := {
@@ -42,6 +45,9 @@ const FUSION_DEFS := {
 	"piercing_calamity": {"pair": ["pierce", "beam"]},
 	"whirl_storm": {"pair": ["shuriken", "boomerang"]},
 	"thunder_formation": {"pair": ["orbit", "lightning"]},
+	"cataclysm_guard": {"pair": ["swordshield", "halberd"]},
+	"sky_piercer": {"pair": ["rapier", "spear"]},
+	"hellcurse_flame": {"pair": ["curse", "fireball"]},
 }
 
 const EVOLUTION_DEFS := {
@@ -340,6 +346,12 @@ func _fire_weapon(w: Dictionary) -> void:
 		"spear":
 			_fire_beam(w)
 		"curse":
+			_fire_curse(w)
+		"cataclysm_guard":
+			_fire_halberd(w)
+		"sky_piercer":
+			_fire_beam(w)
+		"hellcurse_flame":
 			_fire_curse(w)
 
 func _fire_heaven_blade(w: Dictionary) -> void:
@@ -668,8 +680,9 @@ func _offer_level_up() -> void:
 
 	var pool: Array = []
 	if weapons.size() < MAX_WEAPON_SLOTS:
+		var map_locked_weapons: Array = ["halberd", "curse"] if GameState.selected_map == "cheonmagung" else []
 		for wid in WEAPON_DEFS.keys():
-			if not owned_ids.has(wid) and not FUSION_DEFS.has(wid):
+			if not owned_ids.has(wid) and not FUSION_DEFS.has(wid) and not map_locked_weapons.has(wid):
 				pool.append({"kind": "new_weapon", "wid": wid})
 	for w in weapons:
 		if w.level < MAX_WEAPON_LEVEL:

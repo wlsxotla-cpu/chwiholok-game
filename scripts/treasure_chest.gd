@@ -1,5 +1,7 @@
 extends Area2D
 
+signal chest_opened
+
 @onready var sprite: Sprite2D = $Sprite2D
 
 var opened: bool = false
@@ -24,5 +26,6 @@ func _on_body_entered(body: Node) -> void:
 	get_parent().add_child(spark)
 	spark.global_position = global_position
 	spark.modulate = Color(1.0, 0.85, 0.3, 1.0)
+	chest_opened.emit()
 	body._offer_level_up()
 	queue_free()

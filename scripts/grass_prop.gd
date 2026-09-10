@@ -1,5 +1,7 @@
 extends StaticBody2D
 
+signal broken_prop
+
 @onready var sprite: Sprite2D = $Sprite2D
 
 var broken: bool = false
@@ -25,6 +27,7 @@ func _break() -> void:
 	parent.add_child(spark)
 	spark.global_position = global_position
 	spark.modulate = Color(0.55, 1.0, 0.5, 1.0)
+	broken_prop.emit()
 
 	if randf() < 0.15:
 		var heal := preload("res://scenes/Pickup.tscn").instantiate()

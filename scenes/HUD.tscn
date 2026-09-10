@@ -135,7 +135,7 @@ anchor_right = 1.0
 offset_left = -260.0
 offset_top = 24.0
 offset_right = -76.0
-offset_bottom = 70.0
+offset_bottom = 100.0
 grow_horizontal = 0
 alignment = 1
 theme_override_constants/separation = 2
@@ -153,6 +153,13 @@ horizontal_alignment = 2
 text = "생존 05:00"
 theme_override_font_sizes/font_size = 20
 theme_override_colors/font_color = Color(0.91, 0.64, 0.24, 1)
+
+[node name="PropLabel" type="Label" parent="TopRightInfo"]
+layout_mode = 2
+horizontal_alignment = 2
+text = "상자 0 · 풀숲 0"
+theme_override_font_sizes/font_size = 15
+theme_override_colors/font_color = Color(0.65, 0.85, 0.55, 1)
 
 [node name="PauseButton" type="Button" parent="."]
 process_mode = 3
