@@ -9,6 +9,7 @@ signal continue_declined
 signal fusion_confirmed(fid: String)
 signal fusion_declined(fid: String)
 signal manual_fuse_requested(fid: String)
+signal reroll_requested
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var boss_health_panel: VBoxContainer = $BossHealthPanel
@@ -25,6 +26,7 @@ signal manual_fuse_requested(fid: String)
 	$LevelUpPanel/VBox/Option3,
 	$LevelUpPanel/VBox/Option4,
 ]
+@onready var reroll_button: Button = $LevelUpPanel/VBox/RerollButton
 @onready var end_label: Label = $EndLabel
 @onready var continue_panel: Panel = $ContinuePanel
 @onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
@@ -105,6 +107,7 @@ func _ready() -> void:
 		fusion_declined.emit(pending_fusion_fid))
 	restart_button.pressed.connect(func() -> void: SoundManager.play("click"); restart_pressed.emit())
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
+	reroll_button.pressed.connect(func() -> void: reroll_requested.emit())
 	pause_button.pressed.connect(_on_pause_pressed)
 	resume_button.pressed.connect(_on_resume_pressed)
 	pause_menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
@@ -613,6 +616,10 @@ func show_level_up(options: Array) -> void:
 			btn.pressed.disconnect(c["callable"])
 		btn.pressed.connect(_on_option_pressed.bind(opt["id"]))
 	level_up_panel.visible = true
+
+func set_reroll_state(available: bool, cost: int) -> void:
+	reroll_button.disabled = not available
+	reroll_button.text = "다시 뽑기 (내공 %d)" % cost if available else "다시 뽑기 불가"
 
 func _on_option_pressed(id: String) -> void:
 	SoundManager.play("click")

@@ -32,7 +32,10 @@ func _ready() -> void:
 		min_spawn_interval *= 0.7
 		difficulty_ramp = 0.988
 	player.died.connect(_on_player_died)
-	player.leveled_up.connect(hud.show_level_up)
+	player.leveled_up.connect(func(options: Array) -> void:
+		hud.show_level_up(options)
+		hud.set_reroll_state(player.can_reroll_level_up(), player.REROLL_COST))
+	hud.reroll_requested.connect(player.reroll_level_up)
 	player.stats_changed.connect(_update_hud)
 	player.weapon_evolved.connect(hud.show_evolution)
 	player.weapon_fused.connect(hud.show_fusion)
@@ -70,6 +73,7 @@ func _apply_map_theme() -> void:
 
 const GRASS_PROP_COUNT := 26
 const CHEST_COUNT := 4
+const COIN_ALTAR_COUNT := 2
 const CORRIDOR_DIVISIONS := 5
 const CORRIDOR_GAP_WIDTH := 220.0
 const CORRIDOR_WALL_THICKNESS := 48.0
@@ -99,6 +103,12 @@ func _spawn_map_props() -> void:
 		chest.global_position = _random_cell_safe_pos(300.0) if in_corridors else _random_arena_pos(300.0)
 		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
+
+	if in_corridors:
+		for i in range(COIN_ALTAR_COUNT):
+			var altar := preload("res://scenes/CoinAltar.tscn").instantiate()
+			altar.global_position = _random_cell_safe_pos(400.0)
+			add_child(altar)
 
 func _random_cell_safe_pos(min_dist_from_center: float) -> Vector2:
 	var tries: int = 0

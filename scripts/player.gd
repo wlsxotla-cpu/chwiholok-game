@@ -682,7 +682,10 @@ func gain_xp(amount: float) -> void:
 		xp_to_level *= 1.17
 		_offer_level_up()
 
-func _offer_level_up() -> void:
+const REROLL_COST := 15
+var reroll_used_this_levelup: bool = false
+
+func _build_level_up_choices() -> Array:
 	var owned_ids: Array = []
 	for w in weapons:
 		owned_ids.append(w.id)
@@ -713,7 +716,6 @@ func _offer_level_up() -> void:
 	for s in upgrade_pool:
 		pool.append({"kind": "stat", "sid": s.id})
 
-	SoundManager.play("levelup")
 	pool.shuffle()
 	var chosen: Array = []
 	var seen: Array = []
@@ -725,9 +727,29 @@ func _offer_level_up() -> void:
 		chosen.append(_describe_option(entry))
 		if chosen.size() >= 4:
 			break
+	return chosen
 
+func _offer_level_up() -> void:
+	SoundManager.play("levelup")
+	reroll_used_this_levelup = false
 	get_tree().paused = true
-	leveled_up.emit(chosen)
+	leveled_up.emit(_build_level_up_choices())
+
+func can_reroll_level_up() -> bool:
+	return not reroll_used_this_levelup and GameState.total_coins + coins >= REROLL_COST
+
+func reroll_level_up() -> void:
+	if not can_reroll_level_up():
+		return
+	reroll_used_this_levelup = true
+	if coins >= REROLL_COST:
+		coins -= REROLL_COST
+	else:
+		var remainder: int = REROLL_COST - coins
+		coins = 0
+		GameState.spend_coins(remainder)
+	SoundManager.play("click")
+	leveled_up.emit(_build_level_up_choices())
 
 func _describe_option(entry: Dictionary) -> Dictionary:
 	match entry.kind:
