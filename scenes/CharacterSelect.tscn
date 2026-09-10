@@ -226,7 +226,12 @@ layout_mode = 2
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Grid" type="GridContainer" parent="Margin/VBox"]
+[node name="GridScroll" type="ScrollContainer" parent="Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Grid" type="GridContainer" parent="Margin/VBox/GridScroll"]
 layout_mode = 2
 size_flags_horizontal = 4
 columns = 2

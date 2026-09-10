@@ -38,6 +38,11 @@ const WEAPON_NAMES := {
 	"piercing_calamity": "멸겁관천검",
 	"whirl_storm": "선풍만리표",
 	"thunder_formation": "뇌검진",
+	"halberd": "패왕할버드",
+	"swordshield": "호심검방",
+	"rapier": "연환자검",
+	"spear": "만금창",
+	"curse": "귀곡저주",
 }
 
 const PASSIVE_NAMES := {
@@ -46,6 +51,9 @@ const PASSIVE_NAMES := {
 	"agility_scroll": "비연신법",
 	"haste_scroll": "연격지결",
 	"gather_scroll": "채기흡자결",
+	"vanguard_scroll": "패왕비급",
+	"finesse_scroll": "쾌검비급",
+	"curse_scroll": "귀곡비급",
 }
 
 const FUSION_PAIRS := {
@@ -65,6 +73,11 @@ const EVOLUTION_PASSIVE := {
 	"boomerang": "agility_scroll",
 	"beam": "haste_scroll",
 	"lightning": "body_scroll",
+	"halberd": "vanguard_scroll",
+	"swordshield": "vanguard_scroll",
+	"rapier": "finesse_scroll",
+	"spear": "finesse_scroll",
+	"curse": "curse_scroll",
 }
 
 const EVOLVED_NAMES := {
@@ -77,6 +90,11 @@ const EVOLVED_NAMES := {
 	"boomerang": "만리회선표",
 	"beam": "무형검기",
 	"lightning": "천둔뇌영",
+	"halberd": "파천할버드",
+	"swordshield": "금강불괴검방",
+	"rapier": "만검자류",
+	"spear": "관천금창",
+	"curse": "만귀곡성",
 }
 
 const BASE_WEAPON_GUIDE := [
@@ -89,6 +107,11 @@ const BASE_WEAPON_GUIDE := [
 	["boomerang", "회류표", "던지면 날아갔다 돌아오는 표창. 왕복 경로의 적을 다시 타격."],
 	["beam", "일자검기", "정면으로 긴 직선 검기 발사, 일직선상의 모든 적 관통."],
 	["lightning", "뇌전장", "주변 적 중 무작위로 여러 명에게 번개 낙뢰."],
+	["halberd", "패왕할버드", "묵직한 폴암을 크게 휘둘러 넓은 범위에 강한 넉백. 진악 전용 시작 무기."],
+	["swordshield", "호심검방", "검과 방패로 주변을 가격하며, 레벨이 오를수록 받는 피해도 줄여줌. 소운 전용 시작 무기."],
+	["rapier", "연환자검", "가장 가까운 적 한 명에게 빠르게 연속 찌르기. 민서 전용 시작 무기."],
+	["spear", "만금창", "정면으로 창을 길게 내질러 일직선상의 적을 관통. 만냥 전용 시작 무기."],
+	["curse", "귀곡저주", "무작위 적 여러 명에게 저주를 걸어 데미지. 사마획 전용 시작 무기(무기 없이 술법으로 싸움)."],
 ]
 
 const FUSION_GUIDE := [
@@ -104,4 +127,7 @@ const EVOLUTION_GUIDE := [
 	["비연신법", "이동속도 +10%", "표창난사→만화표창진 / 회류표→만리회선표"],
 	["연격지결", "공격속도 +10%", "일자검기→무형검기"],
 	["채기흡자결", "수집 반경 +15%", "화염구 장판→겁화지옥진"],
+	["패왕비급", "공격력 +12%", "패왕할버드→파천할버드 / 호심검방→금강불괴검방"],
+	["쾌검비급", "이동속도 +10%", "연환자검→만검자류 / 만금창→관천금창"],
+	["귀곡비급", "수집 반경 +15%", "귀곡저주→만귀곡성"],
 ]

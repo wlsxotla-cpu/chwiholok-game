@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.20.0 · 2026-09-10"
+const VERSION := "v0.21.0 · 2026-09-10"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -11,6 +11,11 @@ const CHARACTERS := [
 	{"id": "seongjuchang", "name": "성주창", "weapon": "pierce", "unlock_cost": 150, "tier": 3, "portrait": "res://assets/sprites/portraits/seongjuchang.png", "walk_sheet": "res://assets/sprites/seongjuchang_walk.png"},
 	{"id": "simjangbeopsa", "name": "심장법사", "weapon": "fireball", "unlock_cost": 250, "tier": 4, "portrait": "res://assets/sprites/portraits/simjangbeopsa.png", "walk_sheet": "res://assets/sprites/simjangbeopsa_walk.png"},
 	{"id": "eungduni", "name": "응두니", "weapon": "orbit", "unlock_cost": 350, "tier": 5, "portrait": "res://assets/sprites/portraits/eungduni.png", "walk_sheet": "res://assets/sprites/eungduni_walk.png"},
+	{"id": "soun", "name": "소운", "weapon": "swordshield", "unlock_cost": 500, "tier": 6, "portrait": "res://assets/sprites/portraits/soun.png", "walk_sheet": "res://assets/sprites/soun_walk.png"},
+	{"id": "minseo", "name": "민서", "weapon": "rapier", "unlock_cost": 650, "tier": 7, "portrait": "res://assets/sprites/portraits/minseo.png", "walk_sheet": "res://assets/sprites/minseo_walk.png"},
+	{"id": "manyang", "name": "만냥", "weapon": "spear", "unlock_cost": 800, "tier": 8, "portrait": "res://assets/sprites/portraits/manyang.png", "walk_sheet": "res://assets/sprites/manyang_walk.png"},
+	{"id": "jinak", "name": "진악", "weapon": "halberd", "unlock_cost": 950, "tier": 9, "portrait": "res://assets/sprites/portraits/jinak.png", "walk_sheet": "res://assets/sprites/jinak_walk.png"},
+	{"id": "samahoek", "name": "사마획", "weapon": "curse", "unlock_cost": 1100, "tier": 10, "portrait": "res://assets/sprites/portraits/samahoek.png", "walk_sheet": "res://assets/sprites/samahoek_walk.png"},
 ]
 
 const WEAPON_NAMES := {
@@ -23,6 +28,11 @@ const WEAPON_NAMES := {
 	"boomerang": "회류표",
 	"beam": "일자검기",
 	"lightning": "뇌전장",
+	"halberd": "패왕할버드",
+	"swordshield": "호심검방",
+	"rapier": "연환자검",
+	"spear": "만금창",
+	"curse": "귀곡저주",
 }
 
 const META_DEFS := {

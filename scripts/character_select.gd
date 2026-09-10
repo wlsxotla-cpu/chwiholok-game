@@ -1,6 +1,6 @@
 extends Control
 
-@onready var grid: GridContainer = $Margin/VBox/Grid
+@onready var grid: GridContainer = $Margin/VBox/GridScroll/Grid
 @onready var coins_label: Label = $Margin/VBox/CoinsRow/CoinsLabel
 @onready var shop_toggle: Button = $Margin/VBox/CoinsRow/ShopToggle
 @onready var shop_panel: PanelContainer = $Margin/VBox/ShopPanel
