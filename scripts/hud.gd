@@ -11,6 +11,9 @@ signal fusion_declined(fid: String)
 signal manual_fuse_requested(fid: String)
 
 @onready var xp_bar: ProgressBar = $XPBar
+@onready var boss_health_panel: VBoxContainer = $BossHealthPanel
+@onready var boss_name_label: Label = $BossHealthPanel/BossNameLabel
+@onready var boss_health_bar: ProgressBar = $BossHealthPanel/BossHealthBar
 @onready var timer_label: Label = $TopRightInfo/TimerLabel
 @onready var level_label: Label = $Margin/VBox/CharInfo/NameRow/LevelLabel
 @onready var coin_label: Label = $TopRightInfo/CoinLabel
@@ -535,6 +538,19 @@ func show_evolution(weapon_name: String) -> void:
 
 func show_fusion(weapon_name: String) -> void:
 	_show_banner("무기 합체! %s" % weapon_name, Color(1.0, 0.95, 0.6, 1))
+
+func show_boss_health(boss_name: String, current: float, max_hp: float) -> void:
+	boss_name_label.text = boss_name
+	boss_health_bar.max_value = max(max_hp, 1.0)
+	boss_health_bar.value = current
+	boss_health_panel.visible = true
+
+func update_boss_health(current: float, max_hp: float) -> void:
+	boss_health_bar.max_value = max(max_hp, 1.0)
+	boss_health_bar.value = current
+
+func hide_boss_health() -> void:
+	boss_health_panel.visible = false
 
 func show_boss_warning() -> void:
 	_show_banner("보스 출현!", Color(1.0, 0.4, 0.35, 1))

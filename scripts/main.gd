@@ -18,6 +18,8 @@ var boss_count: int = 0
 var horde_timer: float = FIRST_HORDE_DELAY
 var overlord_spawned: bool = false
 var run_over: bool = false
+var tracked_boss: Node = null
+var has_tracked_boss: bool = false
 
 @onready var player: CharacterBody2D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -124,6 +126,14 @@ func _process(delta: float) -> void:
 		overlord_spawned = true
 		_spawn_overlord()
 
+	if has_tracked_boss:
+		if is_instance_valid(tracked_boss):
+			hud.update_boss_health(tracked_boss.health, tracked_boss.max_health)
+		else:
+			tracked_boss = null
+			has_tracked_boss = false
+			hud.hide_boss_health()
+
 func _difficulty_divisor() -> float:
 	return 130.0 if GameState.hard_mode else 170.0
 
@@ -154,6 +164,10 @@ func _spawn_boss() -> void:
 	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	boss.global_position = pos
 	add_child(boss)
+	if not has_tracked_boss or not is_instance_valid(tracked_boss) or tracked_boss.type != Enemy.Type.OVERLORD:
+		tracked_boss = boss
+		has_tracked_boss = true
+		hud.show_boss_health("보스", boss.health, boss.max_health)
 	hud.show_boss_warning()
 	SoundManager.play("levelup", 3.0, 0.6)
 
@@ -189,6 +203,9 @@ func _spawn_overlord() -> void:
 	overlord.global_position = pos
 	overlord.overlord_defeated.connect(_on_overlord_defeated)
 	add_child(overlord)
+	tracked_boss = overlord
+	has_tracked_boss = true
+	hud.show_boss_health("천마", overlord.health, overlord.max_health)
 	hud.show_overlord_warning()
 	SoundManager.play("levelup", 4.0, 0.45)
 	screen_shake_all()
@@ -227,6 +244,9 @@ func _on_dev_action(action: String) -> void:
 			_spawn_overlord()
 
 func _on_overlord_defeated() -> void:
+	tracked_boss = null
+	has_tracked_boss = false
+	hud.hide_boss_health()
 	hud.show_overlord_defeated()
 	SoundManager.play("levelup", 5.0, 0.35)
 	if player.has_method("screen_shake"):
