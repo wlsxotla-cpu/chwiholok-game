@@ -1,34 +1,40 @@
 extends Node2D
 
 var alpha: float = 1.0
-var radius: float = 70.0
-var dir: Vector2 = Vector2.DOWN
-var half_angle: float = deg_to_rad(50.0)
+var radius: float = 80.0
+var ring_progress: float = 0.0
 
-func setup(direction: Vector2, r: float, maxed: bool = false) -> void:
-	dir = direction
-	radius = r
+func setup(r: float, maxed: bool = false) -> void:
+	radius = r * (1.2 if maxed else 1.0)
 	z_index = 5
-	if maxed:
-		radius *= 1.25
-		half_angle = deg_to_rad(58.0)
 	queue_redraw()
 	var tween := create_tween()
-	tween.tween_method(_set_alpha, 1.0, 0.0, 0.24).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.02)
+	tween.tween_method(_set_progress, 0.0, 1.0, 0.32).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_method(_set_alpha, 1.0, 0.0, 0.32).set_delay(0.06)
 	tween.tween_callback(queue_free)
+
+func _set_progress(v: float) -> void:
+	ring_progress = v
+	queue_redraw()
 
 func _set_alpha(v: float) -> void:
 	alpha = v
 	queue_redraw()
 
 func _draw() -> void:
-	var base_angle: float = dir.angle()
-	var points: PackedVector2Array = PackedVector2Array()
-	points.append(Vector2.ZERO)
-	var steps: int = 18
-	for i in range(steps + 1):
-		var a: float = base_angle - half_angle + (2.0 * half_angle) * (float(i) / float(steps))
-		points.append(Vector2(cos(a), sin(a)) * radius)
-	draw_colored_polygon(points, Color(0.55, 0.75, 1.1, 0.42 * alpha))
-	draw_polyline(points, Color(0.85, 0.93, 1.0, 0.9 * alpha), 3.5, true)
-	draw_circle(Vector2.ZERO, 10.0, Color(0.7, 0.85, 1.15, 0.55 * alpha))
+	var outer_r: float = radius * ring_progress
+	var inner_r: float = radius * max(ring_progress - 0.22, 0.0)
+	var col := Color(0.65, 0.82, 1.15, 0.55 * alpha)
+	var core_col := Color(0.9, 0.95, 1.0, 0.9 * alpha)
+	draw_arc(Vector2.ZERO, outer_r, 0.0, TAU, 40, col, 6.0, true)
+	draw_arc(Vector2.ZERO, inner_r, 0.0, TAU, 40, core_col, 3.0, true)
+	# small shield emblem flash at center that fades fast
+	var emblem_scale: float = clamp(1.0 - ring_progress * 1.6, 0.0, 1.0)
+	if emblem_scale > 0.0:
+		var pts := PackedVector2Array([
+			Vector2(0, -18), Vector2(14, -8), Vector2(14, 8), Vector2(0, 20), Vector2(-14, 8), Vector2(-14, -8),
+		])
+		var scaled := PackedVector2Array()
+		for p in pts:
+			scaled.append(p * emblem_scale)
+		draw_colored_polygon(scaled, Color(0.85, 0.92, 1.0, 0.8 * alpha * emblem_scale))

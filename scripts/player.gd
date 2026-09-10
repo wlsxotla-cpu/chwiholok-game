@@ -31,7 +31,7 @@ const WEAPON_DEFS := {
 	"whirl_storm": {"name": "선풍만리표", "cooldown": 1.2, "damage": 12.0, "count": 5.0},
 	"thunder_formation": {"name": "뇌검진", "cooldown": 1.0, "damage": 9.0, "radius": 100.0, "count": 3.0},
 	"halberd": {"name": "패왕할버드", "cooldown": 1.5, "damage": 16.0, "radius": 100.0, "knockback": 140.0},
-	"swordshield": {"name": "호심검방", "cooldown": 1.3, "damage": 9.0, "radius": 95.0, "knockback": 110.0},
+	"swordshield": {"name": "호심검방", "cooldown": 1.4, "damage": 10.0, "radius": 80.0, "knockback": 150.0},
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 12.0, "radius": 220.0, "width": 30.0},
 	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "count": 2.0},
@@ -533,29 +533,26 @@ func _fire_halberd(w: Dictionary) -> void:
 	fx.modulate = Color(1.7, 0.8, 0.45, 1.0)
 	fx.set_radius(radius, _is_maxed(w))
 
-const SWORDSHIELD_HALF_ANGLE := deg_to_rad(50.0)
-
 func _fire_swordshield(w: Dictionary) -> void:
 	var radius: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
 	var knockback: float = _weapon_stat(w, "knockback")
-	var dir: Vector2 = _facing_vector()
 	var hit_any := false
 	for e in get_tree().get_nodes_in_group("enemies"):
 		var to_e: Vector2 = e.global_position - global_position
 		var dist: float = to_e.length()
-		if dist <= radius and dist > 0.001 and absf(to_e.normalized().angle_to(dir)) <= SWORDSHIELD_HALF_ANGLE:
+		if dist <= radius and dist > 0.001:
 			e.take_damage(damage)
 			if e.has_method("apply_knockback"):
 				e.apply_knockback(to_e.normalized() * knockback)
 			hit_any = true
 	if hit_any:
-		screen_shake(3.0, 0.12)
-	SoundManager.play("attack_melee", -2.0, 0.95)
+		screen_shake(3.5, 0.14)
+	SoundManager.play("attack_melee", -2.0, 0.8)
 	var fx := preload("res://scenes/ShieldBashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.setup(dir, radius, _is_maxed(w))
+	fx.setup(radius, _is_maxed(w))
 
 func _fire_rapier(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
