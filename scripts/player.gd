@@ -105,7 +105,9 @@ const INVINCIBLE_DURATION := 0.5
 const LEVEL_UP_RESUME_INVINCIBLE := 1.0
 const REVIVE_INVINCIBLE_DURATION := 2.0
 const REVIVE_HEALTH_FRACTION := 0.5
+const PARRY_COOLDOWN := 1.2
 var invincible_timer: float = 0.0
+var parry_timer: float = 0.0
 var continues_used: int = 0
 var max_continues: int = 1
 var declined_fusions: Dictionary = {}
@@ -290,6 +292,9 @@ func _physics_process(delta: float) -> void:
 	else:
 		shake_strength = 0.0
 		camera.offset = Vector2.ZERO
+
+	if parry_timer > 0.0:
+		parry_timer -= delta
 
 func screen_shake(strength: float, duration: float) -> void:
 	shake_strength = max(shake_strength, strength)
@@ -734,6 +739,12 @@ func _get_weapon(id: String) -> Dictionary:
 
 func has_weapon(id: String) -> bool:
 	return not _get_weapon(id).is_empty()
+
+func can_parry() -> bool:
+	return has_weapon("heaven_blade") and parry_timer <= 0.0
+
+func trigger_parry() -> void:
+	parry_timer = PARRY_COOLDOWN
 
 func take_damage(amount: float) -> void:
 	if invincible_timer > 0.0:

@@ -35,6 +35,8 @@ const HALBERD_BOLT_SPEED_MULT := 1.9
 const HALBERD_BOLT_LIFETIME := 3.4
 const HALBERD_BOLT_SCALE := 1.9
 
+const CHEONMA_ATTACK_INTERVAL := 2.0
+
 signal overlord_defeated
 signal samahoek_defeated
 
@@ -45,7 +47,10 @@ var aura_timer: float = 0.0
 var boss_texture_override: String = ""
 var use_curse_attack: bool = false
 var use_halberd_barrage: bool = false
+var use_cheonma_finale: bool = false
+var cheonma_alternate: bool = false
 var speed_override: float = -1.0
+var xp_mult_override: float = 1.0
 var use_cheonmagung_skin: bool = false
 var slam_timer: float = 0.0
 
@@ -69,7 +74,7 @@ func _ready() -> void:
 	speed = def.speed if speed_override < 0.0 else speed_override
 	max_health = def.health * difficulty_mult
 	contact_damage = def.contact_damage * (1.0 + (difficulty_mult - 1.0) * 0.6)
-	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5)
+	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5) * xp_mult_override
 	health = max_health
 	var texture_path: String = def.texture
 	if boss_texture_override != "":
@@ -88,7 +93,12 @@ func _ready() -> void:
 		if type == Type.OVERLORD:
 			if boss_texture_override == "":
 				sprite.modulate = Color(0.75, 0.35, 1.0, 1.0)
-			slam_timer = (HALBERD_BARRAGE_INTERVAL if use_halberd_barrage else OVERLORD_SLAM_INTERVAL) * randf_range(0.5, 1.0)
+			var base_interval: float = OVERLORD_SLAM_INTERVAL
+			if use_cheonma_finale:
+				base_interval = CHEONMA_ATTACK_INTERVAL
+			elif use_halberd_barrage:
+				base_interval = HALBERD_BARRAGE_INTERVAL
+			slam_timer = base_interval * randf_range(0.5, 1.0)
 		else:
 			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
 	else:
@@ -202,7 +212,14 @@ func _process_boss(delta: float) -> void:
 		_process_overlord_aura(delta)
 	slam_timer -= delta
 	if slam_timer <= 0.0:
-		if use_halberd_barrage:
+		if use_cheonma_finale:
+			slam_timer = CHEONMA_ATTACK_INTERVAL
+			if cheonma_alternate:
+				_halberd_barrage()
+			else:
+				_boss_slam()
+			cheonma_alternate = not cheonma_alternate
+		elif use_halberd_barrage:
 			slam_timer = HALBERD_BARRAGE_INTERVAL
 			_halberd_barrage()
 		else:
@@ -258,7 +275,8 @@ func _halberd_barrage() -> void:
 		bolt.scale *= HALBERD_BOLT_SCALE
 
 func _process_overlord_aura(delta: float) -> void:
-	sprite.modulate = Color(0.75, 0.35, 1.0, 1.0).lerp(Color(1.1, 0.5, 1.3, 1.0), (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5)
+	if boss_texture_override == "":
+		sprite.modulate = Color(0.75, 0.35, 1.0, 1.0).lerp(Color(1.1, 0.5, 1.3, 1.0), (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5)
 	aura_timer -= delta
 	if aura_timer <= 0.0:
 		aura_timer = 0.12

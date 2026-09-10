@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.32.0 · 2026-09-11"
+const VERSION := "v0.33.0 · 2026-09-11"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -23,7 +23,8 @@ const SAMAHOEK_KILL_TARGET := 15
 
 const MAPS := [
 	{"id": "plains", "name": "야지", "desc": "흙바닥과 잡초가 있는 평범한 강호의 벌판", "floor": "res://assets/sprites/floor.png", "bg_color": Color(0.055, 0.043, 0.031, 1), "wall_tint": Color(1.0, 1.0, 1.0, 1.0)},
-	{"id": "cheonmagung", "name": "천마궁", "desc": "천마가 다스리는 마교의 소굴. 용암이 흐르는 검은 돌바닥", "floor": "res://assets/sprites/floor_cheonmagung.png", "bg_color": Color(0.03, 0.012, 0.012, 1), "wall_tint": Color(1.7, 0.55, 0.4, 1.0)},
+	{"id": "cheonmagung", "name": "천마궁", "desc": "천마가 다스리는 마교의 소굴. 낡은 나무 마루가 깔린 궁 복도", "floor": "res://assets/sprites/floor_cheonmagung.png", "bg_color": Color(0.03, 0.012, 0.012, 1), "wall_tint": Color(1.7, 0.55, 0.4, 1.0)},
+	{"id": "ruins", "name": "무너지는 총단", "desc": "천마와의 최후 결전지. 지반이 갈라져 용암이 새어나오고 하늘에서 잔해가 떨어지는 붕괴 직전의 마교 총단", "floor": "res://assets/sprites/floor_ruins.png", "bg_color": Color(0.045, 0.015, 0.01, 1), "wall_tint": Color(2.0, 0.5, 0.25, 1.0)},
 ]
 
 var selected_map: String = "plains"

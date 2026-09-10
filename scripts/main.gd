@@ -23,6 +23,8 @@ var has_tracked_boss: bool = false
 var current_overlord_name: String = "천마"
 const AUTOSAVE_INTERVAL := 15.0
 var autosave_timer: float = AUTOSAVE_INTERVAL
+const METEOR_INTERVAL := 6.5
+var meteor_timer: float = METEOR_INTERVAL
 
 @onready var player: CharacterBody2D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -85,6 +87,11 @@ func _apply_map_theme() -> void:
 
 const GRASS_PROP_COUNT := 26
 const CORRIDOR_PROP_COUNT := 14
+const RUINS_PROP_COUNT := 18
+const RUINS_OBSTACLE_COUNT := 10
+const LAVA_CRACK_COUNT := 12
+const RUINS_BOSS_HP_MULT := 1.7
+const RUINS_BOSS_XP_MULT := 4.0
 const CHEST_COUNT := 4
 const COIN_ALTAR_COUNT := 2
 const CORRIDOR_DIVISIONS := 5
@@ -101,12 +108,21 @@ var corridor_cell_size: float = 0.0
 
 func _spawn_map_props() -> void:
 	var in_corridors: bool = GameState.selected_map == "cheonmagung"
+	var in_ruins: bool = GameState.selected_map == "ruins"
 	if in_corridors:
 		_spawn_palace_corridors()
 
-	var prop_scene: PackedScene = preload("res://scenes/PalaceVaseProp.tscn") if in_corridors else preload("res://scenes/GrassProp.tscn")
-	var prop_break_color: Color = Color(0.75, 0.6, 1.0, 1.0) if in_corridors else Color(0.55, 1.0, 0.5, 1.0)
-	var prop_count: int = CORRIDOR_PROP_COUNT if in_corridors else GRASS_PROP_COUNT
+	var prop_scene: PackedScene = preload("res://scenes/GrassProp.tscn") if not (in_corridors or in_ruins) else preload("res://scenes/PalaceVaseProp.tscn")
+	var prop_break_color: Color = Color(0.55, 1.0, 0.5, 1.0)
+	if in_corridors:
+		prop_break_color = Color(0.75, 0.6, 1.0, 1.0)
+	elif in_ruins:
+		prop_break_color = Color(1.0, 0.55, 0.3, 1.0)
+	var prop_count: int = GRASS_PROP_COUNT
+	if in_corridors:
+		prop_count = CORRIDOR_PROP_COUNT
+	elif in_ruins:
+		prop_count = RUINS_PROP_COUNT
 	for i in range(prop_count):
 		var prop := prop_scene.instantiate()
 		prop.global_position = _random_cell_safe_pos(100.0) if in_corridors else _random_arena_pos(100.0)
@@ -119,11 +135,21 @@ func _spawn_map_props() -> void:
 		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
 
-	if in_corridors:
+	if in_corridors or in_ruins:
 		for i in range(COIN_ALTAR_COUNT):
 			var altar := preload("res://scenes/CoinAltar.tscn").instantiate()
-			altar.global_position = _random_cell_safe_pos(400.0)
+			altar.global_position = _random_cell_safe_pos(400.0) if in_corridors else _random_arena_pos(400.0)
 			add_child(altar)
+
+	if in_ruins:
+		for i in range(RUINS_OBSTACLE_COUNT):
+			var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
+			obstacle.global_position = _random_arena_pos(260.0)
+			add_child(obstacle)
+		for i in range(LAVA_CRACK_COUNT):
+			var lava := preload("res://scenes/LavaCrack.tscn").instantiate()
+			lava.global_position = _random_arena_pos(200.0)
+			add_child(lava)
 
 func _random_cell_safe_pos(min_dist_from_center: float) -> Vector2:
 	var tries: int = 0
@@ -267,6 +293,12 @@ func _process(delta: float) -> void:
 		autosave_timer = AUTOSAVE_INTERVAL
 		_autosave()
 
+	if GameState.selected_map == "ruins":
+		meteor_timer -= delta
+		if meteor_timer <= 0.0:
+			meteor_timer = METEOR_INTERVAL
+			_spawn_meteor_strike()
+
 	spawn_timer -= delta
 	if spawn_timer <= 0.0:
 		spawn_timer = spawn_interval
@@ -308,7 +340,7 @@ func _spawn_enemy() -> void:
 	var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 	enemy.type = _pick_enemy_type()
 	enemy.difficulty_mult = 1.0 + elapsed / _difficulty_divisor()
-	enemy.use_cheonmagung_skin = GameState.selected_map == "cheonmagung"
+	enemy.use_cheonmagung_skin = GameState.selected_map != "plains"
 	var angle: float = randf() * TAU
 	var dist: float = 420.0
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
@@ -328,8 +360,14 @@ func _spawn_boss() -> void:
 		boss.use_curse_attack = true
 		boss_name = "사마획"
 		boss.samahoek_defeated.connect(func() -> void: GameState.record_samahoek_kill())
+	elif GameState.selected_map == "ruins":
+		boss_name = "친위장"
+		boss.xp_mult_override = RUINS_BOSS_XP_MULT
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
-	boss.difficulty_mult = base_mult * (1.0 + (boss_count - 1) * 0.45)
+	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
+	if GameState.selected_map == "ruins":
+		boss_mult *= RUINS_BOSS_HP_MULT
+	boss.difficulty_mult = boss_mult
 	var angle: float = randf() * TAU
 	var dist: float = 500.0
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
@@ -352,7 +390,7 @@ func _spawn_horde() -> void:
 		var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 		enemy.type = _pick_enemy_type()
 		enemy.difficulty_mult = base_mult
-		enemy.use_cheonmagung_skin = GameState.selected_map == "cheonmagung"
+		enemy.use_cheonmagung_skin = GameState.selected_map != "plains"
 		var angle: float = TAU * i / float(count)
 		var dist: float = 420.0 if i % 2 == 0 else 560.0
 		var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
@@ -368,13 +406,20 @@ func _spawn_overlord() -> void:
 	var overlord := preload("res://scenes/Enemy.tscn").instantiate()
 	overlord.type = Enemy.Type.OVERLORD
 	current_overlord_name = "천마"
+	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	if GameState.selected_map == "cheonmagung":
 		overlord.boss_texture_override = GameState.get_character("jinak").portrait
 		current_overlord_name = "진악"
 		overlord.use_halberd_barrage = true
 		overlord.speed_override = 140.0
-	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
-	overlord.difficulty_mult = base_mult * 1.3
+		overlord.difficulty_mult = base_mult * 1.3
+	elif GameState.selected_map == "ruins":
+		overlord.boss_texture_override = "res://assets/sprites/enemy_cheonma.png"
+		current_overlord_name = "천마"
+		overlord.use_cheonma_finale = true
+		overlord.difficulty_mult = base_mult * 1.6
+	else:
+		overlord.difficulty_mult = base_mult * 1.3
 	var angle: float = randf() * TAU
 	var dist: float = 550.0
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
@@ -456,6 +501,18 @@ func _pick_enemy_type() -> int:
 	if t > 90.0:
 		pool.append(Enemy.Type.BOMBER)
 	return pool[randi() % pool.size()]
+
+func _spawn_meteor_strike() -> void:
+	var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
+	var angle: float = randf() * TAU
+	var dist: float = randf_range(0.0, 260.0)
+	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
+	var margin: float = 90.0
+	pos.x = clamp(pos.x, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
+	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
+	meteor.global_position = pos
+	meteor.struck.connect(screen_shake_all)
+	add_child(meteor)
 
 func _spawn_heal() -> void:
 	var heal := preload("res://scenes/Pickup.tscn").instantiate()
