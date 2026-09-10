@@ -28,11 +28,12 @@ const OVERLORD_SLAM_RANGE := 220.0
 const OVERLORD_SLAM_DAMAGE := 55.0
 const OVERLORD_SLAM_INTERVAL := 2.6
 
-const HALBERD_BARRAGE_COUNT := 7
-const HALBERD_BARRAGE_DAMAGE := 22.0
+const HALBERD_BARRAGE_COUNT := 10
+const HALBERD_BARRAGE_DAMAGE := 34.0
 const HALBERD_BARRAGE_INTERVAL := 2.4
-const HALBERD_BARRAGE_SPREAD_DEG := 50.0
-const HALBERD_BOLT_SPEED_MULT := 1.35
+const HALBERD_BOLT_SPEED_MULT := 1.9
+const HALBERD_BOLT_LIFETIME := 3.4
+const HALBERD_BOLT_SCALE := 1.9
 
 signal overlord_defeated
 
@@ -242,12 +243,8 @@ func _halberd_barrage() -> void:
 	if parent == null:
 		return
 	SoundManager.play("attack_fireball", -1.0, 0.55)
-	var to_player: Vector2 = player.global_position - global_position
-	var base_angle: float = to_player.angle()
-	var spread_rad: float = deg_to_rad(HALBERD_BARRAGE_SPREAD_DEG)
 	for i in range(HALBERD_BARRAGE_COUNT):
-		var t: float = float(i) / float(HALBERD_BARRAGE_COUNT - 1) - 0.5
-		var angle: float = base_angle + t * spread_rad
+		var angle: float = TAU * float(i) / float(HALBERD_BARRAGE_COUNT)
 		var bolt := preload("res://scenes/EnemyBullet.tscn").instantiate()
 		parent.add_child(bolt)
 		bolt.global_position = global_position
@@ -255,8 +252,9 @@ func _halberd_barrage() -> void:
 		bolt.setup(aim, HALBERD_BARRAGE_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
 		bolt.velocity *= HALBERD_BOLT_SPEED_MULT
 		bolt.rotation = bolt.velocity.angle()
+		bolt.lifetime = HALBERD_BOLT_LIFETIME
 		bolt.modulate = Color(1.6, 0.95, 0.35, 1.0)
-		bolt.scale *= 1.5
+		bolt.scale *= HALBERD_BOLT_SCALE
 
 func _process_overlord_aura(delta: float) -> void:
 	sprite.modulate = Color(0.75, 0.35, 1.0, 1.0).lerp(Color(1.1, 0.5, 1.3, 1.0), (sin(Time.get_ticks_msec() * 0.006) + 1.0) * 0.5)
