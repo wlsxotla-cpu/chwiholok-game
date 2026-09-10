@@ -20,7 +20,7 @@ func setup(player: Node2D, direction: Vector2, dmg: float, is_maxed: bool = fals
 	rotation = dir.angle()
 	maxed = is_maxed
 	if maxed:
-		modulate = Color(1.0, 1.9, 2.3, 1.0)
+		modulate = Color(0.8, 2.4, 0.9, 1.0)
 		scale *= 2.1
 
 func _physics_process(delta: float) -> void:

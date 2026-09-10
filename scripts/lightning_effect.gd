@@ -40,7 +40,7 @@ func _set_alpha(v: float) -> void:
 
 func _draw() -> void:
 	var core := Color(1.0, 1.0, 1.0, 0.95 * alpha)
-	var glow := Color(0.55, 0.95, 1.0, 0.95 * alpha) if maxed else Color(0.65, 0.85, 1.0, 0.6 * alpha)
+	var glow := Color(0.35, 0.5, 1.1, 0.95 * alpha) if maxed else Color(0.65, 0.85, 1.0, 0.6 * alpha)
 	var outer_scale: float = 2.6 if maxed else 1.0
 	draw_polyline(points, glow, 10.0 * outer_scale, true)
 	draw_polyline(points, core, 4.0 * (1.6 if maxed else 1.0), true)

@@ -16,7 +16,7 @@ func setup(target_pos: Vector2, dmg: float, maxed: bool = false, is_rocket: bool
 	rotation = velocity.angle()
 	rocket = is_rocket and maxed
 	if maxed:
-		modulate = Color(1.0, 1.9, 2.4, 1.0)
+		modulate = Color(2.6, 1.3, 1.5, 1.0) if rocket else Color(2.2, 2.2, 2.5, 1.0)
 		scale *= 2.2 if rocket else 1.5
 
 func _physics_process(delta: float) -> void:

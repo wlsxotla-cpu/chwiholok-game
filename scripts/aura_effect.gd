@@ -19,9 +19,9 @@ func _set_alpha(v: float) -> void:
 
 func _draw() -> void:
 	if maxed:
-		draw_circle(Vector2.ZERO, radius * 1.15, Color(0.5, 0.85, 1.0, 0.22 * alpha))
-		draw_arc(Vector2.ZERO, radius * 1.15, 0.0, TAU, 48, Color(0.75, 0.95, 1.0, 0.9 * alpha), 6.0, true)
-		draw_arc(Vector2.ZERO, radius * 0.85, 0.0, TAU, 48, Color(1.0, 1.0, 1.0, 0.6 * alpha), 3.0, true)
+		draw_circle(Vector2.ZERO, radius * 1.15, Color(0.55, 1.0, 0.55, 0.22 * alpha))
+		draw_arc(Vector2.ZERO, radius * 1.15, 0.0, TAU, 48, Color(0.7, 1.0, 0.65, 0.9 * alpha), 6.0, true)
+		draw_arc(Vector2.ZERO, radius * 0.85, 0.0, TAU, 48, Color(1.0, 1.0, 0.95, 0.6 * alpha), 3.0, true)
 	else:
 		draw_circle(Vector2.ZERO, radius, Color(0.55, 0.95, 0.65, 0.14 * alpha))
 		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(0.7, 1.0, 0.7, 0.55 * alpha), 3.0, true)

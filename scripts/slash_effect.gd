@@ -9,12 +9,12 @@ func set_radius(radius: float, maxed: bool = false) -> void:
 	var target: float = base_target * (1.55 if maxed else 1.0)
 	sprite.scale = Vector2(target, target)
 	sprite.rotation = randf_range(0.0, TAU)
-	sprite.modulate = Color(1.6, 2.6, 3.2, 1.0) if maxed else Color(1.9, 1.7, 1.2, 1.0)
+	sprite.modulate = Color(3.0, 2.4, 0.9, 1.0) if maxed else Color(1.9, 1.7, 1.2, 1.0)
 
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(sprite, "rotation", sprite.rotation + deg_to_rad(120.0), 0.26).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
-	var fade_target: Color = Color(0.7, 1.4, 2.2, 0.0) if maxed else Color(1.0, 0.85, 0.55, 0.0)
+	var fade_target: Color = Color(2.2, 1.5, 0.3, 0.0) if maxed else Color(1.0, 0.85, 0.55, 0.0)
 	tween.tween_property(sprite, "modulate", fade_target, 0.32 if maxed else 0.26).set_delay(0.05)
 	tween.chain().tween_callback(queue_free)
 
