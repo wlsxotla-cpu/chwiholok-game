@@ -26,6 +26,7 @@ var aura_timer: float = 0.0
 
 @export var type: Type = Type.GRUNT
 @export var difficulty_mult: float = 1.0
+var boss_texture_override: String = ""
 var slam_timer: float = 0.0
 
 var speed: float
@@ -50,7 +51,7 @@ func _ready() -> void:
 	contact_damage = def.contact_damage * (1.0 + (difficulty_mult - 1.0) * 0.6)
 	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5)
 	health = max_health
-	sprite.texture = load(def.texture)
+	sprite.texture = load(boss_texture_override) if boss_texture_override != "" else load(def.texture)
 	fire_timer = float(def.get("fire_cooldown", 0.0)) * randf_range(0.4, 1.0)
 
 	if type == Type.BOSS or type == Type.OVERLORD:
@@ -59,7 +60,8 @@ func _ready() -> void:
 		shape.radius = 42.0 if type == Type.OVERLORD else 30.0
 		$CollisionShape2D.shape = shape
 		if type == Type.OVERLORD:
-			sprite.modulate = Color(0.75, 0.35, 1.0, 1.0)
+			if boss_texture_override == "":
+				sprite.modulate = Color(0.75, 0.35, 1.0, 1.0)
 			slam_timer = OVERLORD_SLAM_INTERVAL * randf_range(0.5, 1.0)
 		else:
 			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)

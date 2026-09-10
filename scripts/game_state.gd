@@ -2,7 +2,7 @@ extends Node
 
 const SAVE_PATH := "user://save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.22.3 · 2026-09-10"
+const VERSION := "v0.23.0 · 2026-09-10"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -14,8 +14,8 @@ const CHARACTERS := [
 	{"id": "soun", "name": "소운", "weapon": "swordshield", "unlock_cost": 500, "tier": 6, "portrait": "res://assets/sprites/portraits/soun.png", "walk_sheet": "res://assets/sprites/soun_walk.png"},
 	{"id": "minseo", "name": "민서", "weapon": "rapier", "unlock_cost": 650, "tier": 7, "portrait": "res://assets/sprites/portraits/minseo.png", "walk_sheet": "res://assets/sprites/minseo_walk.png"},
 	{"id": "manyang", "name": "만냥", "weapon": "spear", "unlock_cost": 800, "tier": 8, "portrait": "res://assets/sprites/portraits/manyang.png", "walk_sheet": "res://assets/sprites/manyang_walk.png"},
-	{"id": "jinak", "name": "진악", "weapon": "halberd", "unlock_cost": 950, "tier": 9, "portrait": "res://assets/sprites/portraits/jinak.png", "walk_sheet": "res://assets/sprites/jinak_walk.png"},
-	{"id": "samahoek", "name": "사마획", "weapon": "curse", "unlock_cost": 1100, "tier": 10, "portrait": "res://assets/sprites/portraits/samahoek.png", "walk_sheet": "res://assets/sprites/samahoek_walk.png"},
+	{"id": "jinak", "name": "진악", "weapon": "halberd", "unlock_cost": 950, "tier": 9, "portrait": "res://assets/sprites/portraits/jinak.png", "walk_sheet": "res://assets/sprites/jinak_walk.png", "playable": false},
+	{"id": "samahoek", "name": "사마획", "weapon": "curse", "unlock_cost": 1100, "tier": 10, "portrait": "res://assets/sprites/portraits/samahoek.png", "walk_sheet": "res://assets/sprites/samahoek_walk.png", "playable": false},
 ]
 
 const MAPS := [

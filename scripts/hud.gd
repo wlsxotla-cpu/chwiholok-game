@@ -559,11 +559,11 @@ func show_boss_warning() -> void:
 func show_horde_warning() -> void:
 	_show_banner("몬스터 웨이브!", Color(1.0, 0.65, 0.3, 1))
 
-func show_overlord_warning() -> void:
-	_show_banner("천마 강림!!", Color(0.85, 0.4, 1.0, 1))
+func show_overlord_warning(boss_name: String = "천마") -> void:
+	_show_banner("%s 강림!!" % boss_name, Color(0.85, 0.4, 1.0, 1))
 
-func show_overlord_defeated() -> void:
-	_show_banner("천마 격파! 천하제일이 되었다!", Color(1.0, 0.85, 0.3, 1))
+func show_overlord_defeated(boss_name: String = "천마") -> void:
+	_show_banner("%s 격파! 천하제일이 되었다!" % boss_name, Color(1.0, 0.85, 0.3, 1))
 
 func show_revived() -> void:
 	_show_banner("환생!", Color(0.55, 0.9, 1.0, 1))

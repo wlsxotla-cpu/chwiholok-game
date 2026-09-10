@@ -1,6 +1,7 @@
 extends Control
 
 @onready var grid: GridContainer = $Margin/VBox/GridScroll/Grid
+@onready var grid_scroll: ScrollContainer = $Margin/VBox/GridScroll
 @onready var coins_label: Label = $Margin/VBox/CoinsRow/CoinsLabel
 @onready var shop_toggle: Button = $Margin/VBox/CoinsRow/ShopToggle
 @onready var shop_panel: PanelContainer = $Margin/VBox/ShopPanel
@@ -103,6 +104,14 @@ func _refresh_map_desc() -> void:
 	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
 	map_desc.text = map_data.desc
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenDrag:
+		if grid_scroll.get_global_rect().has_point(event.position):
+			grid_scroll.scroll_vertical -= int(event.relative.y)
+	elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+		if grid_scroll.get_global_rect().has_point(event.position):
+			grid_scroll.scroll_vertical -= int(event.relative.y)
+
 func _on_difficulty_pressed(hard: bool) -> void:
 	SoundManager.play("click")
 	GameState.hard_mode = hard
@@ -120,6 +129,8 @@ func _refresh_all() -> void:
 	for c in grid.get_children():
 		c.queue_free()
 	for char_data in GameState.CHARACTERS:
+		if not char_data.get("playable", true):
+			continue
 		grid.add_child(_build_card(char_data))
 	_refresh_shop()
 
@@ -161,12 +172,30 @@ func _build_card(data: Dictionary) -> Control:
 	name_label.add_theme_font_size_override("font_size", 22)
 	vbox.add_child(name_label)
 
+	var weapon_row := HBoxContainer.new()
+	weapon_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	weapon_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	weapon_row.add_theme_constant_override("separation", 4)
+	vbox.add_child(weapon_row)
+
+	var wid: String = data.get("weapon", "")
+	var weapon_icon_path: String = Guide.WEAPON_ICONS.get(wid, "")
+	if weapon_icon_path != "":
+		var weapon_icon := TextureRect.new()
+		weapon_icon.texture = load(weapon_icon_path)
+		weapon_icon.custom_minimum_size = Vector2(20, 20)
+		weapon_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		weapon_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if not unlocked:
+			weapon_icon.modulate = Color(0.5, 0.48, 0.45, 1)
+		weapon_row.add_child(weapon_icon)
+
 	var weapon_label := Label.new()
-	weapon_label.text = GameState.WEAPON_NAMES.get(data.get("weapon", ""), "")
+	weapon_label.text = GameState.WEAPON_NAMES.get(wid, "")
 	weapon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	weapon_label.add_theme_font_size_override("font_size", 15)
 	weapon_label.add_theme_color_override("font_color", Color(0.75, 0.7, 0.85, 1))
-	vbox.add_child(weapon_label)
+	weapon_row.add_child(weapon_label)
 
 	var status_label := Label.new()
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

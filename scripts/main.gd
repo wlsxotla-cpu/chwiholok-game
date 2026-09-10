@@ -20,6 +20,7 @@ var overlord_spawned: bool = false
 var run_over: bool = false
 var tracked_boss: Node = null
 var has_tracked_boss: bool = false
+var current_overlord_name: String = "천마"
 
 @onready var player: CharacterBody2D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -154,6 +155,10 @@ func _spawn_boss() -> void:
 	boss_count += 1
 	var boss := preload("res://scenes/Enemy.tscn").instantiate()
 	boss.type = Enemy.Type.BOSS
+	var boss_name := "보스"
+	if GameState.selected_map == "cheonmagung":
+		boss.boss_texture_override = GameState.get_character("samahoek").portrait
+		boss_name = "사마획"
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	boss.difficulty_mult = base_mult * (1.0 + (boss_count - 1) * 0.45)
 	var angle: float = randf() * TAU
@@ -167,7 +172,7 @@ func _spawn_boss() -> void:
 	if not has_tracked_boss or not is_instance_valid(tracked_boss) or tracked_boss.type != Enemy.Type.OVERLORD:
 		tracked_boss = boss
 		has_tracked_boss = true
-		hud.show_boss_health("보스", boss.health, boss.max_health)
+		hud.show_boss_health(boss_name, boss.health, boss.max_health)
 	hud.show_boss_warning()
 	SoundManager.play("levelup", 3.0, 0.6)
 
@@ -192,6 +197,10 @@ func _spawn_horde() -> void:
 func _spawn_overlord() -> void:
 	var overlord := preload("res://scenes/Enemy.tscn").instantiate()
 	overlord.type = Enemy.Type.OVERLORD
+	current_overlord_name = "천마"
+	if GameState.selected_map == "cheonmagung":
+		overlord.boss_texture_override = GameState.get_character("jinak").portrait
+		current_overlord_name = "진악"
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	overlord.difficulty_mult = base_mult * 3.0
 	var angle: float = randf() * TAU
@@ -205,8 +214,8 @@ func _spawn_overlord() -> void:
 	add_child(overlord)
 	tracked_boss = overlord
 	has_tracked_boss = true
-	hud.show_boss_health("천마", overlord.health, overlord.max_health)
-	hud.show_overlord_warning()
+	hud.show_boss_health(current_overlord_name, overlord.health, overlord.max_health)
+	hud.show_overlord_warning(current_overlord_name)
 	SoundManager.play("levelup", 4.0, 0.45)
 	screen_shake_all()
 
@@ -247,7 +256,7 @@ func _on_overlord_defeated() -> void:
 	tracked_boss = null
 	has_tracked_boss = false
 	hud.hide_boss_health()
-	hud.show_overlord_defeated()
+	hud.show_overlord_defeated(current_overlord_name)
 	SoundManager.play("levelup", 5.0, 0.35)
 	if player.has_method("screen_shake"):
 		player.screen_shake(14.0, 0.6)
