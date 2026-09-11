@@ -484,9 +484,9 @@ func _current_bonus_text(id: String, lvl: int) -> String:
 		"hp":
 			return "체력 +%d" % (15 * lvl)
 		"dmg":
-			return "공격력 +%d%%" % (7 * lvl)
+			return "공격력 +%d%%" % (5 * lvl)
 		"move":
-			return "이동속도 +%d%%" % (4 * lvl)
+			return "이동속도 +%d%%" % (3 * lvl)
 		"pickup":
 			return "수집 반경 +%d%%" % (10 * lvl)
 		"revive_slots":

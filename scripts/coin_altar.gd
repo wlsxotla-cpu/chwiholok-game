@@ -1,5 +1,7 @@
 extends Area2D
 
+signal player_entered_range(altar: Node)
+signal player_exited_range(altar: Node)
 signal altar_used
 
 const COST := 150
@@ -11,6 +13,7 @@ var glow_time: float = 0.0
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 	glow_time = randf_range(0.0, TAU)
 
 func _process(delta: float) -> void:
@@ -21,11 +24,19 @@ func _process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if used or not body.is_in_group("player"):
 		return
-	if not body.has_method("_offer_level_up"):
+	player_entered_range.emit(self)
+
+func _on_body_exited(body: Node) -> void:
+	if not body.is_in_group("player"):
 		return
+	player_exited_range.emit(self)
+
+func offer(body: Node) -> bool:
+	if used or not body.has_method("_offer_level_up"):
+		return false
 	var available: int = GameState.total_coins + body.coins
 	if available < COST:
-		return
+		return false
 	used = true
 	if body.coins >= COST:
 		body.coins -= COST
@@ -43,3 +54,4 @@ func _on_body_entered(body: Node) -> void:
 	altar_used.emit()
 	body._offer_level_up()
 	queue_free()
+	return true

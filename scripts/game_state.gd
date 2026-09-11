@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.38.0 · 2026-09-11"
+const VERSION := "v0.39.0 · 2026-09-11"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -30,7 +30,7 @@ const PET_DEFS := {
 const MAPS := [
 	{"id": "plains", "name": "야지", "desc": "흙바닥과 잡초가 있는 평범한 강호의 벌판", "floor": "res://assets/sprites/floor.png", "bg_color": Color(0.055, 0.043, 0.031, 1), "wall_tint": Color(1.0, 1.0, 1.0, 1.0)},
 	{"id": "cheonmagung", "name": "천마궁", "desc": "천마가 다스리는 마교의 소굴. 낡은 나무 마루가 깔린 궁 복도", "floor": "res://assets/sprites/floor_cheonmagung.png", "bg_color": Color(0.03, 0.012, 0.012, 1), "wall_tint": Color(1.7, 0.55, 0.4, 1.0)},
-	{"id": "ruins", "name": "무너지는 총단", "desc": "천마와의 최후 결전지. 지반이 갈라져 용암이 새어나오고 하늘에서 잔해가 떨어지는 붕괴 직전의 마교 총단", "floor": "res://assets/sprites/floor_ruins.png", "bg_color": Color(0.045, 0.015, 0.01, 1), "wall_tint": Color(2.0, 0.5, 0.25, 1.0)},
+	{"id": "ruins", "name": "무너지는 총단", "desc": "천마와의 최후 결전지. 지반이 갈라져 용암이 새어나오고 하늘에서 잔해가 떨어지는 붕괴 직전의 마교 총단", "floor": "res://assets/sprites/floor_ruins.png", "bg_color": Color(0.045, 0.015, 0.01, 1), "wall_tint": Color(1.1, 0.98, 0.82, 1.0)},
 ]
 
 var selected_map: String = "plains"
@@ -60,8 +60,8 @@ const WEAPON_NAMES := {
 
 const META_DEFS := {
 	"hp": {"name": "체력 강화", "desc": "최대체력 +15", "base_cost": 15, "max_level": 10},
-	"dmg": {"name": "공격력 강화", "desc": "전체 공격력 +7%", "base_cost": 18, "max_level": 10},
-	"move": {"name": "이동속도 강화", "desc": "이동속도 +4%", "base_cost": 15, "max_level": 8},
+	"dmg": {"name": "공격력 강화", "desc": "전체 공격력 +5%", "base_cost": 18, "max_level": 10},
+	"move": {"name": "이동속도 강화", "desc": "이동속도 +3%", "base_cost": 15, "max_level": 8},
 	"pickup": {"name": "수집 반경 강화", "desc": "픽업 반경 +10%", "base_cost": 12, "max_level": 8},
 	"revive_slots": {"name": "환생술", "desc": "판당 계속하기 가능 횟수 +1 (내공은 그때그때 별도 지불)", "base_cost": 500, "max_level": 3},
 }

@@ -10,6 +10,8 @@ signal fusion_confirmed(fid: String)
 signal fusion_declined(fid: String)
 signal manual_fuse_requested(fid: String)
 signal reroll_requested
+signal altar_offer_confirmed
+signal altar_offer_declined
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var boss_health_panel: VBoxContainer = $BossHealthPanel
@@ -32,6 +34,10 @@ signal reroll_requested
 @onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
 @onready var continue_confirm_button: Button = $ContinuePanel/VBox/ConfirmButton
 @onready var continue_decline_button: Button = $ContinuePanel/VBox/DeclineButton
+@onready var altar_offer_panel: Panel = $AltarOfferPanel
+@onready var altar_cost_label: Label = $AltarOfferPanel/VBox/CostLabel
+@onready var altar_confirm_button: Button = $AltarOfferPanel/VBox/ConfirmButton
+@onready var altar_decline_button: Button = $AltarOfferPanel/VBox/DeclineButton
 @onready var fusion_offer_panel: Panel = $FusionOfferPanel
 @onready var fusion_desc_label: Label = $FusionOfferPanel/VBox/DescLabel
 @onready var fusion_confirm_button: Button = $FusionOfferPanel/VBox/ConfirmButton
@@ -93,6 +99,16 @@ func _ready() -> void:
 		SoundManager.play("click")
 		continue_panel.visible = false
 		continue_declined.emit())
+
+	altar_offer_panel.visible = false
+	altar_confirm_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		altar_offer_panel.visible = false
+		altar_offer_confirmed.emit())
+	altar_decline_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		altar_offer_panel.visible = false
+		altar_offer_declined.emit())
 
 	fusion_offer_panel.visible = false
 	fusion_confirm_button.pressed.connect(func() -> void:
@@ -566,6 +582,9 @@ func show_boss_warning() -> void:
 func show_horde_warning() -> void:
 	_show_banner("몬스터 웨이브!", Color(1.0, 0.65, 0.3, 1))
 
+func show_chest_spawned() -> void:
+	_show_banner("보물상자 출현!", Color(0.95, 0.82, 0.35, 1))
+
 func show_overlord_warning(boss_name: String = "천마") -> void:
 	_show_banner("%s 강림!!" % boss_name, Color(0.85, 0.4, 1.0, 1))
 
@@ -643,6 +662,16 @@ func show_continue_offer(cost: int, available: int) -> void:
 	continue_confirm_button.disabled = not can_afford
 	continue_confirm_button.text = "계속하기" if can_afford else "내공 부족"
 	continue_panel.visible = true
+
+func show_altar_offer(cost: int, available: int) -> void:
+	var can_afford: bool = available >= cost
+	altar_cost_label.text = "내공 %d을 제물로 바치시겠습니까?\n(보유 내공: %d)\n체력 30%% 회복 + 즉시 레벨업" % [cost, available]
+	altar_confirm_button.disabled = not can_afford
+	altar_confirm_button.text = "제물 바치기" if can_afford else "내공 부족"
+	altar_offer_panel.visible = true
+
+func hide_altar_offer() -> void:
+	altar_offer_panel.visible = false
 
 func show_game_over(t: float) -> void:
 	end_label.text = "쓰러졌다...\n생존 시간 %02d:%02d" % [int(t) / 60, int(t) % 60]

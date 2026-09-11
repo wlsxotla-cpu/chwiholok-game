@@ -221,8 +221,8 @@ func _find_joystick() -> void:
 func _apply_meta_upgrades() -> void:
 	var meta: Dictionary = GameState.meta_upgrades
 	max_health += 15.0 * float(meta.get("hp", 0))
-	global_damage_mult *= (1.0 + 0.07 * float(meta.get("dmg", 0)))
-	speed *= (1.0 + 0.04 * float(meta.get("move", 0)))
+	global_damage_mult *= (1.0 + 0.05 * float(meta.get("dmg", 0)))
+	speed *= (1.0 + 0.03 * float(meta.get("move", 0)))
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)))
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 

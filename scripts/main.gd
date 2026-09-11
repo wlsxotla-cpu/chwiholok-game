@@ -43,6 +43,7 @@ func _ready() -> void:
 		boss_count = int(resume_data.get("boss_count", 0))
 		overlord_spawned = bool(resume_data.get("overlord_spawned", false))
 		ruins_midpoint_triggered = bool(resume_data.get("ruins_midpoint_triggered", false))
+		chest_timer = float(resume_data.get("chest_timer", CHEST_FIRST_DELAY))
 		grass_broken_count = int(resume_data.get("grass_broken_count", 0))
 		chests_opened_count = int(resume_data.get("chests_opened_count", 0))
 		GameState.resuming_run = false
@@ -74,6 +75,12 @@ func _ready() -> void:
 		player.decline_fuse(fid)
 		player.invincible_timer = max(player.invincible_timer, player.LEVEL_UP_RESUME_INVINCIBLE))
 	hud.manual_fuse_requested.connect(player.confirm_fuse)
+	hud.altar_offer_confirmed.connect(func() -> void:
+		if active_altar != null and is_instance_valid(active_altar):
+			active_altar.offer(player)
+		active_altar = null)
+	hud.altar_offer_declined.connect(func() -> void:
+		active_altar = null)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
 	_update_hud()
@@ -87,9 +94,13 @@ func _apply_map_theme() -> void:
 	var env: Environment = $WorldEnvironment.environment
 	env.background_color = map_data.bg_color
 	var wall_tint: Color = map_data.wall_tint
+	var is_ruins: bool = GameState.selected_map == "ruins"
+	var wall_texture: Texture2D = load("res://assets/sprites/ruins_wall.png") if is_ruins else null
 	for wall_name in ["WallTop", "WallBottom", "WallLeft", "WallRight"]:
 		var glow: Sprite2D = $Walls.get_node(wall_name + "/Glow")
 		glow.modulate = wall_tint
+		if is_ruins:
+			glow.texture = wall_texture
 
 const GRASS_PROP_COUNT := 26
 const CORRIDOR_PROP_COUNT := 14
@@ -100,7 +111,8 @@ const LAVA_CRACK_SCALE := 1.7
 const LAVA_LAKE_COUNT := 4
 const RUINS_BOSS_HP_MULT := 1.7
 const RUINS_BOSS_XP_MULT := 4.0
-const CHEST_COUNT := 4
+const CHEST_INTERVAL := 300.0
+const CHEST_FIRST_DELAY := 60.0
 const COIN_ALTAR_COUNT := 2
 const CORRIDOR_DIVISIONS := 5
 const CORRIDOR_GAP_WIDTH := 220.0
@@ -111,9 +123,13 @@ const CORRIDOR_PILLAR_COUNT := 6
 const RUINS_MAZE_DIVISIONS := 8
 const RUINS_WALL_THICKNESS := 44.0
 const RUINS_EXTRA_PASSAGE_RATIO := 0.06
+const RUINS_SPAWN_CLEARANCE := 190.0
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0
+var in_grid_layout: bool = false
+var chest_timer: float = CHEST_FIRST_DELAY
+var active_altar: Node = null
 var corridor_cell_centers: Array = []
 var corridor_cell_size: float = 0.0
 
@@ -121,6 +137,7 @@ func _spawn_map_props() -> void:
 	var in_corridors: bool = GameState.selected_map == "cheonmagung"
 	var in_ruins: bool = GameState.selected_map == "ruins"
 	var in_grid: bool = in_corridors or in_ruins
+	in_grid_layout = in_grid
 	if in_corridors:
 		_spawn_palace_corridors()
 	elif in_ruins:
@@ -143,16 +160,13 @@ func _spawn_map_props() -> void:
 		prop.break_spark_color = prop_break_color
 		prop.broken_prop.connect(_on_grass_broken)
 		add_child(prop)
-	for i in range(CHEST_COUNT):
-		var chest := preload("res://scenes/TreasureChest.tscn").instantiate()
-		chest.global_position = _random_cell_safe_pos(300.0) if in_grid else _random_arena_pos(300.0)
-		chest.chest_opened.connect(_on_chest_opened)
-		add_child(chest)
 
 	if in_grid:
 		for i in range(COIN_ALTAR_COUNT):
 			var altar := preload("res://scenes/CoinAltar.tscn").instantiate()
 			altar.global_position = _random_cell_safe_pos(400.0)
+			altar.player_entered_range.connect(_on_altar_range_entered)
+			altar.player_exited_range.connect(_on_altar_range_exited)
 			add_child(altar)
 
 	if in_ruins:
@@ -340,9 +354,23 @@ func _spawn_ruins_maze() -> void:
 			var cx: float = -half + cell * (x + 0.5)
 			var cy: float = -half + cell * (y + 0.5)
 			if x < n - 1 and not open_right[x][y]:
-				_add_wall_shape(walls_body, Vector2(cx + cell / 2.0, cy), Vector2(RUINS_WALL_THICKNESS, cell), "res://assets/sprites/ruins_wall.png")
+				var c1 := Vector2(cx + cell / 2.0, cy)
+				var s1 := Vector2(RUINS_WALL_THICKNESS, cell)
+				if not _wall_blocks_spawn(c1, s1):
+					_add_wall_shape(walls_body, c1, s1, "res://assets/sprites/ruins_wall.png")
 			if y < n - 1 and not open_down[x][y]:
-				_add_wall_shape(walls_body, Vector2(cx, cy + cell / 2.0), Vector2(cell, RUINS_WALL_THICKNESS), "res://assets/sprites/ruins_wall.png")
+				var c2 := Vector2(cx, cy + cell / 2.0)
+				var s2 := Vector2(cell, RUINS_WALL_THICKNESS)
+				if not _wall_blocks_spawn(c2, s2):
+					_add_wall_shape(walls_body, c2, s2, "res://assets/sprites/ruins_wall.png")
+
+func _wall_blocks_spawn(center: Vector2, size: Vector2) -> bool:
+	var half_size: Vector2 = size / 2.0
+	var closest := Vector2(
+		clamp(0.0, center.x - half_size.x, center.x + half_size.x),
+		clamp(0.0, center.y - half_size.y, center.y + half_size.y)
+	)
+	return closest.length() <= RUINS_SPAWN_CLEARANCE
 
 func _autosave() -> void:
 	if run_over:
@@ -357,6 +385,7 @@ func _autosave() -> void:
 	data["boss_count"] = boss_count
 	data["overlord_spawned"] = overlord_spawned
 	data["ruins_midpoint_triggered"] = ruins_midpoint_triggered
+	data["chest_timer"] = chest_timer
 	data["grass_broken_count"] = grass_broken_count
 	data["chests_opened_count"] = chests_opened_count
 	GameState.save_run_state(data)
@@ -368,6 +397,15 @@ func _on_grass_broken() -> void:
 func _on_chest_opened() -> void:
 	chests_opened_count += 1
 	hud.set_prop_counts(chests_opened_count, grass_broken_count)
+
+func _on_altar_range_entered(altar: Node) -> void:
+	active_altar = altar
+	hud.show_altar_offer(altar.COST, GameState.total_coins + player.coins)
+
+func _on_altar_range_exited(altar: Node) -> void:
+	if active_altar == altar:
+		active_altar = null
+		hud.hide_altar_offer()
 
 func _random_arena_pos(min_dist_from_center: float) -> Vector2:
 	var margin: float = 80.0
@@ -393,6 +431,11 @@ func _process(delta: float) -> void:
 	if autosave_timer <= 0.0:
 		autosave_timer = AUTOSAVE_INTERVAL
 		_autosave()
+
+	chest_timer -= delta
+	if chest_timer <= 0.0:
+		chest_timer = CHEST_INTERVAL
+		_spawn_chest()
 
 	if GameState.selected_map == "ruins":
 		meteor_timer -= delta
@@ -608,6 +651,13 @@ func _pick_enemy_type() -> int:
 	if t > 90.0:
 		pool.append(Enemy.Type.BOMBER)
 	return pool[randi() % pool.size()]
+
+func _spawn_chest() -> void:
+	var chest := preload("res://scenes/TreasureChest.tscn").instantiate()
+	chest.global_position = _random_cell_safe_pos(300.0) if in_grid_layout else _random_arena_pos(300.0)
+	chest.chest_opened.connect(_on_chest_opened)
+	add_child(chest)
+	hud.show_chest_spawned()
 
 func _spawn_meteor_strike() -> void:
 	var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
