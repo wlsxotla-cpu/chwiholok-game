@@ -86,6 +86,8 @@ func _ready() -> void:
 	_update_hud()
 	_spawn_map_props()
 	hud.set_prop_counts(chests_opened_count, grass_broken_count)
+	if GameState.selected_map == "ruins" and not was_resuming:
+		hud.show_map_event_warning("이 곳에서는 영구 강화 효과가 50% 감소합니다")
 
 func _apply_map_theme() -> void:
 	var map_data: Dictionary = GameState.get_map(GameState.selected_map)

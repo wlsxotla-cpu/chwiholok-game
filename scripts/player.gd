@@ -218,12 +218,15 @@ func _ensure_orbit_node(wid: String) -> void:
 func _find_joystick() -> void:
 	joystick = get_tree().get_first_node_in_group("joystick")
 
+const RUINS_META_DEBUFF := 0.5
+
 func _apply_meta_upgrades() -> void:
 	var meta: Dictionary = GameState.meta_upgrades
-	max_health += 15.0 * float(meta.get("hp", 0))
-	global_damage_mult *= (1.0 + 0.05 * float(meta.get("dmg", 0)))
-	speed *= (1.0 + 0.03 * float(meta.get("move", 0)))
-	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)))
+	var mult: float = RUINS_META_DEBUFF if GameState.selected_map == "ruins" else 1.0
+	max_health += 15.0 * float(meta.get("hp", 0)) * mult
+	global_damage_mult *= (1.0 + 0.05 * float(meta.get("dmg", 0)) * mult)
+	speed *= (1.0 + 0.03 * float(meta.get("move", 0)) * mult)
+	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)) * mult)
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
