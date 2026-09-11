@@ -23,8 +23,12 @@ var has_tracked_boss: bool = false
 var current_overlord_name: String = "천마"
 const AUTOSAVE_INTERVAL := 15.0
 var autosave_timer: float = AUTOSAVE_INTERVAL
-const METEOR_INTERVAL := 6.5
-var meteor_timer: float = METEOR_INTERVAL
+const METEOR_INTERVAL_BASE := 6.5
+const METEOR_INTERVAL_MIN := 2.2
+const METEOR_RAMP_TIME := 1200.0
+var meteor_timer: float = METEOR_INTERVAL_BASE
+const RUINS_MIDPOINT_TIME := 600.0
+var ruins_midpoint_triggered: bool = false
 
 @onready var player: CharacterBody2D = $Player
 @onready var hud: CanvasLayer = $HUD
@@ -38,6 +42,7 @@ func _ready() -> void:
 		horde_timer = float(resume_data.get("horde_timer", HORDE_INTERVAL))
 		boss_count = int(resume_data.get("boss_count", 0))
 		overlord_spawned = bool(resume_data.get("overlord_spawned", false))
+		ruins_midpoint_triggered = bool(resume_data.get("ruins_midpoint_triggered", false))
 		grass_broken_count = int(resume_data.get("grass_broken_count", 0))
 		chests_opened_count = int(resume_data.get("chests_opened_count", 0))
 		GameState.resuming_run = false
@@ -88,8 +93,10 @@ func _apply_map_theme() -> void:
 const GRASS_PROP_COUNT := 26
 const CORRIDOR_PROP_COUNT := 14
 const RUINS_PROP_COUNT := 18
-const RUINS_OBSTACLE_COUNT := 10
-const LAVA_CRACK_COUNT := 12
+const RUINS_OBSTACLE_COUNT := 16
+const LAVA_CRACK_COUNT := 10
+const LAVA_CRACK_SCALE := 1.7
+const LAVA_LAKE_COUNT := 4
 const RUINS_BOSS_HP_MULT := 1.7
 const RUINS_BOSS_XP_MULT := 4.0
 const CHEST_COUNT := 4
@@ -148,8 +155,14 @@ func _spawn_map_props() -> void:
 			add_child(obstacle)
 		for i in range(LAVA_CRACK_COUNT):
 			var lava := preload("res://scenes/LavaCrack.tscn").instantiate()
-			lava.global_position = _random_arena_pos(200.0)
+			lava.global_position = _random_arena_pos(220.0)
+			lava.scale = Vector2(LAVA_CRACK_SCALE, LAVA_CRACK_SCALE)
 			add_child(lava)
+		for i in range(LAVA_LAKE_COUNT):
+			var lake := preload("res://scenes/LavaLake.tscn").instantiate()
+			lake.global_position = _random_arena_pos(400.0)
+			lake.rotation = randf() * TAU
+			add_child(lake)
 
 func _random_cell_safe_pos(min_dist_from_center: float) -> Vector2:
 	var tries: int = 0
@@ -256,6 +269,7 @@ func _autosave() -> void:
 	data["horde_timer"] = horde_timer
 	data["boss_count"] = boss_count
 	data["overlord_spawned"] = overlord_spawned
+	data["ruins_midpoint_triggered"] = ruins_midpoint_triggered
 	data["grass_broken_count"] = grass_broken_count
 	data["chests_opened_count"] = chests_opened_count
 	GameState.save_run_state(data)
@@ -296,8 +310,12 @@ func _process(delta: float) -> void:
 	if GameState.selected_map == "ruins":
 		meteor_timer -= delta
 		if meteor_timer <= 0.0:
-			meteor_timer = METEOR_INTERVAL
+			var ramp_t: float = clamp(elapsed / METEOR_RAMP_TIME, 0.0, 1.0)
+			meteor_timer = lerp(METEOR_INTERVAL_BASE, METEOR_INTERVAL_MIN, ramp_t)
 			_spawn_meteor_strike()
+		if not ruins_midpoint_triggered and elapsed >= RUINS_MIDPOINT_TIME:
+			ruins_midpoint_triggered = true
+			_trigger_ruins_midpoint_event()
 
 	spawn_timer -= delta
 	if spawn_timer <= 0.0:
@@ -362,6 +380,8 @@ func _spawn_boss() -> void:
 		boss.samahoek_defeated.connect(func() -> void: GameState.record_samahoek_kill())
 	elif GameState.selected_map == "ruins":
 		boss_name = "친위장"
+		boss.boss_texture_override = "res://assets/sprites/enemy_ruins_boss.png"
+		boss.use_qi_cannon = true
 		boss.xp_mult_override = RUINS_BOSS_XP_MULT
 	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
 	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
@@ -513,6 +533,22 @@ func _spawn_meteor_strike() -> void:
 	meteor.global_position = pos
 	meteor.struck.connect(screen_shake_all)
 	add_child(meteor)
+
+func _trigger_ruins_midpoint_event() -> void:
+	hud.show_map_event_warning("귀마의 힘이 강해집니다")
+	screen_shake_all()
+	for i in range(3):
+		get_tree().create_timer(1.0 + float(i) * 2.0).timeout.connect(func() -> void:
+			if not run_over:
+				_spawn_horde())
+	for i in range(5):
+		get_tree().create_timer(1.5 + float(i) * 1.2).timeout.connect(func() -> void:
+			if not run_over:
+				_spawn_boss())
+	for i in range(5):
+		get_tree().create_timer(float(i) * 2.0).timeout.connect(func() -> void:
+			if not run_over:
+				_spawn_meteor_strike())
 
 func _spawn_heal() -> void:
 	var heal := preload("res://scenes/Pickup.tscn").instantiate()

@@ -36,6 +36,14 @@ const HALBERD_BOLT_LIFETIME := 3.4
 const HALBERD_BOLT_SCALE := 1.9
 
 const CHEONMA_ATTACK_INTERVAL := 2.0
+const CHEONMA_NOVA_RADIUS := 260.0
+const CHEONMA_NOVA_DAMAGE := 70.0
+const CHEONMA_NOVA_TELEGRAPH := 0.9
+
+const QI_CANNON_BURST_COUNT := 5
+const QI_CANNON_BURST_INTERVAL := 0.18
+const QI_CANNON_DAMAGE := 10.0
+const QI_CANNON_ATTACK_INTERVAL := 3.0
 
 signal overlord_defeated
 signal samahoek_defeated
@@ -48,7 +56,10 @@ var boss_texture_override: String = ""
 var use_curse_attack: bool = false
 var use_halberd_barrage: bool = false
 var use_cheonma_finale: bool = false
-var cheonma_alternate: bool = false
+var cheonma_phase: int = 0
+var use_qi_cannon: bool = false
+var qi_burst_remaining: int = 0
+var qi_burst_timer: float = 0.0
 var speed_override: float = -1.0
 var xp_mult_override: float = 1.0
 var use_cheonmagung_skin: bool = false
@@ -100,7 +111,7 @@ func _ready() -> void:
 				base_interval = HALBERD_BARRAGE_INTERVAL
 			slam_timer = base_interval * randf_range(0.5, 1.0)
 		else:
-			slam_timer = BOSS_SLAM_INTERVAL * randf_range(0.5, 1.0)
+			slam_timer = (QI_CANNON_ATTACK_INTERVAL if use_qi_cannon else BOSS_SLAM_INTERVAL) * randf_range(0.5, 1.0)
 	else:
 		_apply_rank_tint()
 
@@ -210,18 +221,33 @@ func _process_boss(delta: float) -> void:
 	_process_chase(delta)
 	if type == Type.OVERLORD:
 		_process_overlord_aura(delta)
+
+	if qi_burst_remaining > 0:
+		qi_burst_timer -= delta
+		if qi_burst_timer <= 0.0:
+			qi_burst_timer = QI_CANNON_BURST_INTERVAL
+			_fire_qi_orb()
+			qi_burst_remaining -= 1
+		return
+
 	slam_timer -= delta
 	if slam_timer <= 0.0:
 		if use_cheonma_finale:
 			slam_timer = CHEONMA_ATTACK_INTERVAL
-			if cheonma_alternate:
-				_halberd_barrage()
-			else:
-				_boss_slam()
-			cheonma_alternate = not cheonma_alternate
+			match cheonma_phase:
+				0:
+					_boss_slam()
+				1:
+					_halberd_barrage()
+				_:
+					_cheonma_nova()
+			cheonma_phase = (cheonma_phase + 1) % 3
 		elif use_halberd_barrage:
 			slam_timer = HALBERD_BARRAGE_INTERVAL
 			_halberd_barrage()
+		elif use_qi_cannon:
+			slam_timer = QI_CANNON_ATTACK_INTERVAL
+			qi_burst_remaining = QI_CANNON_BURST_COUNT
 		else:
 			slam_timer = OVERLORD_SLAM_INTERVAL if type == Type.OVERLORD else BOSS_SLAM_INTERVAL
 			if use_curse_attack:
@@ -255,6 +281,45 @@ func _curse_bolt() -> void:
 		bolt.setup(aim, BOSS_SLAM_DAMAGE * 0.55 * (1.0 + (difficulty_mult - 1.0) * 0.6))
 		bolt.modulate = Color(1.3, 0.5, 1.5, 1.0)
 		bolt.scale *= 1.6
+
+func _fire_qi_orb() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	SoundManager.play("attack_fireball", -1.0, 1.1)
+	var orb := preload("res://scenes/EnemyBullet.tscn").instantiate()
+	parent.add_child(orb)
+	orb.global_position = global_position
+	orb.setup(player.global_position, QI_CANNON_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
+	orb.modulate = Color(1.9, 0.35, 0.3, 1.0)
+	orb.scale *= 1.3
+
+func _cheonma_nova() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	SoundManager.play("explosion", 2.0, 0.4)
+	var telegraph := preload("res://scenes/SlashEffect.tscn").instantiate()
+	parent.add_child(telegraph)
+	telegraph.global_position = global_position
+	telegraph.modulate = Color(2.0, 0.3, 0.3, 0.55)
+	telegraph.set_radius(CHEONMA_NOVA_RADIUS, true)
+	get_tree().create_timer(CHEONMA_NOVA_TELEGRAPH).timeout.connect(func() -> void:
+		if is_instance_valid(self):
+			_cheonma_nova_impact())
+
+func _cheonma_nova_impact() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	if global_position.distance_to(player.global_position) <= CHEONMA_NOVA_RADIUS:
+		player.take_damage(CHEONMA_NOVA_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
+	SoundManager.play("explosion", 2.0, 0.5)
+	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
+	parent.add_child(fx)
+	fx.global_position = global_position
+	fx.modulate = Color(2.4, 0.4, 0.35, 1.0)
+	fx.set_radius(CHEONMA_NOVA_RADIUS, true)
 
 func _halberd_barrage() -> void:
 	var parent := get_parent()

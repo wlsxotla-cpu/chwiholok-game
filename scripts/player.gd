@@ -32,7 +32,7 @@ const WEAPON_DEFS := {
 	"piercing_calamity": {"name": "멸겁관천검", "cooldown": 1.3, "damage": 26.0, "radius": 340.0},
 	"whirl_storm": {"name": "선풍만리표", "cooldown": 1.2, "damage": 12.0, "count": 5.0},
 	"thunder_formation": {"name": "뇌검진", "cooldown": 1.0, "damage": 9.0, "radius": 100.0, "count": 3.0},
-	"halberd": {"name": "패왕할버드", "cooldown": 1.5, "damage": 16.0, "radius": 100.0, "knockback": 140.0},
+	"halberd": {"name": "패왕연편", "cooldown": 1.5, "damage": 20.0, "radius": 220.0, "knockback": 160.0},
 	"swordshield": {"name": "호심검방", "cooldown": 1.5, "damage": 9.0, "radius": 260.0, "count": 6.0},
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 20.0, "radius": 90.0},
@@ -62,7 +62,7 @@ const EVOLUTION_DEFS := {
 	"boomerang": {"name": "만리회선표", "damage_mult": 1.3, "extra_count": 2.0},
 	"beam": {"name": "무형검기", "damage_mult": 1.3, "radius_mult": 1.3},
 	"lightning": {"name": "천둔뇌영", "damage_mult": 1.25, "extra_count": 2.0},
-	"halberd": {"name": "파천할버드", "damage_mult": 1.3, "radius_mult": 1.25, "knockback_mult": 1.3},
+	"halberd": {"name": "파천연편", "damage_mult": 1.3, "radius_mult": 1.25, "knockback_mult": 1.3},
 	"swordshield": {"name": "금강불괴검방", "damage_mult": 1.25, "radius_mult": 1.2, "extra_count": 3.0},
 	"rapier": {"name": "만검자류", "damage_mult": 1.25, "extra_count": 2.0},
 	"spear": {"name": "관천금창", "damage_mult": 1.3, "radius_mult": 1.3},
@@ -75,7 +75,7 @@ const PASSIVE_DEFS := {
 	"agility_scroll": {"weapons": ["shuriken", "boomerang"], "name": "비연신법", "desc": "이동속도 +10%. 표창난사/회류표 만렙 시 진화 가능", "effect": "move"},
 	"haste_scroll": {"weapons": ["beam"], "name": "연격지결", "desc": "공격속도 +10%. 일자검기 만렙 시 진화 가능", "effect": "cooldown"},
 	"gather_scroll": {"weapons": ["fireball"], "name": "채기흡자결", "desc": "수집 반경 +15%. 화염구 만렙 시 진화 가능", "effect": "pickup"},
-	"vanguard_scroll": {"weapons": ["halberd", "swordshield"], "name": "패왕비급", "desc": "공격력 +12%. 패왕할버드/호심검방 만렙 시 진화 가능", "effect": "damage"},
+	"vanguard_scroll": {"weapons": ["halberd", "swordshield"], "name": "패왕비급", "desc": "공격력 +12%. 패왕연편/호심검방 만렙 시 진화 가능", "effect": "damage"},
 	"finesse_scroll": {"weapons": ["rapier", "spear"], "name": "쾌검비급", "desc": "이동속도 +10%. 연환자검/만금창 만렙 시 진화 가능", "effect": "move"},
 	"curse_scroll": {"weapons": ["curse"], "name": "귀곡비급", "desc": "수집 반경 +15%. 귀곡저주 만렙 시 진화 가능", "effect": "pickup"},
 }
@@ -606,25 +606,38 @@ func _fire_shuriken(w: Dictionary) -> void:
 	SoundManager.play("attack_ranged", -3.0, 1.15)
 
 func _fire_halberd(w: Dictionary) -> void:
-	var radius: float = _weapon_stat(w, "radius")
+	var reach: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
-	var knockback: float = _weapon_stat(w, "knockback")
-	var hit_any := false
+	var pull: float = _weapon_stat(w, "knockback")
+	var target: Node = null
+	var target_dist: float = -1.0
 	for e in get_tree().get_nodes_in_group("enemies"):
-		var to_e: Vector2 = e.global_position - global_position
-		if to_e.length() <= radius:
-			e.take_damage(damage)
-			if e.has_method("apply_knockback") and to_e.length() > 0.001:
-				e.apply_knockback(to_e.normalized() * knockback)
-			hit_any = true
-	if hit_any:
-		screen_shake(5.0, 0.18)
-	SoundManager.play("attack_melee", -1.0, 0.6)
-	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
+		var d: float = global_position.distance_to(e.global_position)
+		if d <= reach and d > target_dist:
+			target_dist = d
+			target = e
+	if target == null:
+		return
+	target.take_damage(damage)
+	if target.has_method("apply_knockback"):
+		var to_player: Vector2 = global_position - target.global_position
+		if to_player.length() > 0.001:
+			target.apply_knockback(to_player.normalized() * pull)
+	screen_shake(4.0, 0.15)
+	SoundManager.play("attack_melee", -1.0, 0.7)
+	var fx := preload("res://scenes/BeamEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.modulate = Color(1.7, 0.8, 0.45, 1.0)
-	fx.set_radius(radius, _is_maxed(w))
+	var dir: Vector2 = (target.global_position - global_position).normalized()
+	var maxed: bool = _is_maxed(w)
+	var whip_width: float = 16.0 if maxed else 9.0
+	fx.setup(dir, target_dist, whip_width, false, Color(0.55, 0.15, 0.5, 0.6), Color(0.85, 0.45, 1.0, 1.0))
+	var spark := preload("res://scenes/HitSpark.tscn").instantiate()
+	get_parent().add_child(spark)
+	spark.global_position = target.global_position
+	spark.modulate = Color(0.85, 0.35, 0.95, 1.2)
+	if maxed:
+		spark.scale *= 1.4
 
 func _fire_swordshield(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")

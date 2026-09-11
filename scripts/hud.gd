@@ -575,7 +575,10 @@ func show_overlord_defeated(boss_name: String = "천마") -> void:
 func show_revived() -> void:
 	_show_banner("환생!", Color(0.55, 0.9, 1.0, 1))
 
-func _show_banner(text: String, color: Color) -> void:
+func show_map_event_warning(text: String) -> void:
+	_show_banner(text, Color(1.0, 0.25, 0.2, 1), 3.0)
+
+func _show_banner(text: String, color: Color, hold: float = 1.2) -> void:
 	evolve_label.text = text
 	evolve_label.add_theme_color_override("font_color", color)
 	evolve_label.visible = true
@@ -585,7 +588,7 @@ func _show_banner(text: String, color: Color) -> void:
 	var tween := create_tween()
 	tween.tween_property(evolve_label, "modulate:a", 1.0, 0.25)
 	tween.parallel().tween_property(evolve_label, "scale", Vector2(1, 1), 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_interval(1.2)
+	tween.tween_interval(hold)
 	tween.tween_property(evolve_label, "modulate:a", 0.0, 0.4)
 	tween.tween_callback(func() -> void: evolve_label.visible = false)
 

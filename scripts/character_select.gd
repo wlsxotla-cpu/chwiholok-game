@@ -214,7 +214,7 @@ func _build_card(data: Dictionary) -> Control:
 	else:
 		var unlock_type: String = data.get("unlock_type", "")
 		if unlock_type == "jinak_clear":
-			status_label.text = "천마궁에서 진악 처치 시 해금"
+			status_label.text = "천마궁에서 진악 처치 (%d/%d)" % [GameState.jinak_clears, GameState.JINAK_CLEAR_TARGET]
 			status_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1))
 		elif unlock_type == "samahoek_kills":
 			status_label.text = "천마궁에서 사마획 처치 (%d/%d)" % [GameState.samahoek_kills, GameState.SAMAHOEK_KILL_TARGET]
