@@ -17,7 +17,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	glow_time += delta * 2.2
 	var t: float = (sin(glow_time) + 1.0) / 2.0
-	sprite.modulate = Color(1.0, 1.0, 1.0, 1.0).lerp(Color(1.4, 1.05, 0.7, 1.0), t * 0.6)
+	sprite.modulate = Color(1.0, 1.0, 1.0, 1.0).lerp(Color(1.6, 0.35, 0.35, 1.0), t * 0.6)
 	if player_inside:
 		tick_timer -= delta
 		if tick_timer <= 0.0:
