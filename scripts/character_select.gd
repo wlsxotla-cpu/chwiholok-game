@@ -63,7 +63,15 @@ func _ready() -> void:
 				JavaScriptBridge.eval("try { localStorage.removeItem('chwiholok_admin_v2'); } catch(e) {}", true)
 			get_tree().reload_current_scene())
 		$Margin/VBox.add_child(dev_off_btn)
-		$Margin/VBox.move_child(dev_off_btn, 4)
+		$Margin/VBox.move_child(dev_off_btn, 5)
+
+		var dev_invincible_btn := Button.new()
+		dev_invincible_btn.text = "[테스트] 무적 모드: %s" % ("ON" if GameState.dev_invincible else "OFF")
+		dev_invincible_btn.pressed.connect(func() -> void:
+			GameState.dev_invincible = not GameState.dev_invincible
+			dev_invincible_btn.text = "[테스트] 무적 모드: %s" % ("ON" if GameState.dev_invincible else "OFF"))
+		$Margin/VBox.add_child(dev_invincible_btn)
+		$Margin/VBox.move_child(dev_invincible_btn, 4)
 	shop_toggle.pressed.connect(_on_shop_toggle)
 	shop_panel.visible = false
 	guide_toggle.pressed.connect(_on_guide_toggle)

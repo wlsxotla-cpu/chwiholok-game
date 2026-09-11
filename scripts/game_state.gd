@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.34.1 · 2026-09-11"
+const VERSION := "v0.34.2 · 2026-09-11"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -66,6 +66,7 @@ const CONTINUE_COST := 300
 var selected_character: String = "ipopol"
 var hard_mode: bool = false
 var dev_mode: bool = false
+var dev_invincible: bool = false
 var total_coins: int = 0
 var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0, "revive_slots": 0}
 var unlocked_characters: Dictionary = {}

@@ -759,6 +759,8 @@ func trigger_parry() -> void:
 	parry_timer = PARRY_COOLDOWN
 
 func take_damage(amount: float) -> void:
+	if GameState.dev_mode and GameState.dev_invincible:
+		return
 	if invincible_timer > 0.0:
 		return
 	var guard: Dictionary = _get_weapon("swordshield")
