@@ -809,7 +809,7 @@ func _build_level_up_choices() -> Array:
 	var pool: Array = []
 	if weapons.size() < MAX_WEAPON_SLOTS:
 		for wid in WEAPON_DEFS.keys():
-			if not owned_ids.has(wid) and not FUSION_DEFS.has(wid) and not Guide.HIDDEN_WEAPONS.has(wid):
+			if not owned_ids.has(wid) and not FUSION_DEFS.has(wid) and not Guide.HIDDEN_WEAPONS.has(wid) and not _is_locked_character_weapon(wid):
 				pool.append({"kind": "new_weapon", "wid": wid})
 	for w in weapons:
 		if w.level < MAX_WEAPON_LEVEL:
@@ -844,6 +844,12 @@ func _build_level_up_choices() -> Array:
 		if chosen.size() >= 4:
 			break
 	return chosen
+
+func _is_locked_character_weapon(wid: String) -> bool:
+	for c in GameState.CHARACTERS:
+		if c.get("weapon", "") == wid and c.has("unlock_type"):
+			return not GameState.is_character_unlocked(c.id)
+	return false
 
 func _offer_level_up() -> void:
 	SoundManager.play("levelup")
