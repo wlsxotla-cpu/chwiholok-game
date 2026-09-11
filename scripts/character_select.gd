@@ -371,6 +371,50 @@ func _refresh_shop() -> void:
 		c.queue_free()
 	for id in GameState.META_DEFS.keys():
 		shop_list.add_child(_build_shop_row(id))
+	for id in GameState.PET_DEFS.keys():
+		shop_list.add_child(_build_pet_row(id))
+
+func _build_pet_row(id: String) -> Control:
+	var def: Dictionary = GameState.PET_DEFS[id]
+	var owned: bool = GameState.has_pet(id)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+
+	var name_label := Label.new()
+	name_label.text = "%s (동료)" % def.name
+	name_label.add_theme_font_size_override("font_size", 19)
+	info.add_child(name_label)
+
+	var desc_label := Label.new()
+	desc_label.text = "가진 내공 전부를 소모해 영입. 이후 모든 판에 함께 등장해 주기적으로 적을 공격 (낮은 확률로 즉사/내공 추가 드랍)"
+	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc_label.add_theme_font_size_override("font_size", 14)
+	desc_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	info.add_child(desc_label)
+
+	var buy_btn := Button.new()
+	if owned:
+		buy_btn.text = "영입 완료"
+		buy_btn.disabled = true
+	else:
+		buy_btn.text = "내공 전부(%d)" % GameState.total_coins
+		buy_btn.disabled = not GameState.can_buy_pet(id)
+	buy_btn.pressed.connect(_on_pet_buy_pressed.bind(id))
+	row.add_child(buy_btn)
+
+	return row
+
+func _on_pet_buy_pressed(id: String) -> void:
+	SoundManager.play("click")
+	if GameState.buy_pet(id):
+		var def: Dictionary = GameState.PET_DEFS[id]
+		_show_toast("%s 영입! 이제부터 함께 싸웁니다" % def.name)
+		_refresh_all()
 
 func _build_shop_row(id: String) -> Control:
 	var def: Dictionary = GameState.META_DEFS[id]

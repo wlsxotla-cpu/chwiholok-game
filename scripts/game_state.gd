@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.35.0 · 2026-09-11"
+const VERSION := "v0.36.0 · 2026-09-11"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -21,6 +21,11 @@ const CHARACTERS := [
 
 const SAMAHOEK_KILL_TARGET := 15
 const JINAK_CLEAR_TARGET := 3
+
+const PET_MIN_COST := 200
+const PET_DEFS := {
+	"green_spirit": {"name": "초록 정령", "sprite": "res://assets/sprites/pet_spirit_green.png", "offset": Vector2(18, -34)},
+}
 
 const MAPS := [
 	{"id": "plains", "name": "야지", "desc": "흙바닥과 잡초가 있는 평범한 강호의 벌판", "floor": "res://assets/sprites/floor.png", "bg_color": Color(0.055, 0.043, 0.031, 1), "wall_tint": Color(1.0, 1.0, 1.0, 1.0)},
@@ -72,6 +77,7 @@ var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0, "rev
 var unlocked_characters: Dictionary = {}
 var samahoek_kills: int = 0
 var jinak_clears: int = 0
+var owned_pets: Array = []
 var sfx_enabled: bool = true
 var music_enabled: bool = true
 var resuming_run: bool = false
@@ -157,6 +163,20 @@ func unlock_jinak_by_clear() -> void:
 		unlocked_characters["jinak"] = true
 	_save_data()
 
+func has_pet(id: String) -> bool:
+	return owned_pets.has(id)
+
+func can_buy_pet(id: String) -> bool:
+	return not has_pet(id) and total_coins >= PET_MIN_COST
+
+func buy_pet(id: String) -> bool:
+	if not can_buy_pet(id):
+		return false
+	owned_pets.append(id)
+	total_coins = 0
+	_save_data()
+	return true
+
 func upgrade_cost(id: String) -> int:
 	var def: Dictionary = META_DEFS[id]
 	var lvl: int = meta_upgrades[id]
@@ -239,6 +259,8 @@ func _load_data() -> void:
 		unlocked_characters = saved_unlocked.duplicate()
 		samahoek_kills = int(parsed.get("samahoek_kills", 0))
 		jinak_clears = int(parsed.get("jinak_clears", 0))
+		var saved_pets: Array = parsed.get("owned_pets", [])
+		owned_pets = saved_pets.duplicate()
 		sfx_enabled = bool(parsed.get("sfx_enabled", true))
 		music_enabled = bool(parsed.get("music_enabled", true))
 
@@ -251,6 +273,7 @@ func _save_data() -> void:
 		"unlocked_characters": unlocked_characters,
 		"samahoek_kills": samahoek_kills,
 		"jinak_clears": jinak_clears,
+		"owned_pets": owned_pets,
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
 	}

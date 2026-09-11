@@ -48,6 +48,7 @@ func _ready() -> void:
 		GameState.resuming_run = false
 		GameState.pending_run_data = {}
 	_apply_map_theme()
+	_spawn_pets()
 	player.died.connect(_on_player_died)
 	player.leveled_up.connect(func(options: Array) -> void:
 		hud.show_level_up(options)
@@ -533,6 +534,13 @@ func _spawn_meteor_strike() -> void:
 	meteor.global_position = pos
 	meteor.struck.connect(screen_shake_all)
 	add_child(meteor)
+
+func _spawn_pets() -> void:
+	for pet_id in GameState.owned_pets:
+		var pet := preload("res://scenes/Pet.tscn").instantiate()
+		pet.pet_id = pet_id
+		pet.main_ref = self
+		player.add_child(pet)
 
 func _trigger_ruins_midpoint_event() -> void:
 	hud.show_map_event_warning("귀마의 힘이 강해집니다")
