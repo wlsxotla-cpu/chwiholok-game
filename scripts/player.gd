@@ -609,31 +609,45 @@ func _fire_halberd(w: Dictionary) -> void:
 	var reach: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
 	var pull: float = _weapon_stat(w, "knockback")
-	var target: Node = null
-	var target_dist: float = -1.0
+	var lash_width: float = reach * 0.32
+
+	var farthest: Node = null
+	var farthest_dist: float = -1.0
 	for e in get_tree().get_nodes_in_group("enemies"):
 		var d: float = global_position.distance_to(e.global_position)
-		if d <= reach and d > target_dist:
-			target_dist = d
-			target = e
-	if target == null:
+		if d <= reach and d > farthest_dist:
+			farthest_dist = d
+			farthest = e
+	if farthest == null:
 		return
-	target.take_damage(damage)
-	if target.has_method("apply_knockback"):
-		var to_player: Vector2 = global_position - target.global_position
-		if to_player.length() > 0.001:
-			target.apply_knockback(to_player.normalized() * pull)
+	var dir: Vector2 = (farthest.global_position - global_position).normalized()
+
+	var hit_any := false
+	for e in get_tree().get_nodes_in_group("enemies"):
+		var to_e: Vector2 = e.global_position - global_position
+		var proj: float = to_e.dot(dir)
+		if proj < 0.0 or proj > farthest_dist:
+			continue
+		var perp: float = (to_e - dir * proj).length()
+		if perp <= lash_width / 2.0:
+			e.take_damage(damage)
+			if e.has_method("apply_knockback"):
+				var to_player: Vector2 = global_position - e.global_position
+				if to_player.length() > 0.001:
+					e.apply_knockback(to_player.normalized() * pull)
+			hit_any = true
+	if not hit_any:
+		return
 	screen_shake(4.0, 0.15)
 	SoundManager.play("attack_melee", -1.0, 0.7)
 	var fx := preload("res://scenes/WhipEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	var dir: Vector2 = (target.global_position - global_position).normalized()
 	var maxed: bool = _is_maxed(w)
-	fx.setup(dir, target_dist, maxed)
+	fx.setup(dir, farthest_dist, maxed)
 	var spark := preload("res://scenes/HitSpark.tscn").instantiate()
 	get_parent().add_child(spark)
-	spark.global_position = target.global_position
+	spark.global_position = global_position + dir * farthest_dist
 	spark.modulate = Color(0.85, 0.35, 0.95, 1.2)
 	if maxed:
 		spark.scale *= 1.4

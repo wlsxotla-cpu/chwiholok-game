@@ -39,6 +39,7 @@ const CHEONMA_ATTACK_INTERVAL := 2.0
 const CHEONMA_NOVA_RADIUS := 260.0
 const CHEONMA_NOVA_DAMAGE := 70.0
 const CHEONMA_NOVA_TELEGRAPH := 0.9
+const CHEONMA_RECOVERY_DURATION := 0.8
 
 const QI_CANNON_BURST_COUNT := 5
 const QI_CANNON_BURST_INTERVAL := 0.18
@@ -57,6 +58,7 @@ var use_curse_attack: bool = false
 var use_halberd_barrage: bool = false
 var use_cheonma_finale: bool = false
 var cheonma_phase: int = 0
+var cheonma_recovery_timer: float = 0.0
 var use_qi_cannon: bool = false
 var qi_burst_remaining: int = 0
 var qi_burst_timer: float = 0.0
@@ -218,7 +220,12 @@ func _explode() -> void:
 	queue_free()
 
 func _process_boss(delta: float) -> void:
-	_process_chase(delta)
+	if use_cheonma_finale and cheonma_recovery_timer > 0.0:
+		cheonma_recovery_timer -= delta
+		velocity = velocity.lerp(Vector2.ZERO, 0.25)
+		move_and_slide()
+	else:
+		_process_chase(delta)
 	if type == Type.OVERLORD:
 		_process_overlord_aura(delta)
 
@@ -234,6 +241,7 @@ func _process_boss(delta: float) -> void:
 	if slam_timer <= 0.0:
 		if use_cheonma_finale:
 			slam_timer = CHEONMA_ATTACK_INTERVAL
+			cheonma_recovery_timer = CHEONMA_RECOVERY_DURATION
 			match cheonma_phase:
 				0:
 					_boss_slam()
