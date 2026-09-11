@@ -625,13 +625,12 @@ func _fire_halberd(w: Dictionary) -> void:
 			target.apply_knockback(to_player.normalized() * pull)
 	screen_shake(4.0, 0.15)
 	SoundManager.play("attack_melee", -1.0, 0.7)
-	var fx := preload("res://scenes/BeamEffect.tscn").instantiate()
+	var fx := preload("res://scenes/WhipEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
 	var dir: Vector2 = (target.global_position - global_position).normalized()
 	var maxed: bool = _is_maxed(w)
-	var whip_width: float = 16.0 if maxed else 9.0
-	fx.setup(dir, target_dist, whip_width, false, Color(0.55, 0.15, 0.5, 0.6), Color(0.85, 0.45, 1.0, 1.0))
+	fx.setup(dir, target_dist, maxed)
 	var spark := preload("res://scenes/HitSpark.tscn").instantiate()
 	get_parent().add_child(spark)
 	spark.global_position = target.global_position
