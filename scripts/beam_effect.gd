@@ -14,7 +14,6 @@ func setup(direction: Vector2, l: float, w: float, empowered: bool = false) -> v
 	width = w
 	z_index = 5
 	if empowered:
-		width *= 2.1
 		fill_color = Color(0.85, 0.25, 0.95, 0.55)
 		core_color = Color(1.0, 0.85, 1.0, 1.0)
 		core_width = 10.0

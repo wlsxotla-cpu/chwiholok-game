@@ -476,7 +476,7 @@ func _fire_beam(w: Dictionary) -> void:
 	var fx := preload("res://scenes/BeamEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.setup(dir, length, width, w.id == "piercing_calamity" or _is_maxed(w))
+	fx.setup(dir, length, width, _is_maxed(w))
 
 func _fire_spear(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
