@@ -108,9 +108,9 @@ const CORRIDOR_WALL_THICKNESS := 48.0
 const CORRIDOR_NUB_LENGTH := 90.0
 const CORRIDOR_NUB_CHANCE := 0.35
 const CORRIDOR_PILLAR_COUNT := 6
-const RUINS_MAZE_DIVISIONS := 6
-const RUINS_WALL_THICKNESS := 46.0
-const RUINS_EXTRA_PASSAGE_RATIO := 0.12
+const RUINS_MAZE_DIVISIONS := 8
+const RUINS_WALL_THICKNESS := 44.0
+const RUINS_EXTRA_PASSAGE_RATIO := 0.06
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0

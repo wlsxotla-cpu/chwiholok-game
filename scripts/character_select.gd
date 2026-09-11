@@ -2,14 +2,15 @@ extends Control
 
 @onready var grid: GridContainer = $Margin/VBox/GridScroll/Grid
 @onready var grid_scroll: ScrollContainer = $Margin/VBox/GridScroll
-@onready var coins_label: Label = $Margin/VBox/CoinsRow/CoinsLabel
-@onready var shop_toggle: Button = $Margin/VBox/CoinsRow/ShopToggle
+@onready var coins_label: Label = $CoinsBadge
+@onready var character_tab: Button = $Margin/VBox/TabRow/CharacterTab
+@onready var shop_tab: Button = $Margin/VBox/TabRow/ShopTab
 @onready var shop_panel: PanelContainer = $Margin/VBox/ShopPanel
 @onready var shop_list: VBoxContainer = $Margin/VBox/ShopPanel/ShopList
-@onready var guide_toggle: Button = $Margin/VBox/CoinsRow/GuideToggle
+@onready var guide_tab: Button = $Margin/VBox/TabRow/GuideTab
 @onready var guide_panel: PanelContainer = $Margin/VBox/GuidePanel
 @onready var guide_list: VBoxContainer = $Margin/VBox/GuidePanel/GuideScroll/GuideList
-@onready var pet_toggle: Button = $Margin/VBox/CoinsRow/PetToggle
+@onready var pet_tab: Button = $Margin/VBox/TabRow/PetTab
 @onready var pet_panel: PanelContainer = $Margin/VBox/PetPanel
 @onready var pet_list: VBoxContainer = $Margin/VBox/PetPanel/PetScroll/PetList
 @onready var normal_button: Button = $Margin/VBox/DifficultyRow/NormalButton
@@ -75,12 +76,11 @@ func _ready() -> void:
 			dev_invincible_btn.text = "[테스트] 무적 모드: %s" % ("ON" if GameState.dev_invincible else "OFF"))
 		$Margin/VBox.add_child(dev_invincible_btn)
 		$Margin/VBox.move_child(dev_invincible_btn, 4)
-	shop_toggle.pressed.connect(_on_shop_toggle)
-	shop_panel.visible = false
-	guide_toggle.pressed.connect(_on_guide_toggle)
-	guide_panel.visible = false
-	pet_toggle.pressed.connect(_on_pet_toggle)
-	pet_panel.visible = false
+	character_tab.pressed.connect(_select_tab.bind("character"))
+	shop_tab.pressed.connect(_select_tab.bind("shop"))
+	guide_tab.pressed.connect(_select_tab.bind("guide"))
+	pet_tab.pressed.connect(_select_tab.bind("pet"))
+	_select_tab("character")
 	_build_guide()
 	normal_button.pressed.connect(_on_difficulty_pressed.bind(false))
 	hard_button.pressed.connect(_on_difficulty_pressed.bind(true))
@@ -256,26 +256,16 @@ func _on_unlock_pressed(id: String) -> void:
 	if GameState.unlock_character(id):
 		_refresh_all()
 
-func _on_shop_toggle() -> void:
+func _select_tab(tab: String) -> void:
 	SoundManager.play("click")
-	shop_panel.visible = not shop_panel.visible
-	if shop_panel.visible:
-		guide_panel.visible = false
-		pet_panel.visible = false
-
-func _on_guide_toggle() -> void:
-	SoundManager.play("click")
-	guide_panel.visible = not guide_panel.visible
-	if guide_panel.visible:
-		shop_panel.visible = false
-		pet_panel.visible = false
-
-func _on_pet_toggle() -> void:
-	SoundManager.play("click")
-	pet_panel.visible = not pet_panel.visible
-	if pet_panel.visible:
-		shop_panel.visible = false
-		guide_panel.visible = false
+	grid_scroll.visible = tab == "character"
+	shop_panel.visible = tab == "shop"
+	guide_panel.visible = tab == "guide"
+	pet_panel.visible = tab == "pet"
+	character_tab.button_pressed = tab == "character"
+	shop_tab.button_pressed = tab == "shop"
+	guide_tab.button_pressed = tab == "guide"
+	pet_tab.button_pressed = tab == "pet"
 
 func _build_guide() -> void:
 	_add_guide_header("기본 무기")
