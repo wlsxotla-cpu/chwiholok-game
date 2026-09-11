@@ -36,10 +36,10 @@ const WEAPON_DEFS := {
 	"swordshield": {"name": "호심검방", "cooldown": 1.5, "damage": 9.0, "radius": 260.0, "count": 6.0},
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 20.0, "radius": 90.0},
-	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "count": 2.0},
+	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "radius": 260.0},
 	"sky_piercer": {"name": "관천쾌섬창", "cooldown": 1.0, "damage": 34.0, "radius": 150.0},
 	"flame_guard": {"name": "염화호신진", "cooldown": 1.1, "damage": 15.0, "radius": 320.0, "count": 8.0},
-	"cataclysm_fury": {"name": "패왕귀멸진", "cooldown": 1.4, "damage": 24.0, "radius": 130.0, "knockback": 150.0, "count": 3.0},
+	"cataclysm_fury": {"name": "패왕귀멸진", "cooldown": 1.4, "damage": 24.0, "count": 3.0},
 }
 
 const FUSION_DEFS := {
@@ -66,7 +66,7 @@ const EVOLUTION_DEFS := {
 	"swordshield": {"name": "금강불괴검방", "damage_mult": 1.25, "radius_mult": 1.2, "extra_count": 3.0},
 	"rapier": {"name": "만검자류", "damage_mult": 1.25, "extra_count": 2.0},
 	"spear": {"name": "관천금창", "damage_mult": 1.3, "radius_mult": 1.3},
-	"curse": {"name": "만귀곡성", "damage_mult": 1.25, "extra_count": 2.0},
+	"curse": {"name": "만귀곡성", "damage_mult": 1.25, "radius_mult": 1.3},
 }
 
 const PASSIVE_DEFS := {
@@ -669,11 +669,10 @@ func _fire_rapier(w: Dictionary) -> void:
 
 func _fire_curse(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")
-	var count: int = int(_weapon_stat(w, "count"))
+	var range: float = _weapon_stat(w, "radius")
 	var enemies: Array = get_tree().get_nodes_in_group("enemies").filter(
-		func(e: Node) -> bool: return global_position.distance_to(e.global_position) <= TARGET_SEARCH_RANGE
+		func(e: Node) -> bool: return global_position.distance_to(e.global_position) <= range
 	)
-	enemies.shuffle()
 	var struck: int = 0
 	for e in enemies:
 		e.take_damage(damage)
@@ -683,8 +682,6 @@ func _fire_curse(w: Dictionary) -> void:
 		fx.setup(_is_maxed(w))
 		fx.modulate = Color(1.3, 0.5, 1.5, 1.0)
 		struck += 1
-		if struck >= count:
-			break
 	if struck > 0:
 		SoundManager.play("attack_fireball", -2.0, 0.8)
 		screen_shake(2.0, 0.08)
