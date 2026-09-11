@@ -39,7 +39,7 @@ const CHEONMA_ATTACK_INTERVAL := 2.0
 const CHEONMA_NOVA_RADIUS := 260.0
 const CHEONMA_NOVA_DAMAGE := 70.0
 const CHEONMA_NOVA_TELEGRAPH := 0.9
-const CHEONMA_RECOVERY_DURATION := 0.8
+const CHEONMA_RECOVERY_DURATION := 0.35
 
 const QI_CANNON_BURST_COUNT := 5
 const QI_CANNON_BURST_INTERVAL := 0.18
@@ -295,7 +295,7 @@ func _fire_qi_orb() -> void:
 	if parent == null:
 		return
 	SoundManager.play("attack_fireball", -1.0, 1.1)
-	var orb := preload("res://scenes/EnemyBullet.tscn").instantiate()
+	var orb := preload("res://scenes/EnemyOrb.tscn").instantiate()
 	parent.add_child(orb)
 	orb.global_position = global_position
 	orb.setup(player.global_position, QI_CANNON_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
@@ -336,7 +336,7 @@ func _halberd_barrage() -> void:
 	SoundManager.play("attack_fireball", -1.0, 0.55)
 	for i in range(HALBERD_BARRAGE_COUNT):
 		var angle: float = TAU * float(i) / float(HALBERD_BARRAGE_COUNT)
-		var bolt := preload("res://scenes/EnemyBullet.tscn").instantiate()
+		var bolt := preload("res://scenes/EnemyOrb.tscn").instantiate()
 		parent.add_child(bolt)
 		bolt.global_position = global_position
 		var aim: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * 400.0

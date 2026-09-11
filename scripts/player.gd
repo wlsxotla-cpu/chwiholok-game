@@ -32,7 +32,7 @@ const WEAPON_DEFS := {
 	"piercing_calamity": {"name": "멸겁관천검", "cooldown": 1.3, "damage": 26.0, "radius": 340.0},
 	"whirl_storm": {"name": "선풍만리표", "cooldown": 1.2, "damage": 12.0, "count": 5.0},
 	"thunder_formation": {"name": "뇌검진", "cooldown": 1.0, "damage": 9.0, "radius": 100.0, "count": 3.0},
-	"halberd": {"name": "패왕연편", "cooldown": 1.5, "damage": 20.0, "radius": 220.0, "knockback": 160.0},
+	"halberd": {"name": "패왕붕권", "cooldown": 1.3, "damage": 13.0, "count": 3.0},
 	"swordshield": {"name": "호심검방", "cooldown": 1.5, "damage": 9.0, "radius": 260.0, "count": 6.0},
 	"rapier": {"name": "연환자검", "cooldown": 0.9, "damage": 6.0, "count": 3.0},
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 20.0, "radius": 90.0},
@@ -62,7 +62,7 @@ const EVOLUTION_DEFS := {
 	"boomerang": {"name": "만리회선표", "damage_mult": 1.3, "extra_count": 2.0},
 	"beam": {"name": "무형검기", "damage_mult": 1.3, "radius_mult": 1.3},
 	"lightning": {"name": "천둔뇌영", "damage_mult": 1.25, "extra_count": 2.0},
-	"halberd": {"name": "파천연편", "damage_mult": 1.3, "radius_mult": 1.25, "knockback_mult": 1.3},
+	"halberd": {"name": "파천붕권", "damage_mult": 1.3, "extra_count": 2.0},
 	"swordshield": {"name": "금강불괴검방", "damage_mult": 1.25, "radius_mult": 1.2, "extra_count": 3.0},
 	"rapier": {"name": "만검자류", "damage_mult": 1.25, "extra_count": 2.0},
 	"spear": {"name": "관천금창", "damage_mult": 1.3, "radius_mult": 1.3},
@@ -75,7 +75,7 @@ const PASSIVE_DEFS := {
 	"agility_scroll": {"weapons": ["shuriken", "boomerang"], "name": "비연신법", "desc": "이동속도 +10%. 표창난사/회류표 만렙 시 진화 가능", "effect": "move"},
 	"haste_scroll": {"weapons": ["beam"], "name": "연격지결", "desc": "공격속도 +10%. 일자검기 만렙 시 진화 가능", "effect": "cooldown"},
 	"gather_scroll": {"weapons": ["fireball"], "name": "채기흡자결", "desc": "수집 반경 +15%. 화염구 만렙 시 진화 가능", "effect": "pickup"},
-	"vanguard_scroll": {"weapons": ["halberd", "swordshield"], "name": "패왕비급", "desc": "공격력 +12%. 패왕연편/호심검방 만렙 시 진화 가능", "effect": "damage"},
+	"vanguard_scroll": {"weapons": ["halberd", "swordshield"], "name": "패왕비급", "desc": "공격력 +12%. 패왕붕권/호심검방 만렙 시 진화 가능", "effect": "damage"},
 	"finesse_scroll": {"weapons": ["rapier", "spear"], "name": "쾌검비급", "desc": "이동속도 +10%. 연환자검/만금창 만렙 시 진화 가능", "effect": "move"},
 	"curse_scroll": {"weapons": ["curse"], "name": "귀곡비급", "desc": "수집 반경 +15%. 귀곡저주 만렙 시 진화 가능", "effect": "pickup"},
 }
@@ -605,52 +605,25 @@ func _fire_shuriken(w: Dictionary) -> void:
 		bullet.setup(global_position + dir * 400.0, damage, _is_maxed(w))
 	SoundManager.play("attack_ranged", -3.0, 1.15)
 
+const FIST_LANE_SPACING := 30.0
+const FIST_RANGE := 500.0
+
 func _fire_halberd(w: Dictionary) -> void:
-	var reach: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
-	var pull: float = _weapon_stat(w, "knockback")
-	var lash_width: float = reach * 0.32
-
-	var farthest: Node = null
-	var farthest_dist: float = -1.0
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var d: float = global_position.distance_to(e.global_position)
-		if d <= reach and d > farthest_dist:
-			farthest_dist = d
-			farthest = e
-	if farthest == null:
-		return
-	var dir: Vector2 = (farthest.global_position - global_position).normalized()
-
-	var hit_any := false
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var to_e: Vector2 = e.global_position - global_position
-		var proj: float = to_e.dot(dir)
-		if proj < 0.0 or proj > farthest_dist:
-			continue
-		var perp: float = (to_e - dir * proj).length()
-		if perp <= lash_width / 2.0:
-			e.take_damage(damage)
-			if e.has_method("apply_knockback"):
-				var to_player: Vector2 = global_position - e.global_position
-				if to_player.length() > 0.001:
-					e.apply_knockback(to_player.normalized() * pull)
-			hit_any = true
-	if not hit_any:
-		return
-	screen_shake(4.0, 0.15)
-	SoundManager.play("attack_melee", -1.0, 0.7)
-	var fx := preload("res://scenes/WhipEffect.tscn").instantiate()
-	get_parent().add_child(fx)
-	fx.global_position = global_position
+	var count: int = int(_weapon_stat(w, "count"))
 	var maxed: bool = _is_maxed(w)
-	fx.setup(dir, farthest_dist, maxed)
-	var spark := preload("res://scenes/HitSpark.tscn").instantiate()
-	get_parent().add_child(spark)
-	spark.global_position = global_position + dir * farthest_dist
-	spark.modulate = Color(0.85, 0.35, 0.95, 1.2)
-	if maxed:
-		spark.scale *= 1.4
+	var target := _find_nearest_enemy()
+	var dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
+	var perp: Vector2 = dir.orthogonal()
+	for i in range(count):
+		var lane: float = float(i) - float(count - 1) / 2.0
+		var start_pos: Vector2 = global_position + perp * lane * FIST_LANE_SPACING
+		var fist := preload("res://scenes/FistBullet.tscn").instantiate()
+		get_parent().add_child(fist)
+		fist.global_position = start_pos
+		fist.setup(start_pos + dir * FIST_RANGE, damage, maxed)
+	SoundManager.play("attack_melee", -1.0, 0.8)
+	screen_shake(2.5, 0.1)
 
 func _fire_swordshield(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")
