@@ -108,6 +108,9 @@ const CORRIDOR_WALL_THICKNESS := 48.0
 const CORRIDOR_NUB_LENGTH := 90.0
 const CORRIDOR_NUB_CHANCE := 0.35
 const CORRIDOR_PILLAR_COUNT := 6
+const RUINS_MAZE_DIVISIONS := 6
+const RUINS_WALL_THICKNESS := 46.0
+const RUINS_EXTRA_PASSAGE_RATIO := 0.12
 
 var grass_broken_count: int = 0
 var chests_opened_count: int = 0
@@ -117,10 +120,13 @@ var corridor_cell_size: float = 0.0
 func _spawn_map_props() -> void:
 	var in_corridors: bool = GameState.selected_map == "cheonmagung"
 	var in_ruins: bool = GameState.selected_map == "ruins"
+	var in_grid: bool = in_corridors or in_ruins
 	if in_corridors:
 		_spawn_palace_corridors()
+	elif in_ruins:
+		_spawn_ruins_maze()
 
-	var prop_scene: PackedScene = preload("res://scenes/GrassProp.tscn") if not (in_corridors or in_ruins) else preload("res://scenes/PalaceVaseProp.tscn")
+	var prop_scene: PackedScene = preload("res://scenes/GrassProp.tscn") if not in_grid else preload("res://scenes/PalaceVaseProp.tscn")
 	var prop_break_color: Color = Color(0.55, 1.0, 0.5, 1.0)
 	if in_corridors:
 		prop_break_color = Color(0.75, 0.6, 1.0, 1.0)
@@ -133,35 +139,35 @@ func _spawn_map_props() -> void:
 		prop_count = RUINS_PROP_COUNT
 	for i in range(prop_count):
 		var prop := prop_scene.instantiate()
-		prop.global_position = _random_cell_safe_pos(100.0) if in_corridors else _random_arena_pos(100.0)
+		prop.global_position = _random_cell_safe_pos(100.0) if in_grid else _random_arena_pos(100.0)
 		prop.break_spark_color = prop_break_color
 		prop.broken_prop.connect(_on_grass_broken)
 		add_child(prop)
 	for i in range(CHEST_COUNT):
 		var chest := preload("res://scenes/TreasureChest.tscn").instantiate()
-		chest.global_position = _random_cell_safe_pos(300.0) if in_corridors else _random_arena_pos(300.0)
+		chest.global_position = _random_cell_safe_pos(300.0) if in_grid else _random_arena_pos(300.0)
 		chest.chest_opened.connect(_on_chest_opened)
 		add_child(chest)
 
-	if in_corridors or in_ruins:
+	if in_grid:
 		for i in range(COIN_ALTAR_COUNT):
 			var altar := preload("res://scenes/CoinAltar.tscn").instantiate()
-			altar.global_position = _random_cell_safe_pos(400.0) if in_corridors else _random_arena_pos(400.0)
+			altar.global_position = _random_cell_safe_pos(400.0)
 			add_child(altar)
 
 	if in_ruins:
 		for i in range(RUINS_OBSTACLE_COUNT):
 			var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
-			obstacle.global_position = _random_arena_pos(260.0)
+			obstacle.global_position = _random_cell_safe_pos(260.0)
 			add_child(obstacle)
 		for i in range(LAVA_CRACK_COUNT):
 			var lava := preload("res://scenes/LavaCrack.tscn").instantiate()
-			lava.global_position = _random_arena_pos(220.0)
+			lava.global_position = _random_cell_safe_pos(220.0)
 			lava.scale = Vector2(LAVA_CRACK_SCALE, LAVA_CRACK_SCALE)
 			add_child(lava)
 		for i in range(LAVA_LAKE_COUNT):
 			var lake := preload("res://scenes/LavaLake.tscn").instantiate()
-			lake.global_position = _random_arena_pos(400.0)
+			lake.global_position = _random_cell_safe_pos(400.0)
 			lake.rotation = randf() * TAU
 			add_child(lake)
 
@@ -192,7 +198,7 @@ func _wall_segments_with_gaps(start: float, end: float, gap_centers: Array, gap_
 		segments.append([cursor, end])
 	return segments
 
-func _add_wall_shape(walls_body: StaticBody2D, center: Vector2, size: Vector2) -> void:
+func _add_wall_shape(walls_body: StaticBody2D, center: Vector2, size: Vector2, texture_path: String = "res://assets/sprites/palace_wall.png") -> void:
 	var shape := RectangleShape2D.new()
 	shape.size = size
 	var col := CollisionShape2D.new()
@@ -201,7 +207,7 @@ func _add_wall_shape(walls_body: StaticBody2D, center: Vector2, size: Vector2) -
 	walls_body.add_child(col)
 
 	var sprite := Sprite2D.new()
-	sprite.texture = preload("res://assets/sprites/palace_wall.png")
+	sprite.texture = load(texture_path)
 	sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	sprite.region_enabled = true
 	sprite.region_rect = Rect2(0, 0, size.x, size.y)
@@ -257,6 +263,86 @@ func _spawn_palace_corridors() -> void:
 		var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
 		obstacle.global_position = pos
 		add_child(obstacle)
+
+func _spawn_ruins_maze() -> void:
+	var walls_body := StaticBody2D.new()
+	walls_body.collision_layer = 32
+	walls_body.collision_mask = 0
+	walls_body.name = "RuinsMazeWalls"
+	add_child(walls_body)
+
+	var n: int = RUINS_MAZE_DIVISIONS
+	var half: float = GameState.ARENA_HALF_SIZE
+	var cell: float = (half * 2.0) / float(n)
+
+	var cell_centers: Array = []
+	for i in range(n):
+		cell_centers.append(-half + cell * (i + 0.5))
+	corridor_cell_centers = cell_centers
+	corridor_cell_size = cell
+
+	var visited: Array = []
+	var open_right: Array = []
+	var open_down: Array = []
+	for x in range(n):
+		var vcol: Array = []
+		var rcol: Array = []
+		var dcol: Array = []
+		for y in range(n):
+			vcol.append(false)
+			rcol.append(false)
+			dcol.append(false)
+		visited.append(vcol)
+		open_right.append(rcol)
+		open_down.append(dcol)
+
+	var stack: Array = []
+	var start := Vector2i(randi() % n, randi() % n)
+	visited[start.x][start.y] = true
+	stack.append(start)
+	while not stack.is_empty():
+		var cur: Vector2i = stack[stack.size() - 1]
+		var neighbors: Array = []
+		if cur.x > 0 and not visited[cur.x - 1][cur.y]:
+			neighbors.append(Vector2i(cur.x - 1, cur.y))
+		if cur.x < n - 1 and not visited[cur.x + 1][cur.y]:
+			neighbors.append(Vector2i(cur.x + 1, cur.y))
+		if cur.y > 0 and not visited[cur.x][cur.y - 1]:
+			neighbors.append(Vector2i(cur.x, cur.y - 1))
+		if cur.y < n - 1 and not visited[cur.x][cur.y + 1]:
+			neighbors.append(Vector2i(cur.x, cur.y + 1))
+		if neighbors.is_empty():
+			stack.pop_back()
+			continue
+		var next: Vector2i = neighbors[randi() % neighbors.size()]
+		visited[next.x][next.y] = true
+		if next.x == cur.x + 1:
+			open_right[cur.x][cur.y] = true
+		elif next.x == cur.x - 1:
+			open_right[next.x][next.y] = true
+		elif next.y == cur.y + 1:
+			open_down[cur.x][cur.y] = true
+		else:
+			open_down[next.x][next.y] = true
+		stack.append(next)
+
+	var extra_breaks: int = int(float(n * n) * RUINS_EXTRA_PASSAGE_RATIO)
+	for i in range(extra_breaks):
+		var x: int = randi() % n
+		var y: int = randi() % n
+		if randf() < 0.5 and x < n - 1:
+			open_right[x][y] = true
+		elif y < n - 1:
+			open_down[x][y] = true
+
+	for x in range(n):
+		for y in range(n):
+			var cx: float = -half + cell * (x + 0.5)
+			var cy: float = -half + cell * (y + 0.5)
+			if x < n - 1 and not open_right[x][y]:
+				_add_wall_shape(walls_body, Vector2(cx + cell / 2.0, cy), Vector2(RUINS_WALL_THICKNESS, cell), "res://assets/sprites/ruins_wall.png")
+			if y < n - 1 and not open_down[x][y]:
+				_add_wall_shape(walls_body, Vector2(cx, cy + cell / 2.0), Vector2(cell, RUINS_WALL_THICKNESS), "res://assets/sprites/ruins_wall.png")
 
 func _autosave() -> void:
 	if run_over:

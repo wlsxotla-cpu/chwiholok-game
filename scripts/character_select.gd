@@ -9,6 +9,9 @@ extends Control
 @onready var guide_toggle: Button = $Margin/VBox/CoinsRow/GuideToggle
 @onready var guide_panel: PanelContainer = $Margin/VBox/GuidePanel
 @onready var guide_list: VBoxContainer = $Margin/VBox/GuidePanel/GuideScroll/GuideList
+@onready var pet_toggle: Button = $Margin/VBox/CoinsRow/PetToggle
+@onready var pet_panel: PanelContainer = $Margin/VBox/PetPanel
+@onready var pet_list: VBoxContainer = $Margin/VBox/PetPanel/PetScroll/PetList
 @onready var normal_button: Button = $Margin/VBox/DifficultyRow/NormalButton
 @onready var hard_button: Button = $Margin/VBox/DifficultyRow/HardButton
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
@@ -76,6 +79,8 @@ func _ready() -> void:
 	shop_panel.visible = false
 	guide_toggle.pressed.connect(_on_guide_toggle)
 	guide_panel.visible = false
+	pet_toggle.pressed.connect(_on_pet_toggle)
+	pet_panel.visible = false
 	_build_guide()
 	normal_button.pressed.connect(_on_difficulty_pressed.bind(false))
 	hard_button.pressed.connect(_on_difficulty_pressed.bind(true))
@@ -141,6 +146,7 @@ func _refresh_all() -> void:
 			continue
 		grid.add_child(_build_card(char_data))
 	_refresh_shop()
+	_refresh_pets()
 
 func _build_card(data: Dictionary) -> Control:
 	var panel := PanelContainer.new()
@@ -255,12 +261,21 @@ func _on_shop_toggle() -> void:
 	shop_panel.visible = not shop_panel.visible
 	if shop_panel.visible:
 		guide_panel.visible = false
+		pet_panel.visible = false
 
 func _on_guide_toggle() -> void:
 	SoundManager.play("click")
 	guide_panel.visible = not guide_panel.visible
 	if guide_panel.visible:
 		shop_panel.visible = false
+		pet_panel.visible = false
+
+func _on_pet_toggle() -> void:
+	SoundManager.play("click")
+	pet_panel.visible = not pet_panel.visible
+	if pet_panel.visible:
+		shop_panel.visible = false
+		guide_panel.visible = false
 
 func _build_guide() -> void:
 	_add_guide_header("기본 무기")
@@ -371,15 +386,29 @@ func _refresh_shop() -> void:
 		c.queue_free()
 	for id in GameState.META_DEFS.keys():
 		shop_list.add_child(_build_shop_row(id))
-	for id in GameState.PET_DEFS.keys():
-		shop_list.add_child(_build_pet_row(id))
 
-func _build_pet_row(id: String) -> Control:
+func _refresh_pets() -> void:
+	for c in pet_list.get_children():
+		c.queue_free()
+	for id in GameState.PET_DEFS.keys():
+		pet_list.add_child(_build_pet_card(id))
+
+func _build_pet_card(id: String) -> Control:
 	var def: Dictionary = GameState.PET_DEFS[id]
 	var owned: bool = GameState.has_pet(id)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 14)
+
+	var icon := TextureRect.new()
+	if def.has("sprite"):
+		icon.texture = load(def.sprite)
+	icon.custom_minimum_size = Vector2(56, 56)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	if not owned:
+		icon.modulate = Color(0.6, 0.6, 0.6, 1)
+	row.add_child(icon)
 
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -388,6 +417,8 @@ func _build_pet_row(id: String) -> Control:
 	var name_label := Label.new()
 	name_label.text = "%s (동료)" % def.name
 	name_label.add_theme_font_size_override("font_size", 19)
+	if owned:
+		name_label.add_theme_color_override("font_color", Color(0.91, 0.71, 0.24, 1))
 	info.add_child(name_label)
 
 	var desc_label := Label.new()
@@ -405,7 +436,7 @@ func _build_pet_row(id: String) -> Control:
 		buy_btn.text = "내공 전부(%d)" % GameState.total_coins
 		buy_btn.disabled = not GameState.can_buy_pet(id)
 	buy_btn.pressed.connect(_on_pet_buy_pressed.bind(id))
-	row.add_child(buy_btn)
+	info.add_child(buy_btn)
 
 	return row
 
@@ -465,7 +496,7 @@ func _current_bonus_text(id: String, lvl: int) -> String:
 		"dmg":
 			return "공격력 +%d%%" % (7 * lvl)
 		"move":
-			return "이동속도 +%d%%" % (6 * lvl)
+			return "이동속도 +%d%%" % (4 * lvl)
 		"pickup":
 			return "수집 반경 +%d%%" % (10 * lvl)
 		"revive_slots":

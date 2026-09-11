@@ -52,6 +52,15 @@ func _attack() -> void:
 	nearest.take_damage(99999.0 if executed else DAMAGE)
 
 	SoundManager.play("hit", 2.0, 1.3)
+	var to_target: Vector2 = nearest.global_position - global_position
+	var beam := preload("res://scenes/BeamEffect.tscn").instantiate()
+	container.add_child(beam)
+	beam.global_position = global_position
+	beam.setup(to_target.normalized(), to_target.length(), 6.0, false)
+	beam.fill_color = Color(0.4, 1.7, 0.6, 0.55)
+	beam.core_color = Color(0.8, 1.0, 0.8, 1.0)
+	beam.queue_redraw()
+
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
 	container.add_child(fx)
 	fx.global_position = nearest.global_position

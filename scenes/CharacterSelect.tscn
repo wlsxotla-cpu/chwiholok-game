@@ -217,6 +217,18 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_guide_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_guide_hover")
 text = "무기 도감"
 
+[node name="PetToggle" type="Button" parent="Margin/VBox/CoinsRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+theme_override_font_sizes/font_size = 22
+theme_override_colors/font_color = Color(0.15, 0.1, 0.03, 1)
+theme_override_colors/font_hover_color = Color(0.15, 0.1, 0.03, 1)
+theme_override_colors/font_pressed_color = Color(0.95, 0.9, 0.75, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_shop_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_shop_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_shop_pressed")
+text = "펫"
+
 [node name="ShopPanel" type="PanelContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
@@ -225,6 +237,19 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_diff_normal")
 [node name="ShopList" type="VBoxContainer" parent="Margin/VBox/ShopPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
+
+[node name="PetPanel" type="PanelContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+custom_minimum_size = Vector2(0, 260)
+theme_override_styles/panel = SubResource("StyleBoxFlat_diff_normal")
+
+[node name="PetScroll" type="ScrollContainer" parent="Margin/VBox/PetPanel"]
+layout_mode = 2
+
+[node name="PetList" type="VBoxContainer" parent="Margin/VBox/PetPanel/PetScroll"]
+layout_mode = 2
+theme_override_constants/separation = 14
 
 [node name="GuidePanel" type="PanelContainer" parent="Margin/VBox"]
 visible = false

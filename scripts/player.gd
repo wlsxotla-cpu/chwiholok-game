@@ -222,7 +222,7 @@ func _apply_meta_upgrades() -> void:
 	var meta: Dictionary = GameState.meta_upgrades
 	max_health += 15.0 * float(meta.get("hp", 0))
 	global_damage_mult *= (1.0 + 0.07 * float(meta.get("dmg", 0)))
-	speed *= (1.0 + 0.06 * float(meta.get("move", 0)))
+	speed *= (1.0 + 0.04 * float(meta.get("move", 0)))
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)))
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 
@@ -690,37 +690,29 @@ func _fire_curse(w: Dictionary) -> void:
 		screen_shake(2.0, 0.08)
 
 func _fire_cataclysm_fury(w: Dictionary) -> void:
-	var radius: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
-	var knockback: float = _weapon_stat(w, "knockback")
 	var count: int = int(_weapon_stat(w, "count"))
 	var maxed: bool = _is_maxed(w)
-	var hit_any := false
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var to_e: Vector2 = e.global_position - global_position
-		if to_e.length() <= radius:
-			e.take_damage(damage)
-			if e.has_method("apply_knockback") and to_e.length() > 0.001:
-				e.apply_knockback(to_e.normalized() * knockback)
-			hit_any = true
-	if hit_any:
-		screen_shake(6.0, 0.2)
-	SoundManager.play("attack_melee", -1.0, 0.55)
-	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
-	get_parent().add_child(fx)
-	fx.global_position = global_position
-	fx.modulate = Color(1.3, 0.55, 1.6, 1.0)
-	fx.set_radius(radius, maxed)
 
-	var far_enemies: Array = get_tree().get_nodes_in_group("enemies").filter(
-		func(e: Node) -> bool:
-			var d: float = global_position.distance_to(e.global_position)
-			return d > radius and d <= TARGET_SEARCH_RANGE
+	var target := _find_nearest_enemy()
+	var dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
+	var perp: Vector2 = dir.orthogonal()
+	for i in range(count):
+		var lane: float = float(i) - float(count - 1) / 2.0
+		var start_pos: Vector2 = global_position + perp * lane * FIST_LANE_SPACING
+		var fist := preload("res://scenes/FistBullet.tscn").instantiate()
+		get_parent().add_child(fist)
+		fist.global_position = start_pos
+		fist.setup(start_pos + dir * FIST_RANGE, damage, maxed)
+		fist.modulate = Color(1.3, 0.6, 1.7, 1.0)
+
+	var enemies: Array = get_tree().get_nodes_in_group("enemies").filter(
+		func(e: Node) -> bool: return global_position.distance_to(e.global_position) <= TARGET_SEARCH_RANGE
 	)
-	far_enemies.shuffle()
+	enemies.shuffle()
 	var struck: int = 0
-	for e in far_enemies:
-		e.take_damage(damage * 0.6)
+	for e in enemies:
+		e.take_damage(damage * 0.75)
 		var curse_fx := preload("res://scenes/LightningEffect.tscn").instantiate()
 		get_parent().add_child(curse_fx)
 		curse_fx.global_position = e.global_position
@@ -729,6 +721,8 @@ func _fire_cataclysm_fury(w: Dictionary) -> void:
 		struck += 1
 		if struck >= count:
 			break
+	SoundManager.play("attack_fireball", -2.0, 0.75)
+	screen_shake(3.0, 0.12)
 
 func _get_weapon(id: String) -> Dictionary:
 	for w in weapons:
