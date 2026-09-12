@@ -449,7 +449,8 @@ func _build_pet_card(id: String) -> Control:
 	info.add_child(name_label)
 
 	var desc_label := Label.new()
-	desc_label.text = "내공 %d 소모해 영입. 이후 모든 판에 함께 등장해 주기적으로 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌" % GameState.PET_COST
+	var pet_script = preload("res://scripts/pet.gd")
+	desc_label.text = "내공 %d 소모해 영입. 이후 모든 판에 함께 등장해 %d초마다 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌" % [GameState.PET_COST, int(pet_script.SUPPORT_INTERVAL)]
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	desc_label.add_theme_font_size_override("font_size", 14)
 	desc_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))

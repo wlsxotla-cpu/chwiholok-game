@@ -677,6 +677,9 @@ func _fire_swordshield(w: Dictionary) -> void:
 		bullet.setup(global_position + dir * travel, damage, maxed)
 		bullet.modulate = bolt_tint
 		if is_flame:
+			var bolt_sprite: Sprite2D = bullet.get_node("Sprite2D")
+			bolt_sprite.texture = preload("res://assets/sprites/orbit_blade.png")
+			bolt_sprite.scale = Vector2(0.55, 0.55)
 			bullet.leaves_fire_zone = true
 			bullet.fire_zone_damage = damage * 0.35
 			bullet.fire_zone_duration = zone_duration
