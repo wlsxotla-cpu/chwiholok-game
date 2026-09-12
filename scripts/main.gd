@@ -25,6 +25,7 @@ var run_over: bool = false
 var tracked_boss: Node = null
 var has_tracked_boss: bool = false
 var current_overlord_name: String = "천마"
+var run_kill_count: int = 0
 const AUTOSAVE_INTERVAL := 15.0
 var autosave_timer: float = AUTOSAVE_INTERVAL
 const METEOR_INTERVAL_BASE := 6.5
@@ -514,6 +515,7 @@ func _spawn_enemy() -> void:
 	pos.x = clamp(pos.x, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	enemy.global_position = pos
+	enemy.died.connect(func() -> void: run_kill_count += 1)
 	add_child(enemy)
 
 func _spawn_boss() -> void:
@@ -543,6 +545,7 @@ func _spawn_boss() -> void:
 	pos.x = clamp(pos.x, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	boss.global_position = pos
+	boss.died.connect(func() -> void: run_kill_count += 1)
 	add_child(boss)
 	if not has_tracked_boss or not is_instance_valid(tracked_boss) or tracked_boss.type != Enemy.Type.OVERLORD:
 		tracked_boss = boss
@@ -566,6 +569,7 @@ func _spawn_horde() -> void:
 		pos.x = clamp(pos.x, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 		pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 		enemy.global_position = pos
+		enemy.died.connect(func() -> void: run_kill_count += 1)
 		add_child(enemy)
 	hud.show_horde_warning()
 	SoundManager.play("explosion", -2.0, 0.85)
@@ -596,6 +600,7 @@ func _spawn_overlord() -> void:
 	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	overlord.global_position = pos
 	overlord.overlord_defeated.connect(_on_overlord_defeated)
+	overlord.died.connect(func() -> void: run_kill_count += 1)
 	add_child(overlord)
 	tracked_boss = overlord
 	has_tracked_boss = true
@@ -648,30 +653,42 @@ func _on_overlord_defeated() -> void:
 	if player.has_method("screen_shake"):
 		player.screen_shake(14.0, 0.6)
 	run_over = true
+	var summary: String = _build_run_summary()
 	GameState.add_run_coins(player.coins)
 	GameState.clear_run_state()
-	var ranking_note: String = ""
-	if GameState.dev_mode:
-		ranking_note = "관리자 모드 - 랭킹 미등록"
-	elif GameState.player_nickname.is_empty():
-		ranking_note = "닉네임 미설정 - 랭킹 미등록"
-	else:
-		ranking_note = "랭킹 등록 중..."
-		RankingService.submit_clear(GameState.selected_map, GameState.player_nickname, elapsed, GameState.selected_character, GameState.mode_id())
-		RankingService.submit_finished.connect(func(success: bool) -> void:
-			hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT)
+	var ranking_note: String = _handle_ranking_submission(true, elapsed)
 	get_tree().paused = true
-	hud.show_victory(elapsed, current_overlord_name, ranking_note)
+	hud.show_victory(elapsed, current_overlord_name, ranking_note, summary)
+	_offer_ranking_nickname_prompt_if_needed(true, elapsed)
 
-	if not GameState.dev_mode and GameState.player_nickname.is_empty():
-		var clear_time: float = elapsed
-		var map_id: String = GameState.selected_map
-		var char_id: String = GameState.selected_character
-		var mode_id: String = GameState.mode_id()
-		hud.show_ranking_nickname_prompt(func(nick: String) -> void:
-			RankingService.submit_clear(map_id, nick, clear_time, char_id, mode_id)
-			RankingService.submit_finished.connect(func(success: bool) -> void:
-				hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT))
+func _build_run_summary() -> String:
+	var weapon_parts: PackedStringArray = []
+	for w in player.weapons:
+		var wname: String = GameState.WEAPON_NAMES.get(w.id, w.id)
+		weapon_parts.append("%s Lv.%d" % [wname, w.level])
+	var weapons_text: String = ", ".join(weapon_parts) if weapon_parts.size() > 0 else "-"
+	return "처치 %d마리 · 획득 내공 %d\n무기: %s" % [run_kill_count, player.coins, weapons_text]
+
+func _handle_ranking_submission(cleared: bool, time_seconds: float) -> String:
+	if GameState.dev_mode:
+		return "관리자 모드 - 랭킹 미등록"
+	if GameState.player_nickname.is_empty():
+		return "닉네임 미설정 - 랭킹 미등록"
+	RankingService.submit_run(GameState.selected_map, GameState.player_nickname, time_seconds, GameState.selected_character, GameState.mode_id(), cleared)
+	RankingService.submit_finished.connect(func(success: bool) -> void:
+		hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT)
+	return "랭킹 등록 중..."
+
+func _offer_ranking_nickname_prompt_if_needed(cleared: bool, time_seconds: float) -> void:
+	if GameState.dev_mode or not GameState.player_nickname.is_empty():
+		return
+	var map_id: String = GameState.selected_map
+	var char_id: String = GameState.selected_character
+	var mode_id: String = GameState.mode_id()
+	hud.show_ranking_nickname_prompt(func(nick: String) -> void:
+		RankingService.submit_run(map_id, nick, time_seconds, char_id, mode_id, cleared)
+		RankingService.submit_finished.connect(func(success: bool) -> void:
+			hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT))
 
 func screen_shake_all() -> void:
 	if player.has_method("screen_shake"):
@@ -752,10 +769,13 @@ func _update_hud() -> void:
 
 func _on_player_died() -> void:
 	run_over = true
+	var summary: String = _build_run_summary()
 	GameState.add_run_coins(player.coins)
 	GameState.clear_run_state()
+	var ranking_note: String = _handle_ranking_submission(false, elapsed)
 	get_tree().paused = true
-	hud.show_game_over(elapsed)
+	hud.show_game_over(elapsed, ranking_note, summary)
+	_offer_ranking_nickname_prompt_if_needed(false, elapsed)
 
 func _on_restart_pressed() -> void:
 	get_tree().paused = false

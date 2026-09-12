@@ -48,6 +48,7 @@ const QI_CANNON_ATTACK_INTERVAL := 3.0
 
 signal overlord_defeated
 signal samahoek_defeated
+signal died
 
 var aura_timer: float = 0.0
 
@@ -371,6 +372,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0.0:
 		SoundManager.play("death", -4.0, randf_range(0.9, 1.1))
 		_drop_loot()
+		died.emit()
 		if type == Type.OVERLORD:
 			overlord_defeated.emit()
 		elif type == Type.BOSS and use_curse_attack:

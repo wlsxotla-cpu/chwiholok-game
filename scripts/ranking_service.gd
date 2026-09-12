@@ -5,6 +5,7 @@ const FIREBASE_API_KEY := "AIzaSyByP61m-es8wZnxKLYoAbUpoJSVYJDKf7Y"
 
 const MIN_CLEAR_TIME := 20.0
 const MAX_CLEAR_TIME := 7200.0
+const SURVIVAL_SCORE_OFFSET := 100000.0
 
 signal top_fetched(map_id: String, mode_id: String, entries: Array)
 signal submit_finished(success: bool)
@@ -20,21 +21,26 @@ func _base_url() -> String:
 	return "https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents" % FIREBASE_PROJECT_ID
 
 func submit_clear(map_id: String, nickname: String, clear_time: float, character_id: String, mode_id: String = "normal") -> void:
+	submit_run(map_id, nickname, clear_time, character_id, mode_id, true)
+
+func submit_run(map_id: String, nickname: String, time_seconds: float, character_id: String, mode_id: String, cleared: bool) -> void:
 	if not is_configured():
 		return
-	if clear_time < MIN_CLEAR_TIME or clear_time > MAX_CLEAR_TIME:
+	if time_seconds < MIN_CLEAR_TIME or time_seconds > MAX_CLEAR_TIME:
 		return
 	var clean_nick: String = nickname.strip_edges().substr(0, 12)
 	if clean_nick.is_empty():
 		return
 
+	var score: float = time_seconds if cleared else (SURVIVAL_SCORE_OFFSET - time_seconds)
 	var body := {
 		"fields": {
 			"map": {"stringValue": map_id},
 			"mode": {"stringValue": mode_id},
 			"nickname": {"stringValue": clean_nick},
 			"character": {"stringValue": character_id},
-			"clearTimeSeconds": {"doubleValue": clear_time},
+			"cleared": {"booleanValue": cleared},
+			"clearTimeSeconds": {"doubleValue": score},
 		}
 	}
 	var req := HTTPRequest.new()
@@ -106,9 +112,13 @@ func _parse_top_response(code: int, resp_body: PackedByteArray) -> Array:
 		if typeof(row) != TYPE_DICTIONARY or not row.has("document"):
 			continue
 		var f: Dictionary = row.document.get("fields", {})
+		var cleared: bool = bool(f.get("cleared", {}).get("booleanValue", true))
+		var score: float = float(f.get("clearTimeSeconds", {}).get("doubleValue", 0.0))
+		var display_time: float = score if cleared else (SURVIVAL_SCORE_OFFSET - score)
 		entries.append({
 			"nickname": f.get("nickname", {}).get("stringValue", "???"),
 			"character": f.get("character", {}).get("stringValue", ""),
-			"clearTimeSeconds": float(f.get("clearTimeSeconds", {}).get("doubleValue", 0.0)),
+			"clearTimeSeconds": display_time,
+			"cleared": cleared,
 		})
 	return entries

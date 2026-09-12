@@ -720,6 +720,12 @@ func _on_ranking_top_fetched(map_id: String, mode_id: String, entries: Array) ->
 		name_label.size_flags_horizontal = SIZE_EXPAND_FILL
 		name_label.add_theme_font_size_override("font_size", 15)
 		row.add_child(name_label)
+		var cleared: bool = bool(e.get("cleared", true))
+		var tag_label := Label.new()
+		tag_label.text = "클리어" if cleared else "생존"
+		tag_label.add_theme_font_size_override("font_size", 12)
+		tag_label.add_theme_color_override("font_color", Color(0.95, 0.8, 0.35, 1) if cleared else Color(0.65, 0.62, 0.58, 1))
+		row.add_child(tag_label)
 		var time_label := Label.new()
 		var t: float = float(e.get("clearTimeSeconds", 0.0))
 		time_label.text = "%d분 %02d초" % [int(t) / 60, int(t) % 60]

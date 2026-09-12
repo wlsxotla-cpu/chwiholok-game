@@ -30,6 +30,7 @@ signal altar_offer_declined
 ]
 @onready var reroll_button: Button = $LevelUpPanel/VBox/RerollButton
 @onready var end_label: Label = $EndLabel
+@onready var summary_label: Label = $SummaryLabel
 @onready var continue_panel: Panel = $ContinuePanel
 @onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
 @onready var continue_confirm_button: Button = $ContinuePanel/VBox/ConfirmButton
@@ -87,6 +88,7 @@ const PASSIVE_NAMES := Guide.PASSIVE_NAMES
 func _ready() -> void:
 	level_up_panel.visible = false
 	end_label.visible = false
+	summary_label.visible = false
 	restart_button.visible = false
 	menu_button.visible = false
 	pause_panel.visible = false
@@ -708,21 +710,29 @@ func show_altar_offer(cost: int, available: int) -> void:
 func hide_altar_offer() -> void:
 	altar_offer_panel.visible = false
 
-func show_game_over(t: float) -> void:
+func show_game_over(t: float, ranking_note: String = "", summary: String = "") -> void:
 	end_label.text = "쓰러졌다...\n생존 시간 %02d:%02d" % [int(t) / 60, int(t) % 60]
+	if ranking_note != "":
+		end_label.text += "\n" + ranking_note
+	_show_end_summary(summary)
 	end_label.visible = true
 	restart_button.visible = true
 	menu_button.visible = true
 	pause_button.visible = false
 
-func show_victory(t: float, boss_name: String, ranking_note: String = "") -> void:
+func show_victory(t: float, boss_name: String, ranking_note: String = "", summary: String = "") -> void:
 	end_label.text = "%s 격파! 천하제일이 되었다!\n클리어 시간 %02d:%02d" % [boss_name, int(t) / 60, int(t) % 60]
 	if ranking_note != "":
 		end_label.text += "\n" + ranking_note
+	_show_end_summary(summary)
 	end_label.visible = true
 	restart_button.visible = true
 	menu_button.visible = true
 	pause_button.visible = false
+
+func _show_end_summary(summary: String) -> void:
+	summary_label.text = summary
+	summary_label.visible = summary != ""
 
 func set_ranking_note(note: String) -> void:
 	var lines: PackedStringArray = end_label.text.split("\n")
