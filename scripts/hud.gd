@@ -524,14 +524,23 @@ func set_weapons(weapons: Array) -> void:
 		var icon_path: String = WEAPON_ICONS.get(w.id, "")
 		if icon_path == "":
 			continue
+		var slot_btn := Button.new()
+		slot_btn.flat = true
+		slot_btn.focus_mode = Control.FOCUS_NONE
+		slot_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+		slot_btn.pressed.connect(_on_weapon_slot_pressed.bind(w.id))
+
 		var slot := VBoxContainer.new()
 		slot.alignment = BoxContainer.ALIGNMENT_CENTER
 		slot.add_theme_constant_override("separation", 0)
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot_btn.add_child(slot)
 
 		var evolved: bool = w.get("evolved", false)
 
 		var icon_wrap := Control.new()
 		icon_wrap.custom_minimum_size = Vector2(36, 36)
+		icon_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(icon_wrap)
 
 		var icon := TextureRect.new()
@@ -539,6 +548,7 @@ func set_weapons(weapons: Array) -> void:
 		icon.custom_minimum_size = Vector2(36, 36)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if evolved:
 			icon.modulate = Color(1.5, 1.25, 0.6, 1.0)
 		icon_wrap.add_child(icon)
@@ -549,6 +559,7 @@ func set_weapons(weapons: Array) -> void:
 				var combo_dot := Control.new()
 				combo_dot.size = Vector2(10, 10)
 				combo_dot.position = Vector2(27, -1)
+				combo_dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				var dot_color: Color = Color(1.0, 0.85, 0.3, 1.0) if combo_state == "close" else Color(0.6, 0.6, 0.6, 0.9)
 				combo_dot.draw.connect(func() -> void:
 					combo_dot.draw_circle(Vector2(5, 5), 5.0, dot_color)
@@ -566,9 +577,10 @@ func set_weapons(weapons: Array) -> void:
 		lvl_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lvl_label.add_theme_font_size_override("font_size", 13)
 		lvl_label.add_theme_color_override("font_color", Color(0.95, 0.78, 0.3, 1) if maxed else Color(0.85, 0.8, 0.72, 1))
+		lvl_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(lvl_label)
 
-		weapon_row.add_child(slot)
+		weapon_row.add_child(slot_btn)
 
 func _fusion_combo_state(w: Dictionary, owned_ids: Dictionary) -> String:
 	for fused_id in Guide.FUSION_PAIRS.keys():
@@ -583,6 +595,98 @@ func _fusion_combo_state(w: Dictionary, owned_ids: Dictionary) -> String:
 			return ""
 		return "close"
 	return ""
+
+func _on_weapon_slot_pressed(wid: String) -> void:
+	var w: Dictionary = {}
+	for cw in current_weapons:
+		if cw.id == wid:
+			w = cw
+			break
+	if w.is_empty():
+		return
+	SoundManager.play("click")
+	_show_weapon_fusion_info(w)
+
+func _show_weapon_fusion_info(w: Dictionary) -> void:
+	var was_paused: bool = get_tree().paused
+	get_tree().paused = true
+	var overlay := ColorRect.new()
+	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	overlay.color = Color(0, 0, 0, 0.75)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var box := PanelContainer.new()
+	box.process_mode = Node.PROCESS_MODE_ALWAYS
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.custom_minimum_size = Vector2(290, 60)
+	box.position = Vector2(-145, -100)
+	overlay.add_child(box)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	box.add_child(vbox)
+
+	var evolved: bool = w.get("evolved", false)
+	var maxed: bool = int(w.level) >= MAX_WEAPON_LEVEL
+
+	var name_label := Label.new()
+	name_label.text = Guide.WEAPON_NAMES.get(w.id, w.id)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(name_label)
+
+	var lvl_text := Label.new()
+	lvl_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lvl_text.add_theme_font_size_override("font_size", 13)
+	lvl_text.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	lvl_text.text = "진화 완료" if evolved else ("Lv.%d%s" % [int(w.level), " (만렙)" if maxed else ""])
+	vbox.add_child(lvl_text)
+
+	var info_label := Label.new()
+	info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	info_label.add_theme_font_size_override("font_size", 14)
+	info_label.add_theme_color_override("font_color", Color(0.9, 0.86, 0.8, 1))
+
+	var owned_ids: Dictionary = {}
+	for cw2 in current_weapons:
+		owned_ids[cw2.id] = cw2
+
+	var found_pair := false
+	for fused_id in Guide.FUSION_PAIRS.keys():
+		var pair: Array = Guide.FUSION_PAIRS[fused_id]
+		if not pair.has(w.id):
+			continue
+		found_pair = true
+		var partner_id: String = pair[1] if pair[0] == w.id else pair[0]
+		var partner_name: String = Guide.WEAPON_NAMES.get(partner_id, partner_id)
+		var fused_name: String = Guide.WEAPON_NAMES.get(fused_id, fused_id)
+		if evolved:
+			info_label.text = "이미 진화한 무기라 융합할 수 없습니다."
+		elif not owned_ids.has(partner_id):
+			info_label.text = "'%s'와(과) 각각 Lv.%d(만렙)이 되면 '%s'(으)로 합쳐집니다.\n(%s 아직 미보유)" % [partner_name, MAX_WEAPON_LEVEL, fused_name, partner_name]
+		else:
+			var partner: Dictionary = owned_ids[partner_id]
+			if maxed and int(partner.level) >= MAX_WEAPON_LEVEL:
+				info_label.text = "'%s'와(과) 융합 준비 완료!\n다음 레벨업 시 '%s'(으)로 합쳐집니다." % [partner_name, fused_name]
+			else:
+				info_label.text = "'%s'와(과) 각각 Lv.%d(만렙)이 되면 '%s'(으)로 합쳐집니다.\n(현재 %s Lv.%d)" % [partner_name, MAX_WEAPON_LEVEL, fused_name, partner_name, int(partner.level)]
+		break
+	if not found_pair:
+		info_label.text = "이미 진화한 무기입니다." if evolved else "이 무기는 융합 대상이 없습니다."
+	vbox.add_child(info_label)
+
+	var close_btn := Button.new()
+	close_btn.text = "닫기"
+	close_btn.custom_minimum_size = Vector2(0, 48)
+	vbox.add_child(close_btn)
+	close_btn.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		if not was_paused:
+			get_tree().paused = false
+		overlay.queue_free())
 
 func set_passives(owned_passives: Dictionary) -> void:
 	current_passives = owned_passives
@@ -699,9 +803,12 @@ func show_fusion_offer(fid: String, wid: String, partner: String) -> void:
 	fusion_desc_label.text = "%s + %s를 합쳐서 %s로 만드시겠습니까?" % [a_name, b_name, result_name]
 	fusion_offer_panel.visible = true
 
-func show_continue_offer(cost: int, available: int) -> void:
+const PlayerScript = preload("res://scripts/player.gd")
+
+func show_continue_offer(cost: int, available: int, remaining: int) -> void:
 	var can_afford: bool = available >= cost
-	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 내공: %d)" % [cost, available]
+	var lockout: int = int(PlayerScript.CONTINUE_LOCKOUT_DURATION)
+	continue_cost_label.text = "내공 %d을 써서 계속하시겠습니까?\n(보유 %d · 남은 이어하기 %d회)\n※ 이어하기 후 %d초 안엔 재이어하기 불가" % [cost, available, remaining, lockout]
 	continue_confirm_button.disabled = not can_afford
 	continue_confirm_button.text = "계속하기" if can_afford else "내공 부족"
 	continue_panel.visible = true

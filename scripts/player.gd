@@ -8,7 +8,7 @@ signal leveled_up(options: Array)
 signal weapon_evolved(weapon_name: String)
 signal weapon_fused(weapon_name: String)
 signal revived
-signal continue_offered(cost: int, available: int)
+signal continue_offered(cost: int, available: int, remaining: int)
 signal fusion_offered(fid: String, wid: String, partner: String)
 
 const MAX_WEAPON_LEVEL := 8
@@ -355,6 +355,22 @@ func _find_nearest_enemy() -> Node2D:
 			nearest = e
 	return nearest
 
+func _find_boss_priority_target() -> Node2D:
+	var enemies := get_tree().get_nodes_in_group("enemies")
+	var nearest_boss: Node2D = null
+	var nearest_boss_dist := TARGET_SEARCH_RANGE
+	var nearest_any: Node2D = null
+	var nearest_any_dist := TARGET_SEARCH_RANGE
+	for e in enemies:
+		var d: float = global_position.distance_to(e.global_position)
+		if d < nearest_any_dist:
+			nearest_any_dist = d
+			nearest_any = e
+		if e is Enemy and (e.type == Enemy.Type.BOSS or e.type == Enemy.Type.OVERLORD) and d < nearest_boss_dist:
+			nearest_boss_dist = d
+			nearest_boss = e
+	return nearest_boss if nearest_boss != null else nearest_any
+
 func _level_mult(lvl: int, per_level: float) -> float:
 	var full_steps: int = min(lvl - 1, SOFT_CAP_LEVEL - 1)
 	var soft_steps: int = max(0, lvl - SOFT_CAP_LEVEL)
@@ -486,7 +502,7 @@ func _fire_thunder_formation(w: Dictionary) -> void:
 	_fire_lightning(w)
 
 func _fire_beam(w: Dictionary) -> void:
-	var target := _find_nearest_enemy()
+	var target := _find_boss_priority_target()
 	var dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
 	var length: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
@@ -808,7 +824,7 @@ func take_damage(amount: float, bypass_invincibility: bool = false) -> void:
 		if continues_used < max_continues and continue_lockout_timer <= 0.0:
 			health = 0.0
 			get_tree().paused = true
-			continue_offered.emit(_continue_cost(), GameState.total_coins + coins)
+			continue_offered.emit(_continue_cost(), GameState.total_coins + coins, max_continues - continues_used)
 			return
 		health = 0.0
 		died.emit()
