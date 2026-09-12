@@ -108,7 +108,12 @@ const REVIVE_HEALTH_FRACTION := 0.5
 const PARRY_COOLDOWN := 1.2
 var invincible_timer: float = 0.0
 var parry_timer: float = 0.0
-var shield_charges: int = 0
+var shield_charges: int = 0:
+	set(value):
+		shield_charges = value
+		if shield_visual != null:
+			shield_visual.visible = shield_charges > 0
+var shield_visual: Node2D = null
 const CONTINUE_LOCKOUT_DURATION := 8.0
 var continue_lockout_timer: float = 0.0
 var continues_used: int = 0
@@ -137,6 +142,12 @@ func _ready() -> void:
 	anim.sprite_frames = _build_sprite_frames(char_data.walk_sheet)
 	anim.play("walk_down")
 	anim.stop()
+
+	shield_visual = Node2D.new()
+	shield_visual.z_index = 5
+	shield_visual.visible = false
+	shield_visual.draw.connect(_draw_shield_visual)
+	add_child(shield_visual)
 
 	if GameState.resuming_run:
 		restore_state(GameState.pending_run_data)
@@ -307,6 +318,16 @@ func _physics_process(delta: float) -> void:
 
 	if continue_lockout_timer > 0.0:
 		continue_lockout_timer -= delta
+
+	if shield_visual.visible:
+		shield_visual.queue_redraw()
+
+func _draw_shield_visual() -> void:
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var pulse: float = 0.9 + sin(t * 5.0) * 0.1
+	var radius: float = 30.0 * pulse
+	shield_visual.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 32, Color(0.25, 0.85, 0.45, 0.3), 11.0, true)
+	shield_visual.draw_arc(Vector2.ZERO, radius, 0.0, TAU, 32, Color(0.2, 1.0, 0.4, 1.0), 3.5, true)
 
 func screen_shake(strength: float, duration: float) -> void:
 	shake_strength = max(shake_strength, strength)
