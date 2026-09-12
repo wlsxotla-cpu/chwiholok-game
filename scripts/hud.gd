@@ -729,3 +729,91 @@ func set_ranking_note(note: String) -> void:
 	else:
 		lines.append(note)
 	end_label.text = "\n".join(lines)
+
+func show_ranking_nickname_prompt(on_registered: Callable) -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.75)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(overlay)
+
+	var box := PanelContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.custom_minimum_size = Vector2(300, 60)
+	box.position = Vector2(-150, -110)
+	overlay.add_child(box)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	box.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "랭킹에 등록하려면 닉네임이 필요해요"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD
+	title.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(title)
+
+	var edit := LineEdit.new()
+	edit.placeholder_text = "닉네임 (최대 12자)"
+	edit.max_length = 12
+	edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(edit)
+
+	var status := Label.new()
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD
+	status.add_theme_font_size_override("font_size", 13)
+	status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	vbox.add_child(status)
+
+	var confirm_btn := Button.new()
+	confirm_btn.text = "등록하고 랭킹 저장"
+	confirm_btn.custom_minimum_size = Vector2(0, 48)
+	vbox.add_child(confirm_btn)
+
+	var skip_btn := Button.new()
+	skip_btn.text = "괜찮아요 (랭킹 미참여)"
+	skip_btn.flat = true
+	vbox.add_child(skip_btn)
+
+	skip_btn.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		GameState.mark_nickname_prompt_shown()
+		overlay.queue_free())
+
+	confirm_btn.pressed.connect(func() -> void:
+		var nick: String = edit.text.strip_edges()
+		if nick.is_empty():
+			status.text = "닉네임을 입력해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		confirm_btn.disabled = true
+		status.text = "확인 중..."
+		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+		RankingService.claim_nickname(nick))
+
+	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
+		if not is_instance_valid(confirm_btn):
+			return
+		confirm_btn.disabled = false
+		if success:
+			GameState.set_nickname(nick)
+			GameState.mark_nickname_prompt_shown()
+			status.text = "등록 완료! 랭킹 제출 중..."
+			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
+			SoundManager.play("levelup", 3.0, 1.2)
+			on_registered.call(nick)
+			await get_tree().create_timer(0.6).timeout
+			if is_instance_valid(overlay):
+				overlay.queue_free()
+		elif reason == "taken":
+			status.text = "이미 사용 중인 닉네임입니다"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason != "empty":
+			status.text = "네트워크 오류, 다시 시도해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
+
+	edit.grab_focus()
+	edit.text_submitted.connect(func(_t: String) -> void: confirm_btn.pressed.emit())

@@ -10,6 +10,9 @@ signal top_fetched(map_id: String, entries: Array)
 signal submit_finished(success: bool)
 signal nickname_claim_result(success: bool, nickname: String, reason: String)
 
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 func is_configured() -> bool:
 	return FIREBASE_PROJECT_ID != "YOUR_PROJECT_ID" and FIREBASE_API_KEY != "YOUR_API_KEY"
 

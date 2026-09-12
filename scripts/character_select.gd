@@ -442,7 +442,7 @@ func _build_pet_card(id: String) -> Control:
 	info.add_child(name_label)
 
 	var desc_label := Label.new()
-	desc_label.text = "가진 내공 전부를 소모해 영입. 이후 모든 판에 함께 등장해 주기적으로 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌"
+	desc_label.text = "내공 %d 소모해 영입. 이후 모든 판에 함께 등장해 주기적으로 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌" % GameState.PET_COST
 	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	desc_label.add_theme_font_size_override("font_size", 14)
 	desc_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
@@ -453,7 +453,7 @@ func _build_pet_card(id: String) -> Control:
 		buy_btn.text = "영입 완료"
 		buy_btn.disabled = true
 	else:
-		buy_btn.text = "내공 전부(%d)" % GameState.total_coins
+		buy_btn.text = "내공 %d" % GameState.PET_COST
 		buy_btn.disabled = not GameState.can_buy_pet(id)
 	buy_btn.pressed.connect(_on_pet_buy_pressed.bind(id))
 	info.add_child(buy_btn)

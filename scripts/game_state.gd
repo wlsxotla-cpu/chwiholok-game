@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.45.1 · 2026-09-12"
+const VERSION := "v0.46.0 · 2026-09-12"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -22,7 +22,7 @@ const CHARACTERS := [
 const SAMAHOEK_KILL_TARGET := 15
 const JINAK_CLEAR_TARGET := 3
 
-const PET_MIN_COST := 200
+const PET_COST := 5000
 const PET_DEFS := {
 	"green_spirit": {"name": "초록 정령", "sprite": "res://assets/sprites/pet_spirit_green.png", "offset": Vector2(34, -52)},
 }
@@ -169,13 +169,13 @@ func has_pet(id: String) -> bool:
 	return owned_pets.has(id)
 
 func can_buy_pet(id: String) -> bool:
-	return not has_pet(id) and total_coins >= PET_MIN_COST
+	return not has_pet(id) and total_coins >= PET_COST
 
 func buy_pet(id: String) -> bool:
 	if not can_buy_pet(id):
 		return false
 	owned_pets.append(id)
-	total_coins = 0
+	total_coins -= PET_COST
 	_save_data()
 	return true
 

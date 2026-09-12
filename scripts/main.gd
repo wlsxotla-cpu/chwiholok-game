@@ -87,7 +87,7 @@ func _ready() -> void:
 	_spawn_map_props()
 	hud.set_prop_counts(chests_opened_count, grass_broken_count)
 	if GameState.selected_map == "ruins" and not was_resuming:
-		hud.show_map_event_warning("이 곳에서는 영구 강화 효과가 50% 감소합니다")
+		hud.show_map_event_warning("이 곳에서는 캐릭터 고유 능력치와 영구 강화 효과가 대폭 감소합니다")
 
 func _apply_map_theme() -> void:
 	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
@@ -638,7 +638,7 @@ func _on_overlord_defeated() -> void:
 	if GameState.dev_mode:
 		ranking_note = "관리자 모드 - 랭킹 미등록"
 	elif GameState.player_nickname.is_empty():
-		ranking_note = "닉네임 미설정 - 랭킹 미등록 (설정에서 등록 가능)"
+		ranking_note = "닉네임 미설정 - 랭킹 미등록"
 	else:
 		ranking_note = "랭킹 등록 중..."
 		RankingService.submit_clear(GameState.selected_map, GameState.player_nickname, elapsed, GameState.selected_character)
@@ -646,6 +646,15 @@ func _on_overlord_defeated() -> void:
 			hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT)
 	get_tree().paused = true
 	hud.show_victory(elapsed, current_overlord_name, ranking_note)
+
+	if not GameState.dev_mode and GameState.player_nickname.is_empty():
+		var clear_time: float = elapsed
+		var map_id: String = GameState.selected_map
+		var char_id: String = GameState.selected_character
+		hud.show_ranking_nickname_prompt(func(nick: String) -> void:
+			RankingService.submit_clear(map_id, nick, clear_time, char_id)
+			RankingService.submit_finished.connect(func(success: bool) -> void:
+				hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT))
 
 func screen_shake_all() -> void:
 	if player.has_method("screen_shake"):
