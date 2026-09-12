@@ -3,7 +3,13 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.46.0 · 2026-09-12"
+const VERSION := "v0.47.0 · 2026-09-12"
+
+const MODES := [
+	{"id": "normal", "name": "일반"},
+	{"id": "hard", "name": "하드"},
+	{"id": "fast", "name": "패스트"},
+]
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -41,6 +47,13 @@ func get_map(id: String) -> Dictionary:
 			return m
 	return MAPS[0]
 
+func mode_id() -> String:
+	if fast_mode:
+		return "fast"
+	if hard_mode:
+		return "hard"
+	return "normal"
+
 const WEAPON_NAMES := {
 	"slash": "회전베기",
 	"pierce": "관통시",
@@ -70,6 +83,7 @@ const CONTINUE_COST := 300
 
 var selected_character: String = "ipopol"
 var hard_mode: bool = false
+var fast_mode: bool = false
 var dev_mode: bool = false
 var dev_invincible: bool = false
 var total_coins: int = 0

@@ -6,7 +6,7 @@ const FIREBASE_API_KEY := "AIzaSyByP61m-es8wZnxKLYoAbUpoJSVYJDKf7Y"
 const MIN_CLEAR_TIME := 20.0
 const MAX_CLEAR_TIME := 7200.0
 
-signal top_fetched(map_id: String, entries: Array)
+signal top_fetched(map_id: String, mode_id: String, entries: Array)
 signal submit_finished(success: bool)
 signal nickname_claim_result(success: bool, nickname: String, reason: String)
 
@@ -19,7 +19,7 @@ func is_configured() -> bool:
 func _base_url() -> String:
 	return "https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents" % FIREBASE_PROJECT_ID
 
-func submit_clear(map_id: String, nickname: String, clear_time: float, character_id: String) -> void:
+func submit_clear(map_id: String, nickname: String, clear_time: float, character_id: String, mode_id: String = "normal") -> void:
 	if not is_configured():
 		return
 	if clear_time < MIN_CLEAR_TIME or clear_time > MAX_CLEAR_TIME:
@@ -31,6 +31,7 @@ func submit_clear(map_id: String, nickname: String, clear_time: float, character
 	var body := {
 		"fields": {
 			"map": {"stringValue": map_id},
+			"mode": {"stringValue": mode_id},
 			"nickname": {"stringValue": clean_nick},
 			"character": {"stringValue": character_id},
 			"clearTimeSeconds": {"doubleValue": clear_time},
@@ -66,18 +67,20 @@ func claim_nickname(nickname: String) -> void:
 	var url: String = "%s/nicknames?documentId=%s&key=%s" % [_base_url(), clean_nick.uri_encode(), FIREBASE_API_KEY]
 	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify({"fields": {}}))
 
-func fetch_top(map_id: String, count: int = 10) -> void:
+func fetch_top(map_id: String, mode_id: String = "normal", count: int = 10) -> void:
 	if not is_configured():
-		top_fetched.emit(map_id, [])
+		top_fetched.emit(map_id, mode_id, [])
 		return
 	var query := {
 		"structuredQuery": {
 			"from": [{"collectionId": "rankings"}],
 			"where": {
-				"fieldFilter": {
-					"field": {"fieldPath": "map"},
-					"op": "EQUAL",
-					"value": {"stringValue": map_id}
+				"compositeFilter": {
+					"op": "AND",
+					"filters": [
+						{"fieldFilter": {"field": {"fieldPath": "map"}, "op": "EQUAL", "value": {"stringValue": map_id}}},
+						{"fieldFilter": {"field": {"fieldPath": "mode"}, "op": "EQUAL", "value": {"stringValue": mode_id}}},
+					]
 				}
 			},
 			"orderBy": [{"field": {"fieldPath": "clearTimeSeconds"}, "direction": "ASCENDING"}],
@@ -87,7 +90,7 @@ func fetch_top(map_id: String, count: int = 10) -> void:
 	var req := HTTPRequest.new()
 	add_child(req)
 	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, resp_body: PackedByteArray) -> void:
-		top_fetched.emit(map_id, _parse_top_response(code, resp_body))
+		top_fetched.emit(map_id, mode_id, _parse_top_response(code, resp_body))
 		req.queue_free())
 	var url: String = "%s:runQuery?key=%s" % [_base_url(), FIREBASE_API_KEY]
 	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(query))

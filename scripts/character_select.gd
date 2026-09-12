@@ -16,6 +16,7 @@ extends Control
 @onready var ranking_tab: Button = $Margin/VBox/TabRow/RankingTab
 @onready var ranking_panel: PanelContainer = $Margin/VBox/RankingPanel
 @onready var ranking_map_row: HBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingMapRow
+@onready var ranking_mode_row: HBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingModeRow
 @onready var ranking_list: VBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingScroll/RankingList
 @onready var settings_row: HBoxContainer = $Margin/VBox/SettingsRow
 @onready var difficulty_option: OptionButton = $Margin/VBox/SettingsRow/DifficultyOption
@@ -26,6 +27,7 @@ extends Control
 const Guide = preload("res://scripts/weapon_guide_data.gd")
 
 var ranking_current_map: String = ""
+var ranking_current_mode: String = "normal"
 
 func _ready() -> void:
 	var version_label := Button.new()
@@ -110,6 +112,7 @@ func _ready() -> void:
 	add_child(settings_btn)
 
 	RankingService.top_fetched.connect(_on_ranking_top_fetched)
+	_build_ranking_mode_buttons()
 	_build_ranking_map_buttons()
 
 	if not GameState.nickname_prompt_shown:
@@ -119,17 +122,21 @@ func _build_difficulty_options() -> void:
 	difficulty_option.clear()
 	difficulty_option.add_item("일반", 0)
 	difficulty_option.add_item("하드", 1)
-	difficulty_option.select(1 if GameState.hard_mode else 0)
+	difficulty_option.add_item("패스트", 2)
+	difficulty_option.select(2 if GameState.fast_mode else (1 if GameState.hard_mode else 0))
 	difficulty_option.item_selected.connect(_on_difficulty_option_selected)
 	_refresh_difficulty_desc()
 
 func _on_difficulty_option_selected(idx: int) -> void:
 	SoundManager.play("click")
 	GameState.hard_mode = idx == 1
+	GameState.fast_mode = idx == 2
 	_refresh_difficulty_desc()
 
 func _refresh_difficulty_desc() -> void:
-	if GameState.hard_mode:
+	if GameState.fast_mode:
+		difficulty_desc.text = "하드모드와 동일한 강도를 압축해서 몰아치는 빠른 템포 모드 (최종보스 10분 등장)"
+	elif GameState.hard_mode:
 		difficulty_desc.text = "적/보스 스탯이 시간에 따라 훨씬 빠르게 강해짐, 강한 몬스터 종류도 더 일찍 등장, 무리 이벤트 물량도 더 많음 (스폰 속도 자체는 기본과 동일)"
 	else:
 		difficulty_desc.text = "기본 난이도"
@@ -609,6 +616,30 @@ func _show_toast(text: String) -> void:
 	tween.parallel().tween_property(toast, "modulate:a", 0.0, 0.9).set_delay(0.5)
 	tween.tween_callback(toast.queue_free)
 
+func _build_ranking_mode_buttons() -> void:
+	for c in ranking_mode_row.get_children():
+		c.queue_free()
+	var group := ButtonGroup.new()
+	for mode_data in GameState.MODES:
+		var btn := Button.new()
+		btn.text = mode_data.name
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.custom_minimum_size = Vector2(0, 40)
+		btn.size_flags_horizontal = SIZE_EXPAND_FILL
+		btn.add_theme_font_size_override("font_size", 14)
+		btn.add_theme_stylebox_override("normal", difficulty_option.get_theme_stylebox("normal"))
+		btn.add_theme_stylebox_override("hover", difficulty_option.get_theme_stylebox("hover"))
+		btn.add_theme_stylebox_override("pressed", character_tab.get_theme_stylebox("pressed"))
+		btn.button_pressed = mode_data.id == GameState.mode_id()
+		btn.pressed.connect(_on_ranking_mode_pressed.bind(mode_data.id))
+		ranking_mode_row.add_child(btn)
+	ranking_current_mode = GameState.mode_id()
+
+func _on_ranking_mode_pressed(id: String) -> void:
+	ranking_current_mode = id
+	_fetch_ranking()
+
 func _build_ranking_map_buttons() -> void:
 	for c in ranking_map_row.get_children():
 		c.queue_free()
@@ -631,6 +662,9 @@ func _build_ranking_map_buttons() -> void:
 
 func _on_ranking_map_pressed(id: String) -> void:
 	ranking_current_map = id
+	_fetch_ranking()
+
+func _fetch_ranking() -> void:
 	for c in ranking_list.get_children():
 		c.queue_free()
 	var loading := Label.new()
@@ -638,10 +672,10 @@ func _on_ranking_map_pressed(id: String) -> void:
 	loading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	loading.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
 	ranking_list.add_child(loading)
-	RankingService.fetch_top(id, 10)
+	RankingService.fetch_top(ranking_current_map, ranking_current_mode, 10)
 
-func _on_ranking_top_fetched(map_id: String, entries: Array) -> void:
-	if map_id != ranking_current_map:
+func _on_ranking_top_fetched(map_id: String, mode_id: String, entries: Array) -> void:
+	if map_id != ranking_current_map or mode_id != ranking_current_mode:
 		return
 	for c in ranking_list.get_children():
 		c.queue_free()

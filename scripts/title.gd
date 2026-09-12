@@ -62,6 +62,7 @@ func _on_resume_pressed() -> void:
 	GameState.selected_character = String(data.get("character", GameState.selected_character))
 	GameState.selected_map = String(data.get("map", GameState.selected_map))
 	GameState.hard_mode = bool(data.get("hard_mode", false))
+	GameState.fast_mode = bool(data.get("fast_mode", false))
 	GameState.pending_run_data = data
 	GameState.resuming_run = true
 	get_tree().change_scene_to_file("res://scenes/Main.tscn")

@@ -10,7 +10,10 @@ const FIRST_HORDE_DELAY := 110.0
 const OVERLORD_TIME := 1200.0
 const SAFETY_ENEMY_CEILING := 320
 
+const FAST_MODE_TIME_SCALE := 2.0
+
 var elapsed: float = 0.0
+var game_time: float = 0.0
 var spawn_timer: float = 0.0
 var heal_spawn_timer: float = 18.0
 var boss_spawn_timer: float = BOSS_INTERVAL
@@ -38,6 +41,7 @@ func _ready() -> void:
 	var resume_data: Dictionary = GameState.pending_run_data
 	if was_resuming:
 		elapsed = float(resume_data.get("elapsed", 0.0))
+		game_time = float(resume_data.get("game_time", elapsed))
 		boss_spawn_timer = float(resume_data.get("boss_spawn_timer", BOSS_INTERVAL))
 		horde_timer = float(resume_data.get("horde_timer", HORDE_INTERVAL))
 		boss_count = int(resume_data.get("boss_count", 0))
@@ -82,7 +86,8 @@ func _ready() -> void:
 	hud.altar_offer_declined.connect(func() -> void:
 		active_altar = null)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
-	hud.set_character_name(char_data.name + " [하드]" if GameState.hard_mode else char_data.name)
+	var mode_suffix: String = " [패스트]" if GameState.fast_mode else (" [하드]" if GameState.hard_mode else "")
+	hud.set_character_name(char_data.name + mode_suffix)
 	_update_hud()
 	_spawn_map_props()
 	hud.set_prop_counts(chests_opened_count, grass_broken_count)
@@ -381,7 +386,9 @@ func _autosave() -> void:
 	data["character"] = GameState.selected_character
 	data["map"] = GameState.selected_map
 	data["hard_mode"] = GameState.hard_mode
+	data["fast_mode"] = GameState.fast_mode
 	data["elapsed"] = elapsed
+	data["game_time"] = game_time
 	data["boss_spawn_timer"] = boss_spawn_timer
 	data["horde_timer"] = horde_timer
 	data["boss_count"] = boss_count
@@ -423,10 +430,15 @@ func _random_arena_pos(min_dist_from_center: float) -> Vector2:
 		tries += 1
 	return pos
 
+func _time_scale() -> float:
+	return FAST_MODE_TIME_SCALE if GameState.fast_mode else 1.0
+
 func _process(delta: float) -> void:
 	if run_over:
 		return
 	elapsed += delta
+	var game_delta: float = delta * _time_scale()
+	game_time += game_delta
 	hud.set_timer(elapsed)
 
 	autosave_timer -= delta
@@ -434,44 +446,44 @@ func _process(delta: float) -> void:
 		autosave_timer = AUTOSAVE_INTERVAL
 		_autosave()
 
-	chest_timer -= delta
+	chest_timer -= game_delta
 	if chest_timer <= 0.0:
 		chest_timer = CHEST_INTERVAL
 		_spawn_chest()
 
 	if GameState.selected_map == "ruins":
-		meteor_timer -= delta
+		meteor_timer -= game_delta
 		if meteor_timer <= 0.0:
-			var ramp_t: float = clamp(elapsed / METEOR_RAMP_TIME, 0.0, 1.0)
+			var ramp_t: float = clamp(game_time / METEOR_RAMP_TIME, 0.0, 1.0)
 			meteor_timer = lerp(METEOR_INTERVAL_BASE, METEOR_INTERVAL_MIN, ramp_t)
 			_spawn_meteor_strike()
-		if not ruins_midpoint_triggered and elapsed >= RUINS_MIDPOINT_TIME:
+		if not ruins_midpoint_triggered and game_time >= RUINS_MIDPOINT_TIME:
 			ruins_midpoint_triggered = true
 			_trigger_ruins_midpoint_event()
 
-	spawn_timer -= delta
+	spawn_timer -= game_delta
 	if spawn_timer <= 0.0:
 		spawn_timer = spawn_interval
 		spawn_interval = max(min_spawn_interval, spawn_interval * difficulty_ramp)
 		if get_tree().get_nodes_in_group("enemies").size() < SAFETY_ENEMY_CEILING:
 			_spawn_enemy()
 
-	heal_spawn_timer -= delta
+	heal_spawn_timer -= game_delta
 	if heal_spawn_timer <= 0.0:
 		_spawn_heal()
 		heal_spawn_timer = randf_range(22.0, 32.0)
 
-	boss_spawn_timer -= delta
+	boss_spawn_timer -= game_delta
 	if boss_spawn_timer <= 0.0:
 		boss_spawn_timer = BOSS_INTERVAL
 		_spawn_boss()
 
-	horde_timer -= delta
+	horde_timer -= game_delta
 	if horde_timer <= 0.0:
 		horde_timer = HORDE_INTERVAL
 		_spawn_horde()
 
-	if not overlord_spawned and elapsed >= OVERLORD_TIME:
+	if not overlord_spawned and game_time >= OVERLORD_TIME:
 		overlord_spawned = true
 		_spawn_overlord()
 
@@ -484,12 +496,12 @@ func _process(delta: float) -> void:
 			hud.hide_boss_health()
 
 func _difficulty_divisor() -> float:
-	return 130.0 if GameState.hard_mode else 170.0
+	return 130.0 if (GameState.hard_mode or GameState.fast_mode) else 170.0
 
 func _spawn_enemy() -> void:
 	var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 	enemy.type = _pick_enemy_type()
-	enemy.difficulty_mult = 1.0 + elapsed / _difficulty_divisor()
+	enemy.difficulty_mult = 1.0 + game_time / _difficulty_divisor()
 	enemy.use_cheonmagung_skin = GameState.selected_map != "plains"
 	var angle: float = randf() * TAU
 	var dist: float = 420.0
@@ -515,7 +527,7 @@ func _spawn_boss() -> void:
 		boss.boss_texture_override = "res://assets/sprites/enemy_ruins_boss.png"
 		boss.use_qi_cannon = true
 		boss.xp_mult_override = RUINS_BOSS_XP_MULT
-	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
+	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
 	if GameState.selected_map == "ruins":
 		boss_mult *= RUINS_BOSS_HP_MULT
@@ -536,8 +548,8 @@ func _spawn_boss() -> void:
 	SoundManager.play("levelup", 3.0, 0.6)
 
 func _spawn_horde() -> void:
-	var count: int = 44 if GameState.hard_mode else 34
-	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
+	var count: int = 44 if (GameState.hard_mode or GameState.fast_mode) else 34
+	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	for i in range(count):
 		var enemy := preload("res://scenes/Enemy.tscn").instantiate()
 		enemy.type = _pick_enemy_type()
@@ -558,7 +570,7 @@ func _spawn_overlord() -> void:
 	var overlord := preload("res://scenes/Enemy.tscn").instantiate()
 	overlord.type = Enemy.Type.OVERLORD
 	current_overlord_name = "천마"
-	var base_mult: float = 1.0 + elapsed / _difficulty_divisor()
+	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	if GameState.selected_map == "cheonmagung":
 		overlord.boss_texture_override = GameState.get_character("jinak").portrait
 		current_overlord_name = "진악"
@@ -641,7 +653,7 @@ func _on_overlord_defeated() -> void:
 		ranking_note = "닉네임 미설정 - 랭킹 미등록"
 	else:
 		ranking_note = "랭킹 등록 중..."
-		RankingService.submit_clear(GameState.selected_map, GameState.player_nickname, elapsed, GameState.selected_character)
+		RankingService.submit_clear(GameState.selected_map, GameState.player_nickname, elapsed, GameState.selected_character, GameState.mode_id())
 		RankingService.submit_finished.connect(func(success: bool) -> void:
 			hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT)
 	get_tree().paused = true
@@ -651,8 +663,9 @@ func _on_overlord_defeated() -> void:
 		var clear_time: float = elapsed
 		var map_id: String = GameState.selected_map
 		var char_id: String = GameState.selected_character
+		var mode_id: String = GameState.mode_id()
 		hud.show_ranking_nickname_prompt(func(nick: String) -> void:
-			RankingService.submit_clear(map_id, nick, clear_time, char_id)
+			RankingService.submit_clear(map_id, nick, clear_time, char_id, mode_id)
 			RankingService.submit_finished.connect(func(success: bool) -> void:
 				hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT))
 
@@ -661,7 +674,7 @@ func screen_shake_all() -> void:
 		player.screen_shake(8.0, 0.4)
 
 func _pick_enemy_type() -> int:
-	var t: float = elapsed * (1.6 if GameState.hard_mode else 1.0)
+	var t: float = game_time * (1.6 if (GameState.hard_mode or GameState.fast_mode) else 1.0)
 	var pool: Array = [Enemy.Type.GRUNT, Enemy.Type.GRUNT, Enemy.Type.GRUNT]
 	if t > 40.0:
 		pool.append(Enemy.Type.ARCHER)
@@ -682,7 +695,7 @@ func _spawn_chest() -> void:
 
 func _spawn_meteor_strike() -> void:
 	var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
-	var difficulty_mult: float = 1.0 + elapsed / _difficulty_divisor()
+	var difficulty_mult: float = 1.0 + game_time / _difficulty_divisor()
 	meteor.damage_mult = 1.0 + (difficulty_mult - 1.0) * 0.6
 	var angle: float = randf() * TAU
 	var dist: float = randf_range(0.0, 260.0)
