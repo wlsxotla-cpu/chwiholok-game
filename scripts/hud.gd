@@ -30,6 +30,7 @@ signal altar_offer_declined
 ]
 @onready var reroll_button: Button = $LevelUpPanel/VBox/RerollButton
 @onready var end_label: Label = $EndLabel
+@onready var ranking_note_label: Label = $RankingNoteLabel
 @onready var summary_label: Label = $SummaryLabel
 @onready var continue_panel: Panel = $ContinuePanel
 @onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
@@ -88,6 +89,7 @@ const PASSIVE_NAMES := Guide.PASSIVE_NAMES
 func _ready() -> void:
 	level_up_panel.visible = false
 	end_label.visible = false
+	ranking_note_label.visible = false
 	summary_label.visible = false
 	restart_button.visible = false
 	menu_button.visible = false
@@ -712,8 +714,7 @@ func hide_altar_offer() -> void:
 
 func show_game_over(t: float, ranking_note: String = "", summary: String = "") -> void:
 	end_label.text = "쓰러졌다...\n생존 시간 %02d:%02d" % [int(t) / 60, int(t) % 60]
-	if ranking_note != "":
-		end_label.text += "\n" + ranking_note
+	_show_ranking_note(ranking_note)
 	_show_end_summary(summary)
 	end_label.visible = true
 	restart_button.visible = true
@@ -722,25 +723,23 @@ func show_game_over(t: float, ranking_note: String = "", summary: String = "") -
 
 func show_victory(t: float, boss_name: String, ranking_note: String = "", summary: String = "") -> void:
 	end_label.text = "%s 격파! 천하제일이 되었다!\n클리어 시간 %02d:%02d" % [boss_name, int(t) / 60, int(t) % 60]
-	if ranking_note != "":
-		end_label.text += "\n" + ranking_note
+	_show_ranking_note(ranking_note)
 	_show_end_summary(summary)
 	end_label.visible = true
 	restart_button.visible = true
 	menu_button.visible = true
 	pause_button.visible = false
 
+func _show_ranking_note(note: String) -> void:
+	ranking_note_label.text = note
+	ranking_note_label.visible = note != ""
+
 func _show_end_summary(summary: String) -> void:
 	summary_label.text = summary
 	summary_label.visible = summary != ""
 
 func set_ranking_note(note: String) -> void:
-	var lines: PackedStringArray = end_label.text.split("\n")
-	if lines.size() >= 3:
-		lines[2] = note
-	else:
-		lines.append(note)
-	end_label.text = "\n".join(lines)
+	_show_ranking_note(note)
 
 func show_ranking_nickname_prompt(on_registered: Callable) -> void:
 	var overlay := ColorRect.new()
