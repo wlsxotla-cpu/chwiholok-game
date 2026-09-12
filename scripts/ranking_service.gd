@@ -44,6 +44,7 @@ func submit_run(map_id: String, nickname: String, time_seconds: float, character
 		}
 	}
 	var req := HTTPRequest.new()
+	req.accept_gzip = false
 	add_child(req)
 	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, _resp_body: PackedByteArray) -> void:
 		submit_finished.emit(code == 200)
@@ -61,6 +62,7 @@ func claim_nickname(nickname: String) -> void:
 		return
 
 	var req := HTTPRequest.new()
+	req.accept_gzip = false
 	add_child(req)
 	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, _resp_body: PackedByteArray) -> void:
 		if code == 200:
@@ -94,6 +96,7 @@ func fetch_top(map_id: String, mode_id: String = "normal", count: int = 10) -> v
 		}
 	}
 	var req := HTTPRequest.new()
+	req.accept_gzip = false
 	add_child(req)
 	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, resp_body: PackedByteArray) -> void:
 		top_fetched.emit(map_id, mode_id, _parse_top_response(code, resp_body))
