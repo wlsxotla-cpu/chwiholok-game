@@ -772,10 +772,10 @@ func can_parry() -> bool:
 func trigger_parry() -> void:
 	parry_timer = PARRY_COOLDOWN
 
-func take_damage(amount: float) -> void:
+func take_damage(amount: float, bypass_invincibility: bool = false) -> void:
 	if GameState.dev_mode and GameState.dev_invincible:
 		return
-	if invincible_timer > 0.0:
+	if invincible_timer > 0.0 and not bypass_invincibility:
 		return
 	if shield_charges > 0:
 		shield_charges -= 1

@@ -51,7 +51,7 @@ func _impact() -> void:
 	set_process(false)
 	var player := get_tree().get_first_node_in_group("player")
 	if player and player.has_method("take_damage") and global_position.distance_to(player.global_position) <= RADIUS:
-		player.take_damage(DAMAGE * damage_mult)
+		player.take_damage(DAMAGE * damage_mult, true)
 	SoundManager.play("explosion", 1.0, 0.7)
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
