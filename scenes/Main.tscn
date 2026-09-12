@@ -9,7 +9,7 @@
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
 background_color = Color(0.055, 0.043, 0.031, 1)
-glow_enabled = true
+glow_enabled = false
 glow_intensity = 0.9
 glow_bloom = 0.1
 glow_hdr_threshold = 0.9
