@@ -509,6 +509,9 @@ func set_weapons(weapons: Array) -> void:
 	current_weapons = weapons
 	for c in weapon_row.get_children():
 		c.queue_free()
+	var owned_ids: Dictionary = {}
+	for w in weapons:
+		owned_ids[w.id] = w
 	for w in weapons:
 		var icon_path: String = WEAPON_ICONS.get(w.id, "")
 		if icon_path == "":
@@ -519,6 +522,10 @@ func set_weapons(weapons: Array) -> void:
 
 		var evolved: bool = w.get("evolved", false)
 
+		var icon_wrap := Control.new()
+		icon_wrap.custom_minimum_size = Vector2(36, 36)
+		slot.add_child(icon_wrap)
+
 		var icon := TextureRect.new()
 		icon.texture = load(icon_path)
 		icon.custom_minimum_size = Vector2(36, 36)
@@ -526,7 +533,19 @@ func set_weapons(weapons: Array) -> void:
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		if evolved:
 			icon.modulate = Color(1.5, 1.25, 0.6, 1.0)
-		slot.add_child(icon)
+		icon_wrap.add_child(icon)
+
+		if not evolved:
+			var combo_state: String = _fusion_combo_state(w, owned_ids)
+			if combo_state != "":
+				var combo_dot := Control.new()
+				combo_dot.size = Vector2(10, 10)
+				combo_dot.position = Vector2(27, -1)
+				var dot_color: Color = Color(1.0, 0.85, 0.3, 1.0) if combo_state == "close" else Color(0.6, 0.6, 0.6, 0.9)
+				combo_dot.draw.connect(func() -> void:
+					combo_dot.draw_circle(Vector2(5, 5), 5.0, dot_color)
+					combo_dot.draw_arc(Vector2(5, 5), 5.0, 0, TAU, 16, Color(0.1, 0.08, 0.06, 1), 1.5))
+				icon_wrap.add_child(combo_dot)
 
 		var maxed: bool = int(w.level) >= MAX_WEAPON_LEVEL
 		var lvl_label := Label.new()
@@ -542,6 +561,20 @@ func set_weapons(weapons: Array) -> void:
 		slot.add_child(lvl_label)
 
 		weapon_row.add_child(slot)
+
+func _fusion_combo_state(w: Dictionary, owned_ids: Dictionary) -> String:
+	for fused_id in Guide.FUSION_PAIRS.keys():
+		var pair: Array = Guide.FUSION_PAIRS[fused_id]
+		if not pair.has(w.id):
+			continue
+		var partner_id: String = pair[1] if pair[0] == w.id else pair[0]
+		if not owned_ids.has(partner_id):
+			return "distant"
+		var partner: Dictionary = owned_ids[partner_id]
+		if int(w.level) >= MAX_WEAPON_LEVEL and int(partner.level) >= MAX_WEAPON_LEVEL:
+			return ""
+		return "close"
+	return ""
 
 func set_passives(owned_passives: Dictionary) -> void:
 	current_passives = owned_passives

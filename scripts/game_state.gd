@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.43.1 · 2026-09-12"
+const VERSION := "v0.44.0 · 2026-09-12"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -78,7 +78,7 @@ var unlocked_characters: Dictionary = {}
 var samahoek_kills: int = 0
 var jinak_clears: int = 0
 var player_nickname: String = ""
-var nickname_prompt_skipped: bool = false
+var nickname_prompt_shown: bool = false
 var owned_pets: Array = []
 var sfx_enabled: bool = true
 var music_enabled: bool = true
@@ -216,6 +216,10 @@ func set_nickname(v: String) -> void:
 	player_nickname = v.strip_edges().substr(0, 12)
 	_save_data()
 
+func mark_nickname_prompt_shown() -> void:
+	nickname_prompt_shown = true
+	_save_data()
+
 func has_run_save() -> bool:
 	if dev_mode:
 		return false
@@ -270,6 +274,7 @@ func _load_data() -> void:
 		sfx_enabled = bool(parsed.get("sfx_enabled", true))
 		music_enabled = bool(parsed.get("music_enabled", true))
 		player_nickname = String(parsed.get("player_nickname", ""))
+		nickname_prompt_shown = bool(parsed.get("nickname_prompt_shown", false))
 
 func _save_data() -> void:
 	if dev_mode:
@@ -284,6 +289,7 @@ func _save_data() -> void:
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
 		"player_nickname": player_nickname,
+		"nickname_prompt_shown": nickname_prompt_shown,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:

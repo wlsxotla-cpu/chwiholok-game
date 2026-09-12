@@ -15,15 +15,12 @@ extends Control
 @onready var pet_list: VBoxContainer = $Margin/VBox/PetPanel/PetScroll/PetList
 @onready var ranking_tab: Button = $Margin/VBox/TabRow/RankingTab
 @onready var ranking_panel: PanelContainer = $Margin/VBox/RankingPanel
-@onready var ranking_nickname_edit: LineEdit = $Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow/RankingNicknameEdit
-@onready var ranking_nickname_save: Button = $Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow/RankingNicknameSaveButton
 @onready var ranking_map_row: HBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingMapRow
 @onready var ranking_list: VBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingScroll/RankingList
-@onready var difficulty_row: HBoxContainer = $Margin/VBox/DifficultyRow
-@onready var normal_button: Button = $Margin/VBox/DifficultyRow/NormalButton
-@onready var hard_button: Button = $Margin/VBox/DifficultyRow/HardButton
+@onready var settings_row: HBoxContainer = $Margin/VBox/SettingsRow
+@onready var difficulty_option: OptionButton = $Margin/VBox/SettingsRow/DifficultyOption
+@onready var map_option: OptionButton = $Margin/VBox/SettingsRow/MapOption
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
-@onready var map_row: HBoxContainer = $Margin/VBox/MapRow
 @onready var map_desc: Label = $Margin/VBox/MapDesc
 
 const Guide = preload("res://scripts/weapon_guide_data.gd")
@@ -92,59 +89,66 @@ func _ready() -> void:
 	ranking_tab.pressed.connect(_select_tab.bind("ranking"))
 	_select_tab("character")
 	_build_guide()
-	normal_button.pressed.connect(_on_difficulty_pressed.bind(false))
-	hard_button.pressed.connect(_on_difficulty_pressed.bind(true))
-	_refresh_difficulty_buttons()
-	_build_map_buttons()
+	_build_difficulty_options()
+	_build_map_options()
 	_refresh_all()
 
-	ranking_nickname_edit.text = GameState.player_nickname
-	ranking_nickname_save.pressed.connect(func() -> void:
-		SoundManager.play("click")
-		var nick: String = ranking_nickname_edit.text.strip_edges()
-		if nick.is_empty() or nick == GameState.player_nickname:
-			return
-		ranking_nickname_save.disabled = true
-		RankingService.claim_nickname(nick))
-	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
-		ranking_nickname_save.disabled = false
-		if success:
-			GameState.set_nickname(nick)
-			_show_toast("닉네임이 설정되었습니다")
-		elif reason == "taken":
-			_show_toast("이미 사용 중인 닉네임입니다")
-		elif reason != "empty":
-			_show_toast("닉네임 등록 실패, 다시 시도해주세요")
-		ranking_nickname_edit.text = GameState.player_nickname)
+	var vbox: VBoxContainer = $Margin/VBox
+	vbox.move_child($Margin/VBox/TabRow, $Margin/VBox/Subtitle.get_index() + 1)
+
+	var settings_btn := Button.new()
+	settings_btn.text = "설정"
+	settings_btn.flat = true
+	settings_btn.focus_mode = Control.FOCUS_NONE
+	settings_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	settings_btn.position = Vector2(-78, 50)
+	settings_btn.size = Vector2(62, 28)
+	settings_btn.add_theme_font_size_override("font_size", 12)
+	settings_btn.add_theme_color_override("font_color", Color(0.6, 0.58, 0.55, 0.8))
+	settings_btn.add_theme_color_override("font_hover_color", Color(0.9, 0.87, 0.8, 1))
+	settings_btn.pressed.connect(_show_settings_panel)
+	add_child(settings_btn)
+
 	RankingService.top_fetched.connect(_on_ranking_top_fetched)
 	_build_ranking_map_buttons()
 
-	if GameState.player_nickname.is_empty() and not GameState.nickname_prompt_skipped:
+	if not GameState.nickname_prompt_shown:
 		_show_nickname_gate()
 
-func _build_map_buttons() -> void:
-	for c in map_row.get_children():
-		c.queue_free()
-	var group := ButtonGroup.new()
-	for map_data in GameState.MAPS:
-		var btn := Button.new()
-		btn.text = map_data.name
-		btn.toggle_mode = true
-		btn.button_group = group
-		btn.custom_minimum_size = Vector2(0, 48)
-		btn.size_flags_horizontal = SIZE_EXPAND_FILL
-		btn.add_theme_font_size_override("font_size", 18)
-		btn.add_theme_stylebox_override("normal", normal_button.get_theme_stylebox("normal"))
-		btn.add_theme_stylebox_override("hover", normal_button.get_theme_stylebox("hover"))
-		btn.add_theme_stylebox_override("pressed", normal_button.get_theme_stylebox("pressed"))
-		btn.button_pressed = map_data.id == GameState.selected_map
-		btn.pressed.connect(_on_map_pressed.bind(map_data.id))
-		map_row.add_child(btn)
+func _build_difficulty_options() -> void:
+	difficulty_option.clear()
+	difficulty_option.add_item("일반", 0)
+	difficulty_option.add_item("하드", 1)
+	difficulty_option.select(1 if GameState.hard_mode else 0)
+	difficulty_option.item_selected.connect(_on_difficulty_option_selected)
+	_refresh_difficulty_desc()
+
+func _on_difficulty_option_selected(idx: int) -> void:
+	SoundManager.play("click")
+	GameState.hard_mode = idx == 1
+	_refresh_difficulty_desc()
+
+func _refresh_difficulty_desc() -> void:
+	if GameState.hard_mode:
+		difficulty_desc.text = "적/보스 스탯이 시간에 따라 훨씬 빠르게 강해짐, 강한 몬스터 종류도 더 일찍 등장, 무리 이벤트 물량도 더 많음 (스폰 속도 자체는 기본과 동일)"
+	else:
+		difficulty_desc.text = "기본 난이도"
+
+func _build_map_options() -> void:
+	map_option.clear()
+	var selected_idx: int = 0
+	for i in range(GameState.MAPS.size()):
+		var map_data: Dictionary = GameState.MAPS[i]
+		map_option.add_item(map_data.name, i)
+		if map_data.id == GameState.selected_map:
+			selected_idx = i
+	map_option.select(selected_idx)
+	map_option.item_selected.connect(_on_map_option_selected)
 	_refresh_map_desc()
 
-func _on_map_pressed(id: String) -> void:
+func _on_map_option_selected(idx: int) -> void:
 	SoundManager.play("click")
-	GameState.selected_map = id
+	GameState.selected_map = GameState.MAPS[idx].id
 	_refresh_map_desc()
 
 func _refresh_map_desc() -> void:
@@ -158,19 +162,6 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
 		if grid_scroll.get_global_rect().has_point(event.position):
 			grid_scroll.scroll_vertical -= int(event.relative.y)
-
-func _on_difficulty_pressed(hard: bool) -> void:
-	SoundManager.play("click")
-	GameState.hard_mode = hard
-	_refresh_difficulty_buttons()
-
-func _refresh_difficulty_buttons() -> void:
-	normal_button.button_pressed = not GameState.hard_mode
-	hard_button.button_pressed = GameState.hard_mode
-	if GameState.hard_mode:
-		difficulty_desc.text = "적/보스 스탯이 시간에 따라 훨씬 빠르게 강해짐, 강한 몬스터 종류도 더 일찍 등장, 무리 이벤트 물량도 더 많음 (스폰 속도 자체는 기본과 동일)"
-	else:
-		difficulty_desc.text = "기본 난이도"
 
 func _refresh_all() -> void:
 	for c in grid.get_children():
@@ -302,9 +293,8 @@ func _select_tab(tab: String) -> void:
 	guide_tab.button_pressed = tab == "guide"
 	pet_tab.button_pressed = tab == "pet"
 	ranking_tab.button_pressed = tab == "ranking"
-	difficulty_row.visible = tab == "character"
+	settings_row.visible = tab == "character"
 	difficulty_desc.visible = tab == "character"
-	map_row.visible = tab == "character"
 	map_desc.visible = tab == "character"
 
 func _build_guide() -> void:
@@ -631,9 +621,9 @@ func _build_ranking_map_buttons() -> void:
 		btn.custom_minimum_size = Vector2(0, 44)
 		btn.size_flags_horizontal = SIZE_EXPAND_FILL
 		btn.add_theme_font_size_override("font_size", 15)
-		btn.add_theme_stylebox_override("normal", normal_button.get_theme_stylebox("normal"))
-		btn.add_theme_stylebox_override("hover", normal_button.get_theme_stylebox("hover"))
-		btn.add_theme_stylebox_override("pressed", normal_button.get_theme_stylebox("pressed"))
+		btn.add_theme_stylebox_override("normal", difficulty_option.get_theme_stylebox("normal"))
+		btn.add_theme_stylebox_override("hover", difficulty_option.get_theme_stylebox("hover"))
+		btn.add_theme_stylebox_override("pressed", character_tab.get_theme_stylebox("pressed"))
 		btn.button_pressed = map_data.id == GameState.selected_map
 		btn.pressed.connect(_on_ranking_map_pressed.bind(map_data.id))
 		ranking_map_row.add_child(btn)
@@ -753,7 +743,7 @@ func _show_nickname_gate() -> void:
 
 	skip_btn.pressed.connect(func() -> void:
 		SoundManager.play("click")
-		GameState.nickname_prompt_skipped = true
+		GameState.mark_nickname_prompt_shown()
 		overlay.queue_free())
 
 	confirm_btn.pressed.connect(func() -> void:
@@ -773,7 +763,7 @@ func _show_nickname_gate() -> void:
 		confirm_btn.disabled = false
 		if success:
 			GameState.set_nickname(nick)
-			ranking_nickname_edit.text = GameState.player_nickname
+			GameState.mark_nickname_prompt_shown()
 			status.text = "설정 완료!"
 			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
 			SoundManager.play("levelup", 3.0, 1.2)
@@ -784,5 +774,89 @@ func _show_nickname_gate() -> void:
 			status.text = "이미 사용 중인 닉네임입니다"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 		else:
+			status.text = "네트워크 오류, 다시 시도해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
+
+func _show_settings_panel() -> void:
+	SoundManager.play("click")
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.75)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var box := PanelContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.custom_minimum_size = Vector2(300, 60)
+	box.position = Vector2(-150, -110)
+	overlay.add_child(box)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	box.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "환경설정"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 18)
+	vbox.add_child(title)
+
+	var nick_label := Label.new()
+	nick_label.text = "랭킹 닉네임"
+	nick_label.add_theme_font_size_override("font_size", 13)
+	nick_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	vbox.add_child(nick_label)
+
+	var edit := LineEdit.new()
+	edit.text = GameState.player_nickname
+	edit.placeholder_text = "닉네임 (최대 12자)"
+	edit.max_length = 12
+	edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(edit)
+
+	var status := Label.new()
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD
+	status.add_theme_font_size_override("font_size", 13)
+	status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	vbox.add_child(status)
+
+	var save_btn := Button.new()
+	save_btn.text = "닉네임 저장"
+	save_btn.custom_minimum_size = Vector2(0, 48)
+	vbox.add_child(save_btn)
+
+	var close_btn := Button.new()
+	close_btn.text = "닫기"
+	close_btn.flat = true
+	vbox.add_child(close_btn)
+
+	close_btn.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		overlay.queue_free())
+
+	save_btn.pressed.connect(func() -> void:
+		var nick: String = edit.text.strip_edges()
+		if nick.is_empty() or nick == GameState.player_nickname:
+			return
+		save_btn.disabled = true
+		status.text = "확인 중..."
+		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+		RankingService.claim_nickname(nick))
+
+	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
+		if not is_instance_valid(save_btn):
+			return
+		save_btn.disabled = false
+		if success:
+			GameState.set_nickname(nick)
+			GameState.mark_nickname_prompt_shown()
+			status.text = "저장 완료!"
+			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
+			SoundManager.play("levelup", 3.0, 1.2)
+		elif reason == "taken":
+			status.text = "이미 사용 중인 닉네임입니다"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason != "empty":
 			status.text = "네트워크 오류, 다시 시도해주세요"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
