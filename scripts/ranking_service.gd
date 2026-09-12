@@ -1,9 +1,7 @@
 extends Node
 
-# TODO: Firebase 콘솔(console.firebase.google.com)에서 프로젝트 생성 후
-# 프로젝트 설정 > 일반 > 내 앱(웹 앱 추가)에서 확인한 값으로 교체하세요.
-const FIREBASE_PROJECT_ID := "YOUR_PROJECT_ID"
-const FIREBASE_API_KEY := "YOUR_API_KEY"
+const FIREBASE_PROJECT_ID := "chwiholok"
+const FIREBASE_API_KEY := "AIzaSyByP61m-es8wZnxKLYoAbUpoJSVYJDKf7Y"
 
 const MIN_CLEAR_TIME := 20.0
 const MAX_CLEAR_TIME := 7200.0
