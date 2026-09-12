@@ -23,7 +23,7 @@ func _base_url() -> String:
 func submit_clear(map_id: String, nickname: String, clear_time: float, character_id: String, mode_id: String = "normal") -> void:
 	submit_run(map_id, nickname, clear_time, character_id, mode_id, true)
 
-func submit_run(map_id: String, nickname: String, time_seconds: float, character_id: String, mode_id: String, cleared: bool) -> void:
+func submit_run(map_id: String, nickname: String, time_seconds: float, character_id: String, mode_id: String, cleared: bool, level: int = 1) -> void:
 	if not is_configured():
 		return
 	if time_seconds < MIN_CLEAR_TIME or time_seconds > MAX_CLEAR_TIME:
@@ -41,6 +41,7 @@ func submit_run(map_id: String, nickname: String, time_seconds: float, character
 			"character": {"stringValue": character_id},
 			"cleared": {"booleanValue": cleared},
 			"clearTimeSeconds": {"doubleValue": score},
+			"level": {"doubleValue": float(level)},
 		}
 	}
 	var req := HTTPRequest.new()
@@ -123,5 +124,6 @@ func _parse_top_response(code: int, resp_body: PackedByteArray) -> Array:
 			"character": f.get("character", {}).get("stringValue", ""),
 			"clearTimeSeconds": display_time,
 			"cleared": cleared,
+			"level": int(f.get("level", {}).get("doubleValue", 1.0)),
 		})
 	return entries

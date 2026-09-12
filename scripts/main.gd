@@ -673,7 +673,7 @@ func _handle_ranking_submission(cleared: bool, time_seconds: float) -> String:
 		return "관리자 모드 - 랭킹 미등록"
 	if GameState.player_nickname.is_empty():
 		return "닉네임 미설정 - 랭킹 미등록"
-	RankingService.submit_run(GameState.selected_map, GameState.player_nickname, time_seconds, GameState.selected_character, GameState.mode_id(), cleared)
+	RankingService.submit_run(GameState.selected_map, GameState.player_nickname, time_seconds, GameState.selected_character, GameState.mode_id(), cleared, player.level)
 	RankingService.submit_finished.connect(func(success: bool) -> void:
 		hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT)
 	return "랭킹 등록 중..."
@@ -684,8 +684,9 @@ func _offer_ranking_nickname_prompt_if_needed(cleared: bool, time_seconds: float
 	var map_id: String = GameState.selected_map
 	var char_id: String = GameState.selected_character
 	var mode_id: String = GameState.mode_id()
+	var level: int = player.level
 	hud.show_ranking_nickname_prompt(func(nick: String) -> void:
-		RankingService.submit_run(map_id, nick, time_seconds, char_id, mode_id, cleared)
+		RankingService.submit_run(map_id, nick, time_seconds, char_id, mode_id, cleared, level)
 		RankingService.submit_finished.connect(func(success: bool) -> void:
 			hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT))
 

@@ -689,6 +689,8 @@ func _on_ranking_top_fetched(map_id: String, mode_id: String, entries: Array) ->
 	const MEDAL_COLORS := [Color(1.0, 0.84, 0.0, 1.0), Color(0.75, 0.75, 0.78, 1.0), Color(0.8, 0.5, 0.2, 1.0)]
 	for i in range(entries.size()):
 		var e: Dictionary = entries[i]
+		var row_wrap := VBoxContainer.new()
+		row_wrap.add_theme_constant_override("separation", 1)
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 8)
 		if i < 3:
@@ -732,7 +734,23 @@ func _on_ranking_top_fetched(map_id: String, mode_id: String, entries: Array) ->
 		time_label.add_theme_font_size_override("font_size", 15)
 		time_label.add_theme_color_override("font_color", Color(0.7, 0.9, 0.85, 1))
 		row.add_child(time_label)
-		ranking_list.add_child(row)
+		row_wrap.add_child(row)
+
+		var char_id: String = String(e.get("character", ""))
+		var char_name: String = GameState.get_character(char_id).get("name", char_id)
+		var level: int = int(e.get("level", 1))
+		var sub_row := HBoxContainer.new()
+		var sub_indent := Control.new()
+		sub_indent.custom_minimum_size = Vector2(34 + (26 if i < 3 else 0) + 8, 0)
+		sub_row.add_child(sub_indent)
+		var sub_label := Label.new()
+		sub_label.text = "%s Lv.%d" % [char_name, level]
+		sub_label.add_theme_font_size_override("font_size", 11)
+		sub_label.add_theme_color_override("font_color", Color(0.58, 0.55, 0.5, 1))
+		sub_row.add_child(sub_label)
+		row_wrap.add_child(sub_row)
+
+		ranking_list.add_child(row_wrap)
 
 func _show_nickname_gate() -> void:
 	var overlay := ColorRect.new()

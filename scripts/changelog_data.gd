@@ -1,6 +1,9 @@
 extends RefCounted
 
 const ENTRIES := [
+	{"version": "v0.49.2", "date": "2026-09-12", "changes": [
+		"랭킹 목록에 사용한 캐릭터와 레벨 표시 추가",
+	]},
 	{"version": "v0.49.1", "date": "2026-09-12", "changes": [
 		"승리·패배 화면 카드가 화면 중앙보다 아래로 치우쳐 있던 문제 수정 - 화면 정중앙에 오도록 재배치",
 	]},
