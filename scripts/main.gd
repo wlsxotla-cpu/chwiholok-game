@@ -653,7 +653,7 @@ func _on_overlord_defeated() -> void:
 	if player.has_method("screen_shake"):
 		player.screen_shake(14.0, 0.6)
 	run_over = true
-	var summary: String = _build_run_summary()
+	var summary: Dictionary = _build_run_summary()
 	GameState.add_run_coins(player.coins)
 	GameState.clear_run_state()
 	var ranking_note: String = _handle_ranking_submission(true, elapsed)
@@ -661,13 +661,12 @@ func _on_overlord_defeated() -> void:
 	hud.show_victory(elapsed, current_overlord_name, ranking_note, summary)
 	_offer_ranking_nickname_prompt_if_needed(true, elapsed)
 
-func _build_run_summary() -> String:
-	var weapon_parts: PackedStringArray = []
-	for w in player.weapons:
-		var wname: String = GameState.WEAPON_NAMES.get(w.id, w.id)
-		weapon_parts.append("%s Lv.%d" % [wname, w.level])
-	var weapons_text: String = ", ".join(weapon_parts) if weapon_parts.size() > 0 else "-"
-	return "처치 %d마리 · 획득 내공 %d\n무기: %s" % [run_kill_count, player.coins, weapons_text]
+func _build_run_summary() -> Dictionary:
+	return {
+		"kills": run_kill_count,
+		"coins": player.coins,
+		"weapons": player.weapons.duplicate(),
+	}
 
 func _handle_ranking_submission(cleared: bool, time_seconds: float) -> String:
 	if GameState.dev_mode:
@@ -769,7 +768,7 @@ func _update_hud() -> void:
 
 func _on_player_died() -> void:
 	run_over = true
-	var summary: String = _build_run_summary()
+	var summary: Dictionary = _build_run_summary()
 	GameState.add_run_coins(player.coins)
 	GameState.clear_run_state()
 	var ranking_note: String = _handle_ranking_submission(false, elapsed)

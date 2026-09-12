@@ -29,9 +29,11 @@ signal altar_offer_declined
 	$LevelUpPanel/VBox/Option4,
 ]
 @onready var reroll_button: Button = $LevelUpPanel/VBox/RerollButton
+@onready var end_dim_overlay: ColorRect = $EndDimOverlay
+@onready var end_card_panel: Panel = $EndCardPanel
 @onready var end_label: Label = $EndLabel
 @onready var ranking_note_label: Label = $RankingNoteLabel
-@onready var summary_label: Label = $SummaryLabel
+@onready var summary_container: VBoxContainer = $SummaryContainer
 @onready var continue_panel: Panel = $ContinuePanel
 @onready var continue_cost_label: Label = $ContinuePanel/VBox/CostLabel
 @onready var continue_confirm_button: Button = $ContinuePanel/VBox/ConfirmButton
@@ -88,9 +90,11 @@ const PASSIVE_NAMES := Guide.PASSIVE_NAMES
 
 func _ready() -> void:
 	level_up_panel.visible = false
+	end_dim_overlay.visible = false
+	end_card_panel.visible = false
 	end_label.visible = false
 	ranking_note_label.visible = false
-	summary_label.visible = false
+	summary_container.visible = false
 	restart_button.visible = false
 	menu_button.visible = false
 	pause_panel.visible = false
@@ -712,19 +716,23 @@ func show_altar_offer(cost: int, available: int) -> void:
 func hide_altar_offer() -> void:
 	altar_offer_panel.visible = false
 
-func show_game_over(t: float, ranking_note: String = "", summary: String = "") -> void:
+func show_game_over(t: float, ranking_note: String = "", summary: Dictionary = {}) -> void:
 	end_label.text = "쓰러졌다...\n생존 시간 %02d:%02d" % [int(t) / 60, int(t) % 60]
 	_show_ranking_note(ranking_note)
 	_show_end_summary(summary)
+	end_dim_overlay.visible = true
+	end_card_panel.visible = true
 	end_label.visible = true
 	restart_button.visible = true
 	menu_button.visible = true
 	pause_button.visible = false
 
-func show_victory(t: float, boss_name: String, ranking_note: String = "", summary: String = "") -> void:
+func show_victory(t: float, boss_name: String, ranking_note: String = "", summary: Dictionary = {}) -> void:
 	end_label.text = "%s 격파! 천하제일이 되었다!\n클리어 시간 %02d:%02d" % [boss_name, int(t) / 60, int(t) % 60]
 	_show_ranking_note(ranking_note)
 	_show_end_summary(summary)
+	end_dim_overlay.visible = true
+	end_card_panel.visible = true
 	end_label.visible = true
 	restart_button.visible = true
 	menu_button.visible = true
@@ -734,9 +742,81 @@ func _show_ranking_note(note: String) -> void:
 	ranking_note_label.text = note
 	ranking_note_label.visible = note != ""
 
-func _show_end_summary(summary: String) -> void:
-	summary_label.text = summary
-	summary_label.visible = summary != ""
+const QI_ICON := preload("res://assets/sprites/pickup_coin.png")
+
+func _show_end_summary(summary: Dictionary) -> void:
+	for c in summary_container.get_children():
+		c.queue_free()
+	if summary.is_empty():
+		summary_container.visible = false
+		return
+	summary_container.visible = true
+
+	var stats_row := HBoxContainer.new()
+	stats_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	stats_row.add_theme_constant_override("separation", 28)
+	summary_container.add_child(stats_row)
+
+	stats_row.add_child(_build_stat_chip(_make_skull_icon(), "%d마리" % int(summary.get("kills", 0))))
+	stats_row.add_child(_build_stat_chip(_make_texture_icon(QI_ICON), "내공 %d" % int(summary.get("coins", 0))))
+
+	var weapons: Array = summary.get("weapons", [])
+	if not weapons.is_empty():
+		var weapon_row := HFlowContainer.new()
+		weapon_row.alignment = FlowContainer.ALIGNMENT_CENTER
+		weapon_row.add_theme_constant_override("h_separation", 14)
+		weapon_row.add_theme_constant_override("v_separation", 6)
+		summary_container.add_child(weapon_row)
+		for w in weapons:
+			var icon_path: String = WEAPON_ICONS.get(w.id, "")
+			if icon_path == "":
+				continue
+			var slot := VBoxContainer.new()
+			slot.alignment = BoxContainer.ALIGNMENT_CENTER
+			slot.add_theme_constant_override("separation", 0)
+			slot.add_child(_make_texture_icon(load(icon_path), 30))
+			var lvl := Label.new()
+			lvl.text = "Lv.%d" % int(w.level)
+			lvl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lvl.add_theme_font_size_override("font_size", 11)
+			lvl.add_theme_color_override("font_color", Color(0.78, 0.74, 0.68, 1))
+			slot.add_child(lvl)
+			weapon_row.add_child(slot)
+
+func _build_stat_chip(icon: Control, text: String) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 6)
+	row.add_child(icon)
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 17)
+	label.add_theme_color_override("font_color", Color(0.92, 0.88, 0.8, 1))
+	row.add_child(label)
+	return row
+
+func _make_texture_icon(tex: Texture2D, size: float = 24) -> TextureRect:
+	var icon := TextureRect.new()
+	icon.texture = tex
+	icon.custom_minimum_size = Vector2(size, size)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	return icon
+
+func _make_skull_icon(size: float = 24) -> Control:
+	var ctrl := Control.new()
+	ctrl.custom_minimum_size = Vector2(size, size)
+	ctrl.draw.connect(func() -> void:
+		var w: float = ctrl.size.x
+		var h: float = ctrl.size.y
+		var bone: Color = Color(0.88, 0.85, 0.78, 1)
+		var dark: Color = Color(0.12, 0.1, 0.08, 1)
+		ctrl.draw_circle(Vector2(w * 0.5, h * 0.4), w * 0.36, bone)
+		ctrl.draw_rect(Rect2(w * 0.24, h * 0.38, w * 0.52, h * 0.32), bone)
+		ctrl.draw_circle(Vector2(w * 0.36, h * 0.42), w * 0.09, dark)
+		ctrl.draw_circle(Vector2(w * 0.64, h * 0.42), w * 0.09, dark)
+		ctrl.draw_rect(Rect2(w * 0.44, h * 0.58, w * 0.12, h * 0.1), dark))
+	return ctrl
 
 func set_ranking_note(note: String) -> void:
 	_show_ranking_note(note)
