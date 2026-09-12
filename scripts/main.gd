@@ -634,10 +634,18 @@ func _on_overlord_defeated() -> void:
 	run_over = true
 	GameState.add_run_coins(player.coins)
 	GameState.clear_run_state()
-	if not GameState.player_nickname.is_empty() and not GameState.dev_mode:
+	var ranking_note: String = ""
+	if GameState.dev_mode:
+		ranking_note = "관리자 모드 - 랭킹 미등록"
+	elif GameState.player_nickname.is_empty():
+		ranking_note = "닉네임 미설정 - 랭킹 미등록 (설정에서 등록 가능)"
+	else:
+		ranking_note = "랭킹 등록 중..."
 		RankingService.submit_clear(GameState.selected_map, GameState.player_nickname, elapsed, GameState.selected_character)
+		RankingService.submit_finished.connect(func(success: bool) -> void:
+			hud.set_ranking_note("랭킹 등록 완료!" if success else "랭킹 등록 실패 (네트워크 오류)"), CONNECT_ONE_SHOT)
 	get_tree().paused = true
-	hud.show_victory(elapsed, current_overlord_name)
+	hud.show_victory(elapsed, current_overlord_name, ranking_note)
 
 func screen_shake_all() -> void:
 	if player.has_method("screen_shake"):
@@ -665,6 +673,8 @@ func _spawn_chest() -> void:
 
 func _spawn_meteor_strike() -> void:
 	var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
+	var difficulty_mult: float = 1.0 + elapsed / _difficulty_divisor()
+	meteor.damage_mult = 1.0 + (difficulty_mult - 1.0) * 0.6
 	var angle: float = randf() * TAU
 	var dist: float = randf_range(0.0, 260.0)
 	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist

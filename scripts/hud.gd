@@ -713,9 +713,19 @@ func show_game_over(t: float) -> void:
 	menu_button.visible = true
 	pause_button.visible = false
 
-func show_victory(t: float, boss_name: String) -> void:
+func show_victory(t: float, boss_name: String, ranking_note: String = "") -> void:
 	end_label.text = "%s 격파! 천하제일이 되었다!\n클리어 시간 %02d:%02d" % [boss_name, int(t) / 60, int(t) % 60]
+	if ranking_note != "":
+		end_label.text += "\n" + ranking_note
 	end_label.visible = true
 	restart_button.visible = true
 	menu_button.visible = true
 	pause_button.visible = false
+
+func set_ranking_note(note: String) -> void:
+	var lines: PackedStringArray = end_label.text.split("\n")
+	if lines.size() >= 3:
+		lines[2] = note
+	else:
+		lines.append(note)
+	end_label.text = "\n".join(lines)

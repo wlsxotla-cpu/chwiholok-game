@@ -741,6 +741,9 @@ func _show_nickname_gate() -> void:
 	skip_btn.flat = true
 	vbox.add_child(skip_btn)
 
+	edit.grab_focus()
+	edit.text_submitted.connect(func(_t: String) -> void: confirm_btn.pressed.emit())
+
 	skip_btn.pressed.connect(func() -> void:
 		SoundManager.play("click")
 		GameState.mark_nickname_prompt_shown()
@@ -843,6 +846,10 @@ func _show_settings_panel() -> void:
 		status.text = "확인 중..."
 		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
 		RankingService.claim_nickname(nick))
+
+	edit.grab_focus()
+	edit.caret_column = edit.text.length()
+	edit.text_submitted.connect(func(_t: String) -> void: save_btn.pressed.emit())
 
 	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
 		if not is_instance_valid(save_btn):

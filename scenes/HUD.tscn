@@ -497,24 +497,28 @@ theme_override_font_sizes/font_size = 30
 process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
+theme_override_font_sizes/font_size = 19
 text = "옵션 1"
 
 [node name="Option2" type="Button" parent="LevelUpPanel/VBox"]
 process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
+theme_override_font_sizes/font_size = 19
 text = "옵션 2"
 
 [node name="Option3" type="Button" parent="LevelUpPanel/VBox"]
 process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
+theme_override_font_sizes/font_size = 19
 text = "옵션 3"
 
 [node name="Option4" type="Button" parent="LevelUpPanel/VBox"]
 process_mode = 3
 layout_mode = 2
 custom_minimum_size = Vector2(0, 64)
+theme_override_font_sizes/font_size = 19
 text = "옵션 4"
 
 [node name="RerollButton" type="Button" parent="LevelUpPanel/VBox"]
