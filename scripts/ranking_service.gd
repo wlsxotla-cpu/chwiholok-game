@@ -8,6 +8,7 @@ const MAX_CLEAR_TIME := 7200.0
 
 signal top_fetched(map_id: String, entries: Array)
 signal submit_finished(success: bool)
+signal nickname_claim_result(success: bool, nickname: String, reason: String)
 
 func is_configured() -> bool:
 	return FIREBASE_PROJECT_ID != "YOUR_PROJECT_ID" and FIREBASE_API_KEY != "YOUR_API_KEY"
@@ -39,6 +40,28 @@ func submit_clear(map_id: String, nickname: String, clear_time: float, character
 		req.queue_free())
 	var url: String = "%s/rankings?key=%s" % [_base_url(), FIREBASE_API_KEY]
 	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body))
+
+func claim_nickname(nickname: String) -> void:
+	var clean_nick: String = nickname.strip_edges().substr(0, 12)
+	if clean_nick.is_empty():
+		nickname_claim_result.emit(false, clean_nick, "empty")
+		return
+	if not is_configured():
+		nickname_claim_result.emit(true, clean_nick, "")
+		return
+
+	var req := HTTPRequest.new()
+	add_child(req)
+	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, _resp_body: PackedByteArray) -> void:
+		if code == 200:
+			nickname_claim_result.emit(true, clean_nick, "")
+		elif code == 409:
+			nickname_claim_result.emit(false, clean_nick, "taken")
+		else:
+			nickname_claim_result.emit(false, clean_nick, "error")
+		req.queue_free())
+	var url: String = "%s/nicknames?documentId=%s&key=%s" % [_base_url(), clean_nick.uri_encode(), FIREBASE_API_KEY]
+	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify({"fields": {}}))
 
 func fetch_top(map_id: String, count: int = 10) -> void:
 	if not is_configured():

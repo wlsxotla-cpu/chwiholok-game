@@ -100,10 +100,26 @@ func _ready() -> void:
 	ranking_nickname_edit.text = GameState.player_nickname
 	ranking_nickname_save.pressed.connect(func() -> void:
 		SoundManager.play("click")
-		GameState.set_nickname(ranking_nickname_edit.text)
+		var nick: String = ranking_nickname_edit.text.strip_edges()
+		if nick.is_empty() or nick == GameState.player_nickname:
+			return
+		ranking_nickname_save.disabled = true
+		RankingService.claim_nickname(nick))
+	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
+		ranking_nickname_save.disabled = false
+		if success:
+			GameState.set_nickname(nick)
+			_show_toast("닉네임이 설정되었습니다")
+		elif reason == "taken":
+			_show_toast("이미 사용 중인 닉네임입니다")
+		elif reason != "empty":
+			_show_toast("닉네임 등록 실패, 다시 시도해주세요")
 		ranking_nickname_edit.text = GameState.player_nickname)
 	RankingService.top_fetched.connect(_on_ranking_top_fetched)
 	_build_ranking_map_buttons()
+
+	if GameState.player_nickname.is_empty() and not GameState.nickname_prompt_skipped:
+		_show_nickname_gate()
 
 func _build_map_buttons() -> void:
 	for c in map_row.get_children():
@@ -641,15 +657,34 @@ func _on_ranking_top_fetched(map_id: String, entries: Array) -> void:
 		empty_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
 		ranking_list.add_child(empty_label)
 		return
+	const MEDAL_COLORS := [Color(1.0, 0.84, 0.0, 1.0), Color(0.75, 0.75, 0.78, 1.0), Color(0.8, 0.5, 0.2, 1.0)]
 	for i in range(entries.size()):
 		var e: Dictionary = entries[i]
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 10)
+		row.add_theme_constant_override("separation", 8)
+		if i < 3:
+			var medal_color: Color = MEDAL_COLORS[i]
+			var crown := Control.new()
+			crown.custom_minimum_size = Vector2(26, 22)
+			crown.draw.connect(func() -> void:
+				var w: float = crown.size.x
+				var h: float = crown.size.y
+				var base_y: float = h * 0.72
+				var points := PackedVector2Array([
+					Vector2(0, h), Vector2(0, base_y),
+					Vector2(w * 0.18, h * 0.15), Vector2(w * 0.5, base_y * 0.55),
+					Vector2(w * 0.82, h * 0.15), Vector2(w, base_y), Vector2(w, h),
+				])
+				crown.draw_colored_polygon(points, medal_color)
+				crown.draw_circle(Vector2(w * 0.18, h * 0.12), w * 0.07, medal_color)
+				crown.draw_circle(Vector2(w * 0.5, base_y * 0.5), w * 0.08, medal_color)
+				crown.draw_circle(Vector2(w * 0.82, h * 0.12), w * 0.07, medal_color))
+			row.add_child(crown)
 		var rank_label := Label.new()
 		rank_label.text = "%d위" % (i + 1)
-		rank_label.custom_minimum_size = Vector2(48, 0)
+		rank_label.custom_minimum_size = Vector2(34, 0)
 		rank_label.add_theme_font_size_override("font_size", 15)
-		rank_label.add_theme_color_override("font_color", Color(0.91, 0.71, 0.24, 1) if i == 0 else Color(0.85, 0.81, 0.75, 1))
+		rank_label.add_theme_color_override("font_color", MEDAL_COLORS[i] if i < 3 else Color(0.85, 0.81, 0.75, 1))
 		row.add_child(rank_label)
 		var name_label := Label.new()
 		name_label.text = String(e.get("nickname", "???"))
@@ -663,3 +698,86 @@ func _on_ranking_top_fetched(map_id: String, entries: Array) -> void:
 		time_label.add_theme_color_override("font_color", Color(0.7, 0.9, 0.85, 1))
 		row.add_child(time_label)
 		ranking_list.add_child(row)
+
+func _show_nickname_gate() -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.75)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var box := PanelContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.custom_minimum_size = Vector2(300, 60)
+	box.position = Vector2(-150, -110)
+	overlay.add_child(box)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	box.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "랭킹에 사용할 닉네임을 정해주세요"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD
+	title.add_theme_font_size_override("font_size", 16)
+	vbox.add_child(title)
+
+	var edit := LineEdit.new()
+	edit.placeholder_text = "닉네임 (최대 12자)"
+	edit.max_length = 12
+	edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(edit)
+
+	var status := Label.new()
+	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD
+	status.add_theme_font_size_override("font_size", 13)
+	status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	vbox.add_child(status)
+
+	var confirm_btn := Button.new()
+	confirm_btn.text = "확인"
+	confirm_btn.custom_minimum_size = Vector2(0, 48)
+	vbox.add_child(confirm_btn)
+
+	var skip_btn := Button.new()
+	skip_btn.text = "나중에 (랭킹 미참여)"
+	skip_btn.flat = true
+	vbox.add_child(skip_btn)
+
+	skip_btn.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		GameState.nickname_prompt_skipped = true
+		overlay.queue_free())
+
+	confirm_btn.pressed.connect(func() -> void:
+		var nick: String = edit.text.strip_edges()
+		if nick.is_empty():
+			status.text = "닉네임을 입력해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		confirm_btn.disabled = true
+		status.text = "확인 중..."
+		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+		RankingService.claim_nickname(nick))
+
+	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
+		if not is_instance_valid(confirm_btn):
+			return
+		confirm_btn.disabled = false
+		if success:
+			GameState.set_nickname(nick)
+			ranking_nickname_edit.text = GameState.player_nickname
+			status.text = "설정 완료!"
+			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
+			SoundManager.play("levelup", 3.0, 1.2)
+			await get_tree().create_timer(0.6).timeout
+			if is_instance_valid(overlay):
+				overlay.queue_free()
+		elif reason == "taken":
+			status.text = "이미 사용 중인 닉네임입니다"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		else:
+			status.text = "네트워크 오류, 다시 시도해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
