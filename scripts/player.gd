@@ -232,7 +232,7 @@ func _apply_meta_upgrades() -> void:
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)) * mult)
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 
-const RUINS_TIER_DEBUFF := 0.5
+const RUINS_TIER_DEBUFF := 0.1
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))
