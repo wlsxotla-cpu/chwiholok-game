@@ -1,16 +1,12 @@
 extends Node2D
 
-const ATTACK_INTERVAL := 2.2
-const DAMAGE := 9.0
-const RANGE := 240.0
-const EXECUTE_CHANCE := 0.1
-const BONUS_COIN_CHANCE := 0.25
+const SUPPORT_INTERVAL := 12.0
 
 var pet_id: String = "green_spirit"
 var main_ref: Node = null
-var attack_timer: float = 0.0
+var pulse_timer: float = 0.0
 var bob_time: float = 0.0
-var base_offset: Vector2 = Vector2(18.0, -34.0)
+var base_offset: Vector2 = Vector2(34.0, -52.0)
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -21,55 +17,27 @@ func _ready() -> void:
 	if def.has("offset"):
 		base_offset = def.offset
 	position = base_offset
-	attack_timer = randf_range(0.4, ATTACK_INTERVAL)
+	pulse_timer = SUPPORT_INTERVAL * 0.4
 	bob_time = randf_range(0.0, TAU)
 
 func _process(delta: float) -> void:
 	bob_time += delta * 2.4
 	position = base_offset + Vector2(0.0, sin(bob_time) * 4.0)
 
-	attack_timer -= delta
-	if attack_timer <= 0.0:
-		attack_timer = ATTACK_INTERVAL
-		_attack()
-
-func _attack() -> void:
-	var nearest: Node = null
-	var nearest_dist: float = RANGE
-	for e in get_tree().get_nodes_in_group("enemies"):
-		var d: float = global_position.distance_to(e.global_position)
-		if d <= nearest_dist:
-			nearest_dist = d
-			nearest = e
-	if nearest == null:
+	var player: Node = get_parent()
+	if player.shield_charges >= 1:
 		return
+	pulse_timer -= delta
+	if pulse_timer <= 0.0:
+		pulse_timer = SUPPORT_INTERVAL
+		_grant_shield(player)
+
+func _grant_shield(player: Node) -> void:
+	player.shield_charges += 1
 	var container: Node = main_ref if main_ref != null else get_parent()
-	if container == null:
-		return
-
-	var is_tough: bool = nearest is Enemy and (nearest.type == Enemy.Type.BOSS or nearest.type == Enemy.Type.OVERLORD)
-	var executed: bool = not is_tough and randf() < EXECUTE_CHANCE
-	nearest.take_damage(99999.0 if executed else DAMAGE)
-
-	SoundManager.play("hit", 2.0, 1.3)
-	var to_target: Vector2 = nearest.global_position - global_position
-	var beam := preload("res://scenes/BeamEffect.tscn").instantiate()
-	container.add_child(beam)
-	beam.global_position = global_position
-	beam.setup(to_target.normalized(), to_target.length(), 6.0, false)
-	beam.fill_color = Color(0.4, 1.7, 0.6, 0.55)
-	beam.core_color = Color(0.8, 1.0, 0.8, 1.0)
-	beam.queue_redraw()
-
-	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
-	container.add_child(fx)
-	fx.global_position = nearest.global_position
-	fx.modulate = Color(0.5, 2.2, 0.75, 1.0)
-	fx.set_radius(30.0, executed)
-
-	if randf() < BONUS_COIN_CHANCE:
-		var coin := preload("res://scenes/Pickup.tscn").instantiate()
-		container.add_child(coin)
-		coin.type = coin.Type.COIN
-		coin.value = 1.0
-		coin.global_position = nearest.global_position
+	SoundManager.play("levelup", 3.0, 1.4)
+	var ring := preload("res://scenes/SlashEffect.tscn").instantiate()
+	container.add_child(ring)
+	ring.global_position = player.global_position
+	ring.modulate = Color(0.5, 2.0, 0.8, 1.0)
+	ring.set_radius(46.0, false)

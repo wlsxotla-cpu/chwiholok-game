@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.39.1 · 2026-09-11"
+const VERSION := "v0.40.0 · 2026-09-12"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},

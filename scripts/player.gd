@@ -108,6 +108,7 @@ const REVIVE_HEALTH_FRACTION := 0.5
 const PARRY_COOLDOWN := 1.2
 var invincible_timer: float = 0.0
 var parry_timer: float = 0.0
+var shield_charges: int = 0
 var continues_used: int = 0
 var max_continues: int = 1
 var declined_fusions: Dictionary = {}
@@ -747,6 +748,13 @@ func take_damage(amount: float) -> void:
 		return
 	if invincible_timer > 0.0:
 		return
+	if shield_charges > 0:
+		shield_charges -= 1
+		invincible_timer = INVINCIBLE_DURATION
+		screen_shake(4.0, 0.15)
+		SoundManager.play("hurt", 2.0, 1.3)
+		_flash_shield()
+		return
 	var guard: Dictionary = _get_weapon("swordshield")
 	if not guard.is_empty():
 		amount *= 1.0 - clamp(0.03 * int(guard.level), 0.0, 0.4)
@@ -786,6 +794,11 @@ func _flash_hurt() -> void:
 	anim.modulate = Color(1.6, 0.55, 0.55, 1.0)
 	var tween := create_tween()
 	tween.tween_property(anim, "modulate", Color(1, 1, 1, 1), 0.18)
+
+func _flash_shield() -> void:
+	anim.modulate = Color(0.6, 1.8, 0.9, 1.0)
+	var tween := create_tween()
+	tween.tween_property(anim, "modulate", Color(1, 1, 1, 1), 0.25)
 
 const HARD_MODE_COIN_MULT := 1.3
 const HARD_MODE_XP_MULT := 1.15
