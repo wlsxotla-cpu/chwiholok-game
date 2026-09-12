@@ -19,6 +19,7 @@ extends Control
 @onready var ranking_nickname_save: Button = $Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow/RankingNicknameSaveButton
 @onready var ranking_map_row: HBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingMapRow
 @onready var ranking_list: VBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingScroll/RankingList
+@onready var difficulty_row: HBoxContainer = $Margin/VBox/DifficultyRow
 @onready var normal_button: Button = $Margin/VBox/DifficultyRow/NormalButton
 @onready var hard_button: Button = $Margin/VBox/DifficultyRow/HardButton
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
@@ -301,6 +302,10 @@ func _select_tab(tab: String) -> void:
 	guide_tab.button_pressed = tab == "guide"
 	pet_tab.button_pressed = tab == "pet"
 	ranking_tab.button_pressed = tab == "ranking"
+	difficulty_row.visible = tab == "character"
+	difficulty_desc.visible = tab == "character"
+	map_row.visible = tab == "character"
+	map_desc.visible = tab == "character"
 
 func _build_guide() -> void:
 	_add_guide_header("기본 무기")
