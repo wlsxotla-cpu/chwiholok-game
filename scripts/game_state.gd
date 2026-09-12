@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.41.0 · 2026-09-12"
+const VERSION := "v0.42.0 · 2026-09-12"
 
 const CHARACTERS := [
 	{"id": "ipopol", "name": "이포폴", "weapon": "slash", "unlock_cost": 0, "tier": 0, "portrait": "res://assets/sprites/portraits/ipopol.png", "walk_sheet": "res://assets/sprites/ipopol_walk.png"},
@@ -77,6 +77,7 @@ var meta_upgrades: Dictionary = {"hp": 0, "dmg": 0, "move": 0, "pickup": 0, "rev
 var unlocked_characters: Dictionary = {}
 var samahoek_kills: int = 0
 var jinak_clears: int = 0
+var player_nickname: String = ""
 var owned_pets: Array = []
 var sfx_enabled: bool = true
 var music_enabled: bool = true
@@ -210,6 +211,10 @@ func set_music_enabled(v: bool) -> void:
 	music_enabled = v
 	_save_data()
 
+func set_nickname(v: String) -> void:
+	player_nickname = v.strip_edges().substr(0, 12)
+	_save_data()
+
 func has_run_save() -> bool:
 	if dev_mode:
 		return false
@@ -263,6 +268,7 @@ func _load_data() -> void:
 		owned_pets = saved_pets.duplicate()
 		sfx_enabled = bool(parsed.get("sfx_enabled", true))
 		music_enabled = bool(parsed.get("music_enabled", true))
+		player_nickname = String(parsed.get("player_nickname", ""))
 
 func _save_data() -> void:
 	if dev_mode:
@@ -276,6 +282,7 @@ func _save_data() -> void:
 		"owned_pets": owned_pets,
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
+		"player_nickname": player_nickname,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f == null:

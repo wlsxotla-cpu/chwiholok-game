@@ -634,6 +634,8 @@ func _on_overlord_defeated() -> void:
 	run_over = true
 	GameState.add_run_coins(player.coins)
 	GameState.clear_run_state()
+	if not GameState.player_nickname.is_empty():
+		RankingService.submit_clear(GameState.selected_map, GameState.player_nickname, elapsed, GameState.selected_character)
 	get_tree().paused = true
 	hud.show_victory(elapsed, current_overlord_name)
 

@@ -13,6 +13,12 @@ extends Control
 @onready var pet_tab: Button = $Margin/VBox/TabRow/PetTab
 @onready var pet_panel: PanelContainer = $Margin/VBox/PetPanel
 @onready var pet_list: VBoxContainer = $Margin/VBox/PetPanel/PetScroll/PetList
+@onready var ranking_tab: Button = $Margin/VBox/TabRow/RankingTab
+@onready var ranking_panel: PanelContainer = $Margin/VBox/RankingPanel
+@onready var ranking_nickname_edit: LineEdit = $Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow/RankingNicknameEdit
+@onready var ranking_nickname_save: Button = $Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow/RankingNicknameSaveButton
+@onready var ranking_map_row: HBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingMapRow
+@onready var ranking_list: VBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingScroll/RankingList
 @onready var normal_button: Button = $Margin/VBox/DifficultyRow/NormalButton
 @onready var hard_button: Button = $Margin/VBox/DifficultyRow/HardButton
 @onready var difficulty_desc: Label = $Margin/VBox/DifficultyDesc
@@ -20,6 +26,8 @@ extends Control
 @onready var map_desc: Label = $Margin/VBox/MapDesc
 
 const Guide = preload("res://scripts/weapon_guide_data.gd")
+
+var ranking_current_map: String = ""
 
 func _ready() -> void:
 	var version_label := Button.new()
@@ -80,6 +88,7 @@ func _ready() -> void:
 	shop_tab.pressed.connect(_select_tab.bind("shop"))
 	guide_tab.pressed.connect(_select_tab.bind("guide"))
 	pet_tab.pressed.connect(_select_tab.bind("pet"))
+	ranking_tab.pressed.connect(_select_tab.bind("ranking"))
 	_select_tab("character")
 	_build_guide()
 	normal_button.pressed.connect(_on_difficulty_pressed.bind(false))
@@ -87,6 +96,14 @@ func _ready() -> void:
 	_refresh_difficulty_buttons()
 	_build_map_buttons()
 	_refresh_all()
+
+	ranking_nickname_edit.text = GameState.player_nickname
+	ranking_nickname_save.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		GameState.set_nickname(ranking_nickname_edit.text)
+		ranking_nickname_edit.text = GameState.player_nickname)
+	RankingService.top_fetched.connect(_on_ranking_top_fetched)
+	_build_ranking_map_buttons()
 
 func _build_map_buttons() -> void:
 	for c in map_row.get_children():
@@ -262,10 +279,12 @@ func _select_tab(tab: String) -> void:
 	shop_panel.visible = tab == "shop"
 	guide_panel.visible = tab == "guide"
 	pet_panel.visible = tab == "pet"
+	ranking_panel.visible = tab == "ranking"
 	character_tab.button_pressed = tab == "character"
 	shop_tab.button_pressed = tab == "shop"
 	guide_tab.button_pressed = tab == "guide"
 	pet_tab.button_pressed = tab == "pet"
+	ranking_tab.button_pressed = tab == "ranking"
 
 func _build_guide() -> void:
 	_add_guide_header("기본 무기")
@@ -578,3 +597,69 @@ func _show_toast(text: String) -> void:
 	tween.tween_property(toast, "position:y", 40, 0.6).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(toast, "modulate:a", 0.0, 0.9).set_delay(0.5)
 	tween.tween_callback(toast.queue_free)
+
+func _build_ranking_map_buttons() -> void:
+	for c in ranking_map_row.get_children():
+		c.queue_free()
+	var group := ButtonGroup.new()
+	for map_data in GameState.MAPS:
+		var btn := Button.new()
+		btn.text = map_data.name
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.custom_minimum_size = Vector2(0, 44)
+		btn.size_flags_horizontal = SIZE_EXPAND_FILL
+		btn.add_theme_font_size_override("font_size", 15)
+		btn.add_theme_stylebox_override("normal", normal_button.get_theme_stylebox("normal"))
+		btn.add_theme_stylebox_override("hover", normal_button.get_theme_stylebox("hover"))
+		btn.add_theme_stylebox_override("pressed", normal_button.get_theme_stylebox("pressed"))
+		btn.button_pressed = map_data.id == GameState.selected_map
+		btn.pressed.connect(_on_ranking_map_pressed.bind(map_data.id))
+		ranking_map_row.add_child(btn)
+	_on_ranking_map_pressed(GameState.selected_map)
+
+func _on_ranking_map_pressed(id: String) -> void:
+	ranking_current_map = id
+	for c in ranking_list.get_children():
+		c.queue_free()
+	var loading := Label.new()
+	loading.text = "불러오는 중..." if RankingService.is_configured() else "랭킹 서버가 아직 준비되지 않았습니다."
+	loading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	loading.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	ranking_list.add_child(loading)
+	RankingService.fetch_top(id, 10)
+
+func _on_ranking_top_fetched(map_id: String, entries: Array) -> void:
+	if map_id != ranking_current_map:
+		return
+	for c in ranking_list.get_children():
+		c.queue_free()
+	if entries.is_empty():
+		var empty_label := Label.new()
+		empty_label.text = "아직 기록이 없습니다." if RankingService.is_configured() else "랭킹 서버가 아직 준비되지 않았습니다."
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		empty_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+		ranking_list.add_child(empty_label)
+		return
+	for i in range(entries.size()):
+		var e: Dictionary = entries[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		var rank_label := Label.new()
+		rank_label.text = "%d위" % (i + 1)
+		rank_label.custom_minimum_size = Vector2(48, 0)
+		rank_label.add_theme_font_size_override("font_size", 15)
+		rank_label.add_theme_color_override("font_color", Color(0.91, 0.71, 0.24, 1) if i == 0 else Color(0.85, 0.81, 0.75, 1))
+		row.add_child(rank_label)
+		var name_label := Label.new()
+		name_label.text = String(e.get("nickname", "???"))
+		name_label.size_flags_horizontal = SIZE_EXPAND_FILL
+		name_label.add_theme_font_size_override("font_size", 15)
+		row.add_child(name_label)
+		var time_label := Label.new()
+		var t: float = float(e.get("clearTimeSeconds", 0.0))
+		time_label.text = "%d분 %02d초" % [int(t) / 60, int(t) % 60]
+		time_label.add_theme_font_size_override("font_size", 15)
+		time_label.add_theme_color_override("font_color", Color(0.7, 0.9, 0.85, 1))
+		row.add_child(time_label)
+		ranking_list.add_child(row)

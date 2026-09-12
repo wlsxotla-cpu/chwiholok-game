@@ -251,6 +251,17 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_diff_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_diff_selected")
 text = "펫"
 
+[node name="RankingTab" type="Button" parent="Margin/VBox/TabRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+size_flags_horizontal = 3
+toggle_mode = true
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_diff_selected")
+text = "랭킹"
+
 [node name="ShopPanel" type="PanelContainer" parent="Margin/VBox"]
 visible = false
 layout_mode = 2
@@ -286,6 +297,42 @@ layout_mode = 2
 [node name="GuideList" type="VBoxContainer" parent="Margin/VBox/GuidePanel/GuideScroll"]
 layout_mode = 2
 theme_override_constants/separation = 14
+
+[node name="RankingPanel" type="PanelContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_diff_normal")
+
+[node name="RankingVBox" type="VBoxContainer" parent="Margin/VBox/RankingPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RankingNicknameRow" type="HBoxContainer" parent="Margin/VBox/RankingPanel/RankingVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RankingNicknameEdit" type="LineEdit" parent="Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "닉네임 입력 (최대 12자)"
+max_length = 12
+
+[node name="RankingNicknameSaveButton" type="Button" parent="Margin/VBox/RankingPanel/RankingVBox/RankingNicknameRow"]
+layout_mode = 2
+text = "저장"
+
+[node name="RankingMapRow" type="HBoxContainer" parent="Margin/VBox/RankingPanel/RankingVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="RankingScroll" type="ScrollContainer" parent="Margin/VBox/RankingPanel/RankingVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="RankingList" type="VBoxContainer" parent="Margin/VBox/RankingPanel/RankingVBox/RankingScroll"]
+layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="GridScroll" type="ScrollContainer" parent="Margin/VBox"]
 layout_mode = 2
