@@ -9,6 +9,11 @@ var pierce: int = 1
 var hit_count: int = 0
 var rocket: bool = false
 var smoke_timer: float = 0.0
+var leaves_fire_zone: bool = false
+var fire_zone_damage: float = 0.0
+var fire_zone_duration: float = 0.0
+var fire_zone_radius: float = 0.0
+var fire_zone_maxed: bool = false
 
 func setup(target_pos: Vector2, dmg: float, maxed: bool = false, is_rocket: bool = false) -> void:
 	damage = dmg
@@ -43,6 +48,17 @@ func _spawn_smoke() -> void:
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("enemies") and body.has_method("take_damage"):
 		body.call_deferred("take_damage", damage)
+		if leaves_fire_zone:
+			call_deferred("_spawn_fire_zone", body.global_position)
 		hit_count += 1
 		if hit_count >= pierce:
 			queue_free()
+
+func _spawn_fire_zone(pos: Vector2) -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var zone := preload("res://scenes/FireZone.tscn").instantiate()
+	parent.add_child(zone)
+	zone.global_position = pos
+	zone.setup(fire_zone_damage, fire_zone_duration, fire_zone_radius, fire_zone_maxed)

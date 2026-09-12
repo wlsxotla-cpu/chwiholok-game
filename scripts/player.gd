@@ -665,6 +665,8 @@ func _fire_swordshield(w: Dictionary) -> void:
 	var maxed: bool = _is_maxed(w)
 	var is_flame: bool = w.id == "flame_guard"
 	var bolt_tint: Color = Color(1.7, 0.75, 0.35, 1.0) if is_flame else Color(0.6, 0.85, 1.35, 1.0)
+	var zone_duration: float = _weapon_stat(w, "duration")
+	var zone_radius: float = _weapon_stat(w, "zone_radius")
 	for i in range(count):
 		var angle: float = TAU * float(i) / float(count)
 		var dir: Vector2 = Vector2.RIGHT.rotated(angle)
@@ -674,18 +676,18 @@ func _fire_swordshield(w: Dictionary) -> void:
 		bullet.pierce = 2
 		bullet.setup(global_position + dir * travel, damage, maxed)
 		bullet.modulate = bolt_tint
+		if is_flame:
+			bullet.leaves_fire_zone = true
+			bullet.fire_zone_damage = damage * 0.35
+			bullet.fire_zone_duration = zone_duration
+			bullet.fire_zone_radius = zone_radius
+			bullet.fire_zone_maxed = maxed
 	SoundManager.play("attack_melee", -2.0, 0.85)
 	var fx := preload("res://scenes/ShieldBashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
 	fx.setup(50.0, maxed)
 	fx.modulate = bolt_tint
-	if is_flame:
-		var zone := preload("res://scenes/FireZone.tscn").instantiate()
-		get_parent().add_child(zone)
-		zone.global_position = global_position
-		zone.setup(damage * 0.35, _weapon_stat(w, "duration"), _weapon_stat(w, "zone_radius"), maxed)
-		SoundManager.play("attack_fireball", -8.0)
 
 func _fire_rapier(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()

@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.49.3 · 2026-09-12"
+const VERSION := "v0.49.4 · 2026-09-12"
 
 const MODES := [
 	{"id": "normal", "name": "일반"},
