@@ -9,6 +9,7 @@ const HORDE_INTERVAL := 50.0
 const FIRST_HORDE_DELAY := 110.0
 const OVERLORD_TIME := 1200.0
 const SAFETY_ENEMY_CEILING := 320
+const FAST_MODE_ENEMY_CEILING := 220
 
 const FAST_MODE_TIME_SCALE := 2.0
 
@@ -467,7 +468,8 @@ func _process(delta: float) -> void:
 	if spawn_timer <= 0.0:
 		spawn_timer = spawn_interval
 		spawn_interval = max(min_spawn_interval, spawn_interval * difficulty_ramp)
-		if get_tree().get_nodes_in_group("enemies").size() < SAFETY_ENEMY_CEILING:
+		var enemy_ceiling: int = FAST_MODE_ENEMY_CEILING if GameState.fast_mode else SAFETY_ENEMY_CEILING
+		if get_tree().get_nodes_in_group("enemies").size() < enemy_ceiling:
 			_spawn_enemy()
 
 	heal_spawn_timer -= game_delta
