@@ -345,7 +345,10 @@ func _halberd_barrage() -> void:
 		bolt.velocity *= HALBERD_BOLT_SPEED_MULT
 		bolt.rotation = bolt.velocity.angle()
 		bolt.lifetime = HALBERD_BOLT_LIFETIME
-		bolt.modulate = Color(1.6, 0.95, 0.35, 1.0)
+		var bolt_sprite: Sprite2D = bolt.get_node("Sprite2D")
+		bolt_sprite.texture = preload("res://assets/sprites/orbit_blade.png")
+		bolt_sprite.scale = Vector2(0.6, 0.6)
+		bolt.modulate = Color(1.3, 0.5, 0.95, 1.0)
 		bolt.scale *= HALBERD_BOLT_SCALE
 
 func _process_overlord_aura(delta: float) -> void:

@@ -38,7 +38,7 @@ const WEAPON_DEFS := {
 	"spear": {"name": "만금창", "cooldown": 1.3, "damage": 20.0, "radius": 90.0},
 	"curse": {"name": "귀곡저주", "cooldown": 1.7, "damage": 8.0, "radius": 260.0},
 	"sky_piercer": {"name": "관천쾌섬창", "cooldown": 1.0, "damage": 34.0, "radius": 150.0},
-	"flame_guard": {"name": "염화호신진", "cooldown": 1.1, "damage": 15.0, "radius": 320.0, "count": 8.0},
+	"flame_guard": {"name": "염화호신진", "cooldown": 1.1, "damage": 15.0, "radius": 320.0, "count": 8.0, "duration": 2.2, "zone_radius": 130.0},
 	"cataclysm_fury": {"name": "패왕귀멸진", "cooldown": 1.4, "damage": 24.0, "count": 3.0},
 }
 
@@ -680,6 +680,12 @@ func _fire_swordshield(w: Dictionary) -> void:
 	fx.global_position = global_position
 	fx.setup(50.0, maxed)
 	fx.modulate = bolt_tint
+	if is_flame:
+		var zone := preload("res://scenes/FireZone.tscn").instantiate()
+		get_parent().add_child(zone)
+		zone.global_position = global_position
+		zone.setup(damage * 0.35, _weapon_stat(w, "duration"), _weapon_stat(w, "zone_radius"), maxed)
+		SoundManager.play("attack_fireball", -8.0)
 
 func _fire_rapier(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
