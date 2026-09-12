@@ -628,11 +628,13 @@ func show_revived() -> void:
 	_show_banner("환생!", Color(0.55, 0.9, 1.0, 1))
 
 func show_map_event_warning(text: String) -> void:
-	_show_banner(text, Color(1.0, 0.25, 0.2, 1), 3.0)
+	_show_banner(text, Color(1.0, 0.25, 0.2, 1), 3.0, 20)
 
-func _show_banner(text: String, color: Color, hold: float = 1.2) -> void:
+func _show_banner(text: String, color: Color, hold: float = 1.2, font_size: int = 30) -> void:
 	evolve_label.text = text
 	evolve_label.add_theme_color_override("font_color", color)
+	evolve_label.add_theme_font_size_override("font_size", font_size)
+	evolve_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	evolve_label.visible = true
 	evolve_label.modulate.a = 0.0
 	evolve_label.scale = Vector2(0.8, 0.8)
