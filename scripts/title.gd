@@ -188,6 +188,59 @@ func _unhandled_input(event: InputEvent) -> void:
 func _go() -> void:
 	if going or pending_update:
 		return
+	if GameState.has_run_save():
+		_show_new_game_confirm()
+		return
 	going = true
 	SoundManager.play("click")
 	get_tree().change_scene_to_file("res://scenes/CharacterSelect.tscn")
+
+func _show_new_game_confirm() -> void:
+	var overlay := ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.7)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(overlay)
+
+	var box := PanelContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.custom_minimum_size = Vector2(300, 60)
+	box.position = Vector2(-150, -100)
+	overlay.add_child(box)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	box.add_child(vbox)
+
+	var msg := Label.new()
+	msg.text = "진행 중인 게임이 있습니다.\n새로 시작하면 기존 진행 상황이 사라집니다."
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD
+	msg.add_theme_font_size_override("font_size", 15)
+	msg.add_theme_color_override("font_color", Color(0.9, 0.86, 0.8, 1))
+	vbox.add_child(msg)
+
+	var resume_btn := Button.new()
+	resume_btn.text = "이어하기"
+	resume_btn.custom_minimum_size = Vector2(0, 48)
+	resume_btn.pressed.connect(func() -> void:
+		overlay.queue_free()
+		_on_resume_pressed())
+	vbox.add_child(resume_btn)
+
+	var new_btn := Button.new()
+	new_btn.text = "새로 시작 (기존 기록 삭제)"
+	new_btn.custom_minimum_size = Vector2(0, 48)
+	new_btn.pressed.connect(func() -> void:
+		overlay.queue_free()
+		GameState.clear_run_state()
+		going = true
+		SoundManager.play("click")
+		get_tree().change_scene_to_file("res://scenes/CharacterSelect.tscn"))
+	vbox.add_child(new_btn)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "취소"
+	cancel_btn.flat = true
+	cancel_btn.pressed.connect(func() -> void: overlay.queue_free())
+	vbox.add_child(cancel_btn)

@@ -109,6 +109,8 @@ const PARRY_COOLDOWN := 1.2
 var invincible_timer: float = 0.0
 var parry_timer: float = 0.0
 var shield_charges: int = 0
+const CONTINUE_LOCKOUT_DURATION := 8.0
+var continue_lockout_timer: float = 0.0
 var continues_used: int = 0
 var max_continues: int = 1
 var declined_fusions: Dictionary = {}
@@ -302,6 +304,9 @@ func _physics_process(delta: float) -> void:
 
 	if parry_timer > 0.0:
 		parry_timer -= delta
+
+	if continue_lockout_timer > 0.0:
+		continue_lockout_timer -= delta
 
 func screen_shake(strength: float, duration: float) -> void:
 	shake_strength = max(shake_strength, strength)
@@ -674,6 +679,8 @@ func _fire_rapier(w: Dictionary) -> void:
 		fx.set_radius(26.0, maxed)
 	SoundManager.play("attack_melee", -3.0, 1.5)
 
+const CURSE_MAX_EFFECTS := 12
+
 func _fire_curse(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")
 	var range: float = _weapon_stat(w, "radius")
@@ -683,11 +690,12 @@ func _fire_curse(w: Dictionary) -> void:
 	var struck: int = 0
 	for e in enemies:
 		e.take_damage(damage)
-		var fx := preload("res://scenes/LightningEffect.tscn").instantiate()
-		get_parent().add_child(fx)
-		fx.global_position = e.global_position
-		fx.setup(_is_maxed(w))
-		fx.modulate = Color(1.3, 0.5, 1.5, 1.0)
+		if struck < CURSE_MAX_EFFECTS:
+			var fx := preload("res://scenes/LightningEffect.tscn").instantiate()
+			get_parent().add_child(fx)
+			fx.global_position = e.global_position
+			fx.setup(_is_maxed(w))
+			fx.modulate = Color(1.3, 0.5, 1.5, 1.0)
 		struck += 1
 	if struck > 0:
 		SoundManager.play("attack_fireball", -2.0, 0.8)
@@ -765,21 +773,26 @@ func take_damage(amount: float) -> void:
 	_flash_hurt()
 	invincible_timer = INVINCIBLE_DURATION
 	if health <= 0.0:
-		if continues_used < max_continues:
+		if continues_used < max_continues and continue_lockout_timer <= 0.0:
 			health = 0.0
 			get_tree().paused = true
-			continue_offered.emit(GameState.CONTINUE_COST, GameState.total_coins + coins)
+			continue_offered.emit(_continue_cost(), GameState.total_coins + coins)
 			return
 		health = 0.0
 		died.emit()
 
+func _continue_cost() -> int:
+	return GameState.CONTINUE_COST * (continues_used + 1)
+
 func confirm_continue() -> void:
-	if GameState.total_coins + coins < GameState.CONTINUE_COST:
+	var cost: int = _continue_cost()
+	if GameState.total_coins + coins < cost:
 		return
 	continues_used += 1
+	continue_lockout_timer = CONTINUE_LOCKOUT_DURATION
 	GameState.add_run_coins(coins)
 	coins = 0
-	GameState.spend_coins(GameState.CONTINUE_COST)
+	GameState.spend_coins(cost)
 	health = max_health * REVIVE_HEALTH_FRACTION
 	invincible_timer = REVIVE_INVINCIBLE_DURATION
 	stats_changed.emit()
