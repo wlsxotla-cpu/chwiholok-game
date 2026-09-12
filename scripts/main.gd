@@ -93,6 +93,8 @@ func _ready() -> void:
 	hud.set_prop_counts(chests_opened_count, grass_broken_count)
 	if GameState.selected_map == "ruins" and not was_resuming:
 		hud.show_map_event_warning("이 곳에서는 캐릭터 고유 능력치와 영구 강화 효과가 대폭 감소합니다")
+	if was_resuming and overlord_spawned:
+		_spawn_overlord()
 
 func _apply_map_theme() -> void:
 	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
