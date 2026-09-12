@@ -229,12 +229,15 @@ func _apply_meta_upgrades() -> void:
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)) * mult)
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 
+const RUINS_TIER_DEBUFF := 0.5
+
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))
 	if tier <= 0:
 		return
-	max_health *= (1.0 + 0.06 * tier)
-	global_damage_mult *= (1.0 + 0.06 * tier)
+	var mult: float = RUINS_TIER_DEBUFF if GameState.selected_map == "ruins" else 1.0
+	max_health *= (1.0 + 0.06 * tier * mult)
+	global_damage_mult *= (1.0 + 0.06 * tier * mult)
 
 func _build_sprite_frames(sheet_path: String) -> SpriteFrames:
 	var tex: Texture2D = load(sheet_path)
