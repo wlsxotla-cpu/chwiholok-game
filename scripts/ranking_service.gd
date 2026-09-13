@@ -7,9 +7,12 @@ const MIN_CLEAR_TIME := 20.0
 const MAX_CLEAR_TIME := 7200.0
 const SURVIVAL_SCORE_OFFSET := 100000.0
 
+const MIN_PASSWORD_LENGTH := 4
+
 signal top_fetched(map_id: String, mode_id: String, entries: Array)
 signal submit_finished(success: bool)
 signal nickname_claim_result(success: bool, nickname: String, reason: String)
+signal nickname_change_result(success: bool, nickname: String, reason: String)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -19,6 +22,12 @@ func is_configured() -> bool:
 
 func _base_url() -> String:
 	return "https://firestore.googleapis.com/v1/projects/%s/databases/(default)/documents" % FIREBASE_PROJECT_ID
+
+func _resource_name(relative_path: String) -> String:
+	return "projects/%s/databases/(default)/documents/%s" % [FIREBASE_PROJECT_ID, relative_path]
+
+func hash_password(password: String) -> String:
+	return password.sha256_text()
 
 func submit_clear(map_id: String, nickname: String, clear_time: float, character_id: String, mode_id: String = "normal") -> void:
 	submit_run(map_id, nickname, clear_time, character_id, mode_id, true)
@@ -53,10 +62,13 @@ func submit_run(map_id: String, nickname: String, time_seconds: float, character
 	var url: String = "%s/rankings?key=%s" % [_base_url(), FIREBASE_API_KEY]
 	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body))
 
-func claim_nickname(nickname: String) -> void:
+func claim_nickname(nickname: String, password: String) -> void:
 	var clean_nick: String = nickname.strip_edges().substr(0, 12)
 	if clean_nick.is_empty():
 		nickname_claim_result.emit(false, clean_nick, "empty")
+		return
+	if password.length() < MIN_PASSWORD_LENGTH:
+		nickname_claim_result.emit(false, clean_nick, "weak_password")
 		return
 	if not is_configured():
 		nickname_claim_result.emit(true, clean_nick, "")
@@ -74,7 +86,93 @@ func claim_nickname(nickname: String) -> void:
 			nickname_claim_result.emit(false, clean_nick, "error")
 		req.queue_free())
 	var url: String = "%s/nicknames?documentId=%s&key=%s" % [_base_url(), clean_nick.uri_encode(), FIREBASE_API_KEY]
-	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify({"fields": {}}))
+	var body := {"fields": {"passwordHash": {"stringValue": hash_password(password)}}}
+	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body))
+
+# Renames a nickname everywhere: verifies old_password against the old nickname's
+# stored hash, reserves new_nick (fails if taken), and renames every past ranking
+# entry — all atomically in one Firestore batch commit. If the password is wrong,
+# or new_nick is already taken, the ENTIRE batch is rejected and nothing changes.
+func change_nickname(old_nick: String, old_password: String, new_nick: String, new_password: String) -> void:
+	if not is_configured():
+		nickname_change_result.emit(false, new_nick, "error")
+		return
+	var clean_old: String = old_nick.strip_edges().substr(0, 12)
+	var clean_new: String = new_nick.strip_edges().substr(0, 12)
+	if clean_new.is_empty() or new_password.length() < MIN_PASSWORD_LENGTH:
+		nickname_change_result.emit(false, clean_new, "weak_password")
+		return
+	if clean_old.is_empty():
+		nickname_change_result.emit(false, clean_new, "error")
+		return
+
+	var query := {
+		"structuredQuery": {
+			"from": [{"collectionId": "rankings"}],
+			"where": {"fieldFilter": {"field": {"fieldPath": "nickname"}, "op": "EQUAL", "value": {"stringValue": clean_old}}},
+			"limit": 200
+		}
+	}
+	var req := HTTPRequest.new()
+	req.accept_gzip = false
+	add_child(req)
+	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, resp_body: PackedByteArray) -> void:
+		req.queue_free()
+		_submit_change_batch(code, resp_body, clean_old, old_password, clean_new, new_password))
+	var url: String = "%s:runQuery?key=%s" % [_base_url(), FIREBASE_API_KEY]
+	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(query))
+
+func _submit_change_batch(code: int, resp_body: PackedByteArray, old_nick: String, old_password: String, new_nick: String, new_password: String) -> void:
+	if code != 200:
+		nickname_change_result.emit(false, new_nick, "error")
+		return
+	var parsed = JSON.parse_string(resp_body.get_string_from_utf8())
+	var doc_names: Array = []
+	if typeof(parsed) == TYPE_ARRAY:
+		for row in parsed:
+			if typeof(row) == TYPE_DICTIONARY and row.has("document"):
+				doc_names.append(String(row.document.name))
+
+	var writes: Array = []
+	# 1) verification probe: re-write the old nickname's passwordHash unchanged.
+	#    Firestore rules require request value == currently stored value, so this
+	#    fails outright (and the whole batch aborts) if old_password is wrong.
+	writes.append({
+		"update": {
+			"name": _resource_name("nicknames/%s" % old_nick),
+			"fields": {"passwordHash": {"stringValue": hash_password(old_password)}},
+		},
+		"updateMask": {"fieldPaths": ["passwordHash"]},
+	})
+	# 2) reserve the new nickname (fails if it already exists).
+	writes.append({
+		"update": {
+			"name": _resource_name("nicknames/%s" % new_nick),
+			"fields": {"passwordHash": {"stringValue": hash_password(new_password)}},
+		},
+		"currentDocument": {"exists": false},
+	})
+	# 3) rename every past ranking entry that used the old nickname.
+	for doc_name in doc_names:
+		writes.append({
+			"update": {
+				"name": doc_name,
+				"fields": {"nickname": {"stringValue": new_nick}},
+			},
+			"updateMask": {"fieldPaths": ["nickname"]},
+		})
+
+	var req := HTTPRequest.new()
+	req.accept_gzip = false
+	add_child(req)
+	req.request_completed.connect(func(_result: int, commit_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+		if commit_code == 200:
+			nickname_change_result.emit(true, new_nick, "")
+		else:
+			nickname_change_result.emit(false, new_nick, "rejected")
+		req.queue_free())
+	var url: String = "%s:commit?key=%s" % [_base_url(), FIREBASE_API_KEY]
+	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify({"writes": writes}))
 
 func fetch_top(map_id: String, mode_id: String = "normal", count: int = 10) -> void:
 	if not is_configured():

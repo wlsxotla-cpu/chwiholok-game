@@ -783,6 +783,12 @@ func _show_nickname_gate() -> void:
 	edit.custom_minimum_size = Vector2(0, 44)
 	vbox.add_child(edit)
 
+	var pw_edit := LineEdit.new()
+	pw_edit.placeholder_text = "비밀번호 (4자 이상, 나중에 닉네임 변경 시 필요)"
+	pw_edit.secret = true
+	pw_edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(pw_edit)
+
 	var status := Label.new()
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -801,7 +807,8 @@ func _show_nickname_gate() -> void:
 	vbox.add_child(skip_btn)
 
 	edit.grab_focus()
-	edit.text_submitted.connect(func(_t: String) -> void: confirm_btn.pressed.emit())
+	edit.text_submitted.connect(func(_t: String) -> void: pw_edit.grab_focus())
+	pw_edit.text_submitted.connect(func(_t: String) -> void: confirm_btn.pressed.emit())
 
 	skip_btn.pressed.connect(func() -> void:
 		SoundManager.play("click")
@@ -810,21 +817,26 @@ func _show_nickname_gate() -> void:
 
 	confirm_btn.pressed.connect(func() -> void:
 		var nick: String = edit.text.strip_edges()
+		var pw: String = pw_edit.text
 		if nick.is_empty():
 			status.text = "닉네임을 입력해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		if pw.length() < RankingService.MIN_PASSWORD_LENGTH:
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 			return
 		confirm_btn.disabled = true
 		status.text = "확인 중..."
 		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
-		RankingService.claim_nickname(nick))
+		RankingService.claim_nickname(nick, pw))
 
 	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
 		if not is_instance_valid(confirm_btn):
 			return
 		confirm_btn.disabled = false
 		if success:
-			GameState.set_nickname(nick)
+			GameState.set_nickname(nick, pw_edit.text)
 			GameState.mark_nickname_prompt_shown()
 			status.text = "설정 완료!"
 			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
@@ -834,6 +846,9 @@ func _show_nickname_gate() -> void:
 				overlay.queue_free()
 		elif reason == "taken":
 			status.text = "이미 사용 중인 닉네임입니다"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason == "weak_password":
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 		else:
 			status.text = "네트워크 오류, 다시 시도해주세요"
@@ -864,17 +879,31 @@ func _show_settings_panel() -> void:
 	vbox.add_child(title)
 
 	var nick_label := Label.new()
-	nick_label.text = "랭킹 닉네임"
+	nick_label.text = "현재 닉네임: %s" % (GameState.player_nickname if not GameState.player_nickname.is_empty() else "(미설정)")
 	nick_label.add_theme_font_size_override("font_size", 13)
 	nick_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
 	vbox.add_child(nick_label)
 
-	var edit := LineEdit.new()
-	edit.text = GameState.player_nickname
-	edit.placeholder_text = "닉네임 (최대 12자)"
-	edit.max_length = 12
-	edit.custom_minimum_size = Vector2(0, 44)
-	vbox.add_child(edit)
+	var has_existing: bool = not GameState.player_nickname.is_empty()
+	var old_pw_edit: LineEdit = null
+	if has_existing:
+		old_pw_edit = LineEdit.new()
+		old_pw_edit.placeholder_text = "현재 비밀번호"
+		old_pw_edit.secret = true
+		old_pw_edit.custom_minimum_size = Vector2(0, 44)
+		vbox.add_child(old_pw_edit)
+
+	var new_nick_edit := LineEdit.new()
+	new_nick_edit.placeholder_text = "새 닉네임 (최대 12자)"
+	new_nick_edit.max_length = 12
+	new_nick_edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(new_nick_edit)
+
+	var new_pw_edit := LineEdit.new()
+	new_pw_edit.placeholder_text = "새 비밀번호 (%d자 이상)" % RankingService.MIN_PASSWORD_LENGTH
+	new_pw_edit.secret = true
+	new_pw_edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(new_pw_edit)
 
 	var status := Label.new()
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -897,25 +926,45 @@ func _show_settings_panel() -> void:
 		SoundManager.play("click")
 		overlay.queue_free())
 
-	save_btn.pressed.connect(func() -> void:
-		var nick: String = edit.text.strip_edges()
-		if nick.is_empty() or nick == GameState.player_nickname:
-			return
-		save_btn.disabled = true
-		status.text = "확인 중..."
-		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
-		RankingService.claim_nickname(nick))
+	var used_change_flow := false
 
-	edit.grab_focus()
-	edit.caret_column = edit.text.length()
-	edit.text_submitted.connect(func(_t: String) -> void: save_btn.pressed.emit())
+	save_btn.pressed.connect(func() -> void:
+		var new_nick: String = new_nick_edit.text.strip_edges()
+		var new_pw: String = new_pw_edit.text
+		if new_nick.is_empty() or new_nick == GameState.player_nickname:
+			status.text = "새 닉네임을 입력해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		if new_pw.length() < RankingService.MIN_PASSWORD_LENGTH:
+			status.text = "새 비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+		if has_existing:
+			var old_pw: String = old_pw_edit.text
+			if old_pw.is_empty():
+				status.text = "현재 비밀번호를 입력해주세요"
+				status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+				return
+			used_change_flow = true
+			save_btn.disabled = true
+			status.text = "확인 중... (과거 기록도 함께 갱신)"
+			RankingService.change_nickname(GameState.player_nickname, old_pw, new_nick, new_pw)
+		else:
+			used_change_flow = false
+			save_btn.disabled = true
+			status.text = "확인 중..."
+			RankingService.claim_nickname(new_nick, new_pw))
+
+	new_nick_edit.grab_focus()
+	new_nick_edit.text_submitted.connect(func(_t: String) -> void: save_btn.pressed.emit())
 
 	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
-		if not is_instance_valid(save_btn):
+		if used_change_flow or not is_instance_valid(save_btn):
 			return
 		save_btn.disabled = false
 		if success:
-			GameState.set_nickname(nick)
+			GameState.set_nickname(nick, new_pw_edit.text)
 			GameState.mark_nickname_prompt_shown()
 			status.text = "저장 완료!"
 			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
@@ -923,6 +972,29 @@ func _show_settings_panel() -> void:
 		elif reason == "taken":
 			status.text = "이미 사용 중인 닉네임입니다"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason == "weak_password":
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 		elif reason != "empty":
+			status.text = "네트워크 오류, 다시 시도해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
+
+	RankingService.nickname_change_result.connect(func(success: bool, nick: String, reason: String) -> void:
+		if not used_change_flow or not is_instance_valid(save_btn):
+			return
+		save_btn.disabled = false
+		if success:
+			GameState.set_nickname(nick, new_pw_edit.text)
+			GameState.mark_nickname_prompt_shown()
+			status.text = "저장 완료! 과거 기록도 새 닉네임으로 갱신됐습니다."
+			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
+			SoundManager.play("levelup", 3.0, 1.2)
+		elif reason == "weak_password":
+			status.text = "새 비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason == "rejected":
+			status.text = "현재 비밀번호가 틀렸거나 새 닉네임이 이미 사용 중입니다"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		else:
 			status.text = "네트워크 오류, 다시 시도해주세요"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))

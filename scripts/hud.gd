@@ -528,12 +528,14 @@ func set_weapons(weapons: Array) -> void:
 		slot_btn.flat = true
 		slot_btn.focus_mode = Control.FOCUS_NONE
 		slot_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+		slot_btn.custom_minimum_size = Vector2(48, 58)
 		slot_btn.pressed.connect(_on_weapon_slot_pressed.bind(w.id))
 
 		var slot := VBoxContainer.new()
 		slot.alignment = BoxContainer.ALIGNMENT_CENTER
 		slot.add_theme_constant_override("separation", 0)
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.set_anchors_preset(Control.PRESET_CENTER)
 		slot_btn.add_child(slot)
 
 		var evolved: bool = w.get("evolved", false)
@@ -959,6 +961,12 @@ func show_ranking_nickname_prompt(on_registered: Callable) -> void:
 	edit.custom_minimum_size = Vector2(0, 44)
 	vbox.add_child(edit)
 
+	var pw_edit := LineEdit.new()
+	pw_edit.placeholder_text = "비밀번호 (4자 이상, 나중에 닉네임 변경 시 필요)"
+	pw_edit.secret = true
+	pw_edit.custom_minimum_size = Vector2(0, 44)
+	vbox.add_child(pw_edit)
+
 	var status := Label.new()
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD
@@ -983,21 +991,26 @@ func show_ranking_nickname_prompt(on_registered: Callable) -> void:
 
 	confirm_btn.pressed.connect(func() -> void:
 		var nick: String = edit.text.strip_edges()
+		var pw: String = pw_edit.text
 		if nick.is_empty():
 			status.text = "닉네임을 입력해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		if pw.length() < RankingService.MIN_PASSWORD_LENGTH:
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 			return
 		confirm_btn.disabled = true
 		status.text = "확인 중..."
 		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
-		RankingService.claim_nickname(nick))
+		RankingService.claim_nickname(nick, pw))
 
 	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
 		if not is_instance_valid(confirm_btn):
 			return
 		confirm_btn.disabled = false
 		if success:
-			GameState.set_nickname(nick)
+			GameState.set_nickname(nick, pw_edit.text)
 			GameState.mark_nickname_prompt_shown()
 			status.text = "등록 완료! 랭킹 제출 중..."
 			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
@@ -1009,9 +1022,13 @@ func show_ranking_nickname_prompt(on_registered: Callable) -> void:
 		elif reason == "taken":
 			status.text = "이미 사용 중인 닉네임입니다"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason == "weak_password":
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 		elif reason != "empty":
 			status.text = "네트워크 오류, 다시 시도해주세요"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
 
 	edit.grab_focus()
-	edit.text_submitted.connect(func(_t: String) -> void: confirm_btn.pressed.emit())
+	edit.text_submitted.connect(func(_t: String) -> void: pw_edit.grab_focus())
+	pw_edit.text_submitted.connect(func(_t: String) -> void: confirm_btn.pressed.emit())

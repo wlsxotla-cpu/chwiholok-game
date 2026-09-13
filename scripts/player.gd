@@ -271,18 +271,19 @@ func _build_sprite_frames(sheet_path: String) -> SpriteFrames:
 			frames.add_frame(full_name, atlas)
 	return frames
 
-func _physics_process(delta: float) -> void:
+func _current_input_dir() -> Vector2:
 	var input_dir := Vector2(
 		Input.get_action_strength("move_right") - Input.get_action_strength("move_left"),
 		Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
 	)
-	var from_joystick := false
 	if joystick and joystick.direction.length() > 0.01:
-		input_dir = joystick.direction
-		from_joystick = true
-	if not from_joystick and input_dir.length() > 1.0:
+		return joystick.direction
+	if input_dir.length() > 1.0:
 		input_dir = input_dir.normalized()
+	return input_dir
 
+func _physics_process(delta: float) -> void:
+	var input_dir: Vector2 = _current_input_dir()
 	var target_velocity: Vector2 = input_dir * speed
 	velocity = velocity.lerp(target_velocity, clamp(20.0 * delta, 0.0, 1.0))
 	move_and_slide()
@@ -355,10 +356,12 @@ func _find_nearest_enemy() -> Node2D:
 			nearest = e
 	return nearest
 
+const BOSS_TARGET_SEARCH_RANGE := 600.0
+
 func _find_boss_priority_target() -> Node2D:
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest_boss: Node2D = null
-	var nearest_boss_dist := TARGET_SEARCH_RANGE
+	var nearest_boss_dist := BOSS_TARGET_SEARCH_RANGE
 	var nearest_any: Node2D = null
 	var nearest_any_dist := TARGET_SEARCH_RANGE
 	for e in enemies:
@@ -843,6 +846,7 @@ func confirm_continue() -> void:
 	GameState.spend_coins(cost)
 	health = max_health * REVIVE_HEALTH_FRACTION
 	invincible_timer = REVIVE_INVINCIBLE_DURATION
+	velocity = _current_input_dir() * speed
 	stats_changed.emit()
 	revived.emit()
 	get_tree().paused = false

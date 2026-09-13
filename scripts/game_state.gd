@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.49.6 · 2026-09-13"
+const VERSION := "v0.49.7 · 2026-09-13"
 
 const MODES := [
 	{"id": "normal", "name": "일반"},
@@ -92,6 +92,7 @@ var unlocked_characters: Dictionary = {}
 var samahoek_kills: int = 0
 var jinak_clears: int = 0
 var player_nickname: String = ""
+var player_nickname_password: String = ""
 var nickname_prompt_shown: bool = false
 var owned_pets: Array = []
 var sfx_enabled: bool = true
@@ -226,8 +227,10 @@ func set_music_enabled(v: bool) -> void:
 	music_enabled = v
 	_save_data()
 
-func set_nickname(v: String) -> void:
+func set_nickname(v: String, password: String = "") -> void:
 	player_nickname = v.strip_edges().substr(0, 12)
+	if not password.is_empty():
+		player_nickname_password = password
 	_save_data()
 
 func mark_nickname_prompt_shown() -> void:
@@ -288,6 +291,7 @@ func _load_data() -> void:
 		sfx_enabled = bool(parsed.get("sfx_enabled", true))
 		music_enabled = bool(parsed.get("music_enabled", true))
 		player_nickname = String(parsed.get("player_nickname", ""))
+		player_nickname_password = String(parsed.get("player_nickname_password", ""))
 		nickname_prompt_shown = bool(parsed.get("nickname_prompt_shown", false))
 
 func _save_data() -> void:
@@ -303,6 +307,7 @@ func _save_data() -> void:
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
 		"player_nickname": player_nickname,
+		"player_nickname_password": player_nickname_password,
 		"nickname_prompt_shown": nickname_prompt_shown,
 	}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
