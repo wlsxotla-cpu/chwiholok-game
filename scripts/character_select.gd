@@ -885,22 +885,39 @@ func _show_settings_panel() -> void:
 	vbox.add_child(nick_label)
 
 	var has_existing: bool = not GameState.player_nickname.is_empty()
+	var has_password: bool = not GameState.player_nickname_password.is_empty()
+	# Nickname was set before the password system existed (or synced from another
+	# device) - there's no old password to verify, so let them set one for their
+	# CURRENT nickname instead of forcing a rename.
+	var needs_initial_password: bool = has_existing and not has_password
+
+	if needs_initial_password:
+		var notice := Label.new()
+		notice.text = "아직 비밀번호가 설정되지 않았습니다.\n비밀번호를 설정하면 이후 닉네임 변경 시 본인 확인에 사용됩니다."
+		notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		notice.autowrap_mode = TextServer.AUTOWRAP_WORD
+		notice.add_theme_font_size_override("font_size", 12)
+		notice.add_theme_color_override("font_color", Color(0.95, 0.8, 0.4, 1))
+		vbox.add_child(notice)
+
 	var old_pw_edit: LineEdit = null
-	if has_existing:
+	if has_existing and has_password:
 		old_pw_edit = LineEdit.new()
 		old_pw_edit.placeholder_text = "현재 비밀번호"
 		old_pw_edit.secret = true
 		old_pw_edit.custom_minimum_size = Vector2(0, 44)
 		vbox.add_child(old_pw_edit)
 
-	var new_nick_edit := LineEdit.new()
-	new_nick_edit.placeholder_text = "새 닉네임 (최대 12자)"
-	new_nick_edit.max_length = 12
-	new_nick_edit.custom_minimum_size = Vector2(0, 44)
-	vbox.add_child(new_nick_edit)
+	var new_nick_edit: LineEdit = null
+	if not needs_initial_password:
+		new_nick_edit = LineEdit.new()
+		new_nick_edit.placeholder_text = "새 닉네임 (최대 12자)"
+		new_nick_edit.max_length = 12
+		new_nick_edit.custom_minimum_size = Vector2(0, 44)
+		vbox.add_child(new_nick_edit)
 
 	var new_pw_edit := LineEdit.new()
-	new_pw_edit.placeholder_text = "새 비밀번호 (%d자 이상)" % RankingService.MIN_PASSWORD_LENGTH
+	new_pw_edit.placeholder_text = "비밀번호 (%d자 이상)" % RankingService.MIN_PASSWORD_LENGTH
 	new_pw_edit.secret = true
 	new_pw_edit.custom_minimum_size = Vector2(0, 44)
 	vbox.add_child(new_pw_edit)
@@ -913,7 +930,7 @@ func _show_settings_panel() -> void:
 	vbox.add_child(status)
 
 	var save_btn := Button.new()
-	save_btn.text = "닉네임 저장"
+	save_btn.text = "비밀번호 설정" if needs_initial_password else "닉네임 저장"
 	save_btn.custom_minimum_size = Vector2(0, 48)
 	vbox.add_child(save_btn)
 
@@ -926,41 +943,48 @@ func _show_settings_panel() -> void:
 		SoundManager.play("click")
 		overlay.queue_free())
 
-	var used_change_flow := false
+	# "claim" = brand-new nickname, "change" = rename with known password,
+	# "set_initial" = legacy nickname setting a password for the first time.
+	var flow_mode: String = "set_initial" if needs_initial_password else ("change" if has_existing else "claim")
 
 	save_btn.pressed.connect(func() -> void:
-		var new_nick: String = new_nick_edit.text.strip_edges()
 		var new_pw: String = new_pw_edit.text
+		if new_pw.length() < RankingService.MIN_PASSWORD_LENGTH:
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+			return
+		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+		if flow_mode == "set_initial":
+			save_btn.disabled = true
+			status.text = "확인 중..."
+			RankingService.set_initial_password(GameState.player_nickname, new_pw)
+			return
+		var new_nick: String = new_nick_edit.text.strip_edges()
 		if new_nick.is_empty() or new_nick == GameState.player_nickname:
 			status.text = "새 닉네임을 입력해주세요"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 			return
-		if new_pw.length() < RankingService.MIN_PASSWORD_LENGTH:
-			status.text = "새 비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
-			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
-			return
-		status.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
-		if has_existing:
+		if flow_mode == "change":
 			var old_pw: String = old_pw_edit.text
 			if old_pw.is_empty():
 				status.text = "현재 비밀번호를 입력해주세요"
 				status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 				return
-			used_change_flow = true
 			save_btn.disabled = true
 			status.text = "확인 중... (과거 기록도 함께 갱신)"
 			RankingService.change_nickname(GameState.player_nickname, old_pw, new_nick, new_pw)
 		else:
-			used_change_flow = false
 			save_btn.disabled = true
 			status.text = "확인 중..."
 			RankingService.claim_nickname(new_nick, new_pw))
 
-	new_nick_edit.grab_focus()
-	new_nick_edit.text_submitted.connect(func(_t: String) -> void: save_btn.pressed.emit())
+	(new_nick_edit if new_nick_edit != null else new_pw_edit).grab_focus()
+	new_pw_edit.text_submitted.connect(func(_t: String) -> void: save_btn.pressed.emit())
+	if new_nick_edit != null:
+		new_nick_edit.text_submitted.connect(func(_t: String) -> void: save_btn.pressed.emit())
 
 	RankingService.nickname_claim_result.connect(func(success: bool, nick: String, reason: String) -> void:
-		if used_change_flow or not is_instance_valid(save_btn):
+		if flow_mode != "claim" or not is_instance_valid(save_btn):
 			return
 		save_btn.disabled = false
 		if success:
@@ -980,7 +1004,7 @@ func _show_settings_panel() -> void:
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
 
 	RankingService.nickname_change_result.connect(func(success: bool, nick: String, reason: String) -> void:
-		if not used_change_flow or not is_instance_valid(save_btn):
+		if flow_mode != "change" or not is_instance_valid(save_btn):
 			return
 		save_btn.disabled = false
 		if success:
@@ -994,6 +1018,25 @@ func _show_settings_panel() -> void:
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 		elif reason == "rejected":
 			status.text = "현재 비밀번호가 틀렸거나 새 닉네임이 이미 사용 중입니다"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		else:
+			status.text = "네트워크 오류, 다시 시도해주세요"
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1)))
+
+	RankingService.password_set_result.connect(func(success: bool, reason: String) -> void:
+		if flow_mode != "set_initial" or not is_instance_valid(save_btn):
+			return
+		save_btn.disabled = false
+		if success:
+			GameState.set_nickname(GameState.player_nickname, new_pw_edit.text)
+			status.text = "비밀번호가 설정되었습니다!"
+			status.add_theme_color_override("font_color", Color(0.55, 0.9, 0.6, 1))
+			SoundManager.play("levelup", 3.0, 1.2)
+		elif reason == "weak_password":
+			status.text = "비밀번호는 %d자 이상 입력해주세요" % RankingService.MIN_PASSWORD_LENGTH
+			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
+		elif reason == "rejected":
+			status.text = "다른 기기에서 이미 이 닉네임의 비밀번호가 설정되었습니다"
 			status.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1))
 		else:
 			status.text = "네트워크 오류, 다시 시도해주세요"

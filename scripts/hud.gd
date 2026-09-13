@@ -633,11 +633,27 @@ func _show_weapon_fusion_info(w: Dictionary) -> void:
 	var evolved: bool = w.get("evolved", false)
 	var maxed: bool = int(w.level) >= MAX_WEAPON_LEVEL
 
+	var header := HBoxContainer.new()
+	header.alignment = BoxContainer.ALIGNMENT_CENTER
+	header.add_theme_constant_override("separation", 8)
+	vbox.add_child(header)
+
+	var icon_path: String = WEAPON_ICONS.get(w.id, "")
+	if icon_path != "":
+		var header_icon := TextureRect.new()
+		header_icon.texture = load(icon_path)
+		header_icon.custom_minimum_size = Vector2(28, 28)
+		header_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		header_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		if evolved:
+			header_icon.modulate = Color(1.5, 1.25, 0.6, 1.0)
+		header.add_child(header_icon)
+
 	var name_label := Label.new()
 	name_label.text = Guide.WEAPON_NAMES.get(w.id, w.id)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.add_theme_font_size_override("font_size", 18)
-	vbox.add_child(name_label)
+	header.add_child(name_label)
 
 	var lvl_text := Label.new()
 	lvl_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

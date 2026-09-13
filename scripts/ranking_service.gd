@@ -13,6 +13,7 @@ signal top_fetched(map_id: String, mode_id: String, entries: Array)
 signal submit_finished(success: bool)
 signal nickname_claim_result(success: bool, nickname: String, reason: String)
 signal nickname_change_result(success: bool, nickname: String, reason: String)
+signal password_set_result(success: bool, reason: String)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -88,6 +89,34 @@ func claim_nickname(nickname: String, password: String) -> void:
 	var url: String = "%s/nicknames?documentId=%s&key=%s" % [_base_url(), clean_nick.uri_encode(), FIREBASE_API_KEY]
 	var body := {"fields": {"passwordHash": {"stringValue": hash_password(password)}}}
 	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body))
+
+# Sets a password on an EXISTING nickname that has none yet (legacy nickname
+# reserved before this password system existed). Relies on the Firestore rule's
+# migration escape hatch, which allows a first-ever passwordHash write on a
+# nicknames doc that doesn't have one - so whoever gets here first "claims" it.
+func set_initial_password(nickname: String, password: String) -> void:
+	var clean_nick: String = nickname.strip_edges().substr(0, 12)
+	if clean_nick.is_empty():
+		password_set_result.emit(false, "error")
+		return
+	if password.length() < MIN_PASSWORD_LENGTH:
+		password_set_result.emit(false, "weak_password")
+		return
+	if not is_configured():
+		password_set_result.emit(true, "")
+		return
+	var req := HTTPRequest.new()
+	req.accept_gzip = false
+	add_child(req)
+	req.request_completed.connect(func(_result: int, code: int, _headers: PackedStringArray, _resp_body: PackedByteArray) -> void:
+		if code == 200:
+			password_set_result.emit(true, "")
+		else:
+			password_set_result.emit(false, "rejected")
+		req.queue_free())
+	var url: String = "%s/nicknames/%s?updateMask.fieldPaths=passwordHash&key=%s" % [_base_url(), clean_nick.uri_encode(), FIREBASE_API_KEY]
+	var body := {"fields": {"passwordHash": {"stringValue": hash_password(password)}}}
+	req.request(url, ["Content-Type: application/json"], HTTPClient.METHOD_PATCH, JSON.stringify(body))
 
 # Renames a nickname everywhere: verifies old_password against the old nickname's
 # stored hash, reserves new_nick (fails if taken), and renames every past ranking
