@@ -1,5 +1,11 @@
 extends Area2D
 
+# Many bolts can each leave a zone in quick succession (e.g. flame_guard firing
+# 8 bolts per volley); without a cap the screen fills with overlapping circles
+# and hides the player/enemies. Keep only the newest few alive at once.
+const MAX_ACTIVE_ZONES := 6
+static var active_zones: Array = []
+
 var damage: float = 4.0
 var duration: float = 2.0
 var tick_interval: float = 0.5
@@ -10,6 +16,16 @@ var radius: float = 40.0
 const FIRE_TEXTURE_OUTER_RADIUS_PX := 27.5
 
 @onready var sprite: Sprite2D = $Sprite2D
+
+func _ready() -> void:
+	active_zones.append(self)
+	while active_zones.size() > MAX_ACTIVE_ZONES:
+		var oldest = active_zones.pop_front()
+		if is_instance_valid(oldest) and oldest != self:
+			oldest.queue_free()
+
+func _exit_tree() -> void:
+	active_zones.erase(self)
 
 func setup(dmg: float, dur: float, r: float, maxed: bool = false) -> void:
 	damage = dmg
