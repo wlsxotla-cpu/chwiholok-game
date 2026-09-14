@@ -54,6 +54,7 @@ func _ready() -> void:
 		chests_opened_count = int(resume_data.get("chests_opened_count", 0))
 		GameState.resuming_run = false
 		GameState.pending_run_data = {}
+	var resume_mid_boss_alive: bool = was_resuming and bool(resume_data.get("mid_boss_alive", false))
 	_apply_map_theme()
 	_spawn_pets()
 	player.died.connect(_on_player_died)
@@ -97,6 +98,13 @@ func _ready() -> void:
 		hud.show_map_event_warning("이 곳에서는 캐릭터 고유 능력치와 영구 강화 효과가 대폭 감소합니다")
 	if was_resuming and overlord_spawned:
 		_spawn_overlord()
+	if resume_mid_boss_alive:
+		var mb_health: float = float(resume_data.get("mid_boss_health", 1.0))
+		var mb_pos := Vector2(
+			float(resume_data.get("mid_boss_pos_x", player.global_position.x)),
+			float(resume_data.get("mid_boss_pos_y", player.global_position.y))
+		)
+		_spawn_boss(true, mb_health, mb_pos)
 
 func _apply_map_theme() -> void:
 	var map_data: Dictionary = GameState.get_map(GameState.selected_map)
@@ -401,6 +409,12 @@ func _autosave() -> void:
 	data["chest_timer"] = chest_timer
 	data["grass_broken_count"] = grass_broken_count
 	data["chests_opened_count"] = chests_opened_count
+	var mid_boss_alive: bool = has_tracked_boss and is_instance_valid(tracked_boss) and tracked_boss.type == Enemy.Type.BOSS
+	data["mid_boss_alive"] = mid_boss_alive
+	if mid_boss_alive:
+		data["mid_boss_health"] = tracked_boss.health
+		data["mid_boss_pos_x"] = tracked_boss.global_position.x
+		data["mid_boss_pos_y"] = tracked_boss.global_position.y
 	GameState.save_run_state(data)
 
 func _on_grass_broken() -> void:
@@ -518,8 +532,9 @@ func _spawn_enemy() -> void:
 	enemy.died.connect(func() -> void: run_kill_count += 1)
 	add_child(enemy)
 
-func _spawn_boss() -> void:
-	boss_count += 1
+func _spawn_boss(is_resume: bool = false, resume_health: float = 0.0, resume_pos: Vector2 = Vector2.ZERO) -> void:
+	if not is_resume:
+		boss_count += 1
 	var boss := preload("res://scenes/Enemy.tscn").instantiate()
 	boss.type = Enemy.Type.BOSS
 	var boss_name := "보스"
@@ -538,21 +553,28 @@ func _spawn_boss() -> void:
 	if GameState.selected_map == "ruins":
 		boss_mult *= RUINS_BOSS_HP_MULT
 	boss.difficulty_mult = boss_mult
-	var angle: float = randf() * TAU
-	var dist: float = 500.0
-	var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
+	var pos: Vector2
+	if is_resume:
+		pos = resume_pos
+	else:
+		var angle: float = randf() * TAU
+		var dist: float = 500.0
+		pos = player.global_position + Vector2(cos(angle), sin(angle)) * dist
 	var margin: float = 80.0
 	pos.x = clamp(pos.x, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	pos.y = clamp(pos.y, -GameState.ARENA_HALF_SIZE + margin, GameState.ARENA_HALF_SIZE - margin)
 	boss.global_position = pos
 	boss.died.connect(func() -> void: run_kill_count += 1)
 	add_child(boss)
+	if is_resume:
+		boss.health = clamp(resume_health, 1.0, boss.max_health)
 	if not has_tracked_boss or not is_instance_valid(tracked_boss) or tracked_boss.type != Enemy.Type.OVERLORD:
 		tracked_boss = boss
 		has_tracked_boss = true
 		hud.show_boss_health(boss_name, boss.health, boss.max_health)
-	hud.show_boss_warning()
-	SoundManager.play("levelup", 3.0, 0.6)
+	if not is_resume:
+		hud.show_boss_warning()
+		SoundManager.play("levelup", 3.0, 0.6)
 
 func _spawn_horde() -> void:
 	var count: int = 44 if (GameState.hard_mode or GameState.fast_mode) else 34
