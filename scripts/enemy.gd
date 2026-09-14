@@ -50,9 +50,12 @@ const FROST_BURST_RANGE_MULT := 1.15
 const FROST_BURST_DAMAGE := 28.0
 const FROST_BURST_SLOW_DURATION := 2.2
 const FROST_BURST_SLOW_MULT := 0.45
-const FROST_BOLT_COUNT := 6
+const FROST_BOLT_COUNT := 8
 const FROST_BOLT_DAMAGE := 16.0
 const FROST_BOLT_INTERVAL := 2.6
+const FROST_BOLT_SWEEP_COUNT := 2
+const FROST_BOLT_SHOT_INTERVAL := 0.06
+const FROST_BOLT_SPEED_MULT := 2.1
 
 const FROST_FINALE_ATTACK_INTERVAL := 2.0
 const FROST_FINALE_RECOVERY_DURATION := 0.4
@@ -434,18 +437,30 @@ func _frost_melee_burst(range_mult: float = 1.0, damage_mult: float = 1.0) -> vo
 	fx.set_radius(r, type == Type.OVERLORD)
 
 func _frost_bolt_spread() -> void:
+	SoundManager.play("attack_fireball", 1.5, 1.4)
+	var total: int = FROST_BOLT_COUNT * FROST_BOLT_SWEEP_COUNT
+	for i in range(total):
+		var angle: float = TAU * float(i % FROST_BOLT_COUNT) / float(FROST_BOLT_COUNT)
+		if i == 0:
+			_fire_frost_bolt(angle)
+		else:
+			var delay: float = FROST_BOLT_SHOT_INTERVAL * i
+			get_tree().create_timer(delay).timeout.connect(func() -> void:
+				if is_instance_valid(self):
+					_fire_frost_bolt(angle))
+
+func _fire_frost_bolt(angle: float) -> void:
 	var parent := get_parent()
 	if parent == null:
 		return
-	SoundManager.play("attack_fireball", 1.5, 1.4)
-	for i in range(FROST_BOLT_COUNT):
-		var angle: float = TAU * float(i) / float(FROST_BOLT_COUNT)
-		var bolt := preload("res://scenes/EnemyOrb.tscn").instantiate()
-		parent.add_child(bolt)
-		bolt.global_position = global_position
-		var aim: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * 400.0
-		bolt.setup(aim, FROST_BOLT_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
-		bolt.modulate = Color(0.55, 0.9, 1.7, 1.0)
+	var bolt := preload("res://scenes/EnemyOrb.tscn").instantiate()
+	parent.add_child(bolt)
+	bolt.global_position = global_position
+	var aim: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * 400.0
+	bolt.setup(aim, FROST_BOLT_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
+	bolt.velocity *= FROST_BOLT_SPEED_MULT
+	bolt.rotation = bolt.velocity.angle()
+	bolt.modulate = Color(0.55, 0.9, 1.7, 1.0)
 
 func _frost_pulse() -> void:
 	_frost_melee_burst(FROST_PULSE_RANGE_MULT, FROST_PULSE_DAMAGE_MULT)
