@@ -51,9 +51,9 @@ var pending_fusion_fid: String = ""
 @onready var restart_button: Button = $RestartButton
 @onready var menu_button: Button = $MenuButton
 @onready var pause_button: Button = $PauseButton
-@onready var pet_skill_button: Button = $PetSkillButton
-@onready var pet_skill_icon: TextureRect = $PetSkillButton/Icon
-@onready var pet_skill_cooldown_label: Label = $PetSkillButton/CooldownLabel
+@onready var pet_skill_button: Button = $TopRightInfo/PetSkillButton
+@onready var pet_skill_icon: TextureRect = $TopRightInfo/PetSkillButton/Row/Icon
+@onready var pet_skill_label: Label = $TopRightInfo/PetSkillButton/Row/Label
 @onready var pause_panel: Panel = $PausePanel
 @onready var resume_button: Button = $PausePanel/VBox/ResumeButton
 @onready var pause_menu_button: Button = $PausePanel/VBox/MenuButton
@@ -739,11 +739,12 @@ func set_pet_skill_available(v: bool) -> void:
 func update_pet_skill_cooldown(remaining: float, total: float) -> void:
 	if remaining <= 0.0:
 		pet_skill_icon.modulate = Color(1, 1, 1, 1)
-		pet_skill_cooldown_label.visible = false
+		pet_skill_label.modulate = Color(1, 1, 1, 1)
+		pet_skill_label.text = "충격파 스킬"
 	else:
 		pet_skill_icon.modulate = Color(1, 1, 1, 0.35)
-		pet_skill_cooldown_label.visible = true
-		pet_skill_cooldown_label.text = str(int(ceil(remaining)))
+		pet_skill_label.modulate = Color(1, 1, 1, 0.5)
+		pet_skill_label.text = "충격파 스킬 (%d)" % int(ceil(remaining))
 
 func show_boss_health(boss_name: String, current: float, max_hp: float) -> void:
 	boss_name_label.text = boss_name

@@ -319,11 +319,7 @@ func _process_boss(delta: float) -> void:
 			frost_phase = (frost_phase + 1) % 3
 		elif use_frost_burst:
 			slam_timer = FROST_BOLT_INTERVAL
-			if frost_phase % 2 == 0:
-				_frost_melee_burst()
-			else:
-				_frost_bolt_spread()
-			frost_phase += 1
+			_frost_bolt_spread()
 		elif use_halberd_barrage:
 			slam_timer = HALBERD_BARRAGE_INTERVAL
 			_halberd_barrage()
@@ -543,8 +539,8 @@ func _process_overlord_aura(delta: float) -> void:
 		spark.global_position = global_position + Vector2(randf_range(-30.0, 30.0), randf_range(-30.0, 30.0))
 		spark.modulate = Color(0.8, 0.4, 1.0, 1.0)
 
-func apply_knockback(v: Vector2) -> void:
-	knockback_timer = 0.25
+func apply_knockback(v: Vector2, duration: float = 0.25) -> void:
+	knockback_timer = duration
 	knockback_velocity = v
 
 func take_damage(amount: float) -> void:

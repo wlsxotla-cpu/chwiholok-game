@@ -2,7 +2,8 @@ extends Node2D
 
 const SUPPORT_INTERVAL := 12.0
 const PUSH_RADIUS := 360.0
-const PUSH_FORCE := 340.0
+const PUSH_FORCE := 4200.0
+const PUSH_KNOCKBACK_DURATION := 0.6
 const PUSH_COOLDOWN := 30.0
 
 var pet_id: String = "green_spirit"
@@ -52,7 +53,7 @@ func try_trigger_push_skill() -> bool:
 		var to_e: Vector2 = e.global_position - player.global_position
 		if to_e.length() <= PUSH_RADIUS:
 			if e.has_method("apply_knockback") and to_e.length() > 0.001:
-				e.apply_knockback(to_e.normalized() * PUSH_FORCE)
+				e.apply_knockback(to_e.normalized() * PUSH_FORCE, PUSH_KNOCKBACK_DURATION)
 				hit_any = true
 	SoundManager.play("explosion", 2.0, 0.8)
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
