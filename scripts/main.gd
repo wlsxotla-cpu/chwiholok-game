@@ -637,6 +637,7 @@ func _spawn_overlord() -> void:
 		overlord.boss_texture_override = "res://assets/sprites/enemy_frost_overlord.png"
 		current_overlord_name = "빙제"
 		overlord.use_frost_finale = true
+		overlord.speed_override = 380.0
 		overlord.difficulty_mult = base_mult * FROSTPEAK_OVERLORD_MULT
 	else:
 		overlord.difficulty_mult = base_mult * 1.3

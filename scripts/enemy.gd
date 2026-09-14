@@ -58,7 +58,12 @@ const FROST_FINALE_ATTACK_INTERVAL := 2.0
 const FROST_FINALE_RECOVERY_DURATION := 0.4
 const FROST_PULSE_RANGE_MULT := 1.6
 const FROST_PULSE_DAMAGE_MULT := 1.4
-const ICICLE_RAIN_COUNT := 5
+const ICICLE_RAIN_PER_BURST := 6
+const ICICLE_RAIN_BURST_COUNT := 3
+const ICICLE_RAIN_BURST_DELAY_MIN := 0.22
+const ICICLE_RAIN_BURST_DELAY_MAX := 0.5
+const ICICLE_RAIN_TELEGRAPH := 0.5
+const ICICLE_RAIN_FALL_TIME := 0.15
 const ICICLE_RAIN_SPREAD := 260.0
 const FROST_DASH_SPEED := 620.0
 const FROST_DASH_DURATION := 0.55
@@ -446,14 +451,24 @@ func _frost_pulse() -> void:
 	_frost_melee_burst(FROST_PULSE_RANGE_MULT, FROST_PULSE_DAMAGE_MULT)
 
 func _icicle_rain() -> void:
+	_fire_icicle_burst()
+	for burst_i in range(1, ICICLE_RAIN_BURST_COUNT):
+		var delay: float = randf_range(ICICLE_RAIN_BURST_DELAY_MIN, ICICLE_RAIN_BURST_DELAY_MAX)
+		get_tree().create_timer(delay * burst_i).timeout.connect(func() -> void:
+			if is_instance_valid(self):
+				_fire_icicle_burst())
+
+func _fire_icicle_burst() -> void:
 	var parent := get_parent()
 	if parent == null:
 		return
-	SoundManager.play("attack_fireball", 1.0, 1.3)
-	for i in range(ICICLE_RAIN_COUNT):
+	SoundManager.play("attack_fireball", 1.0, 1.5)
+	for i in range(ICICLE_RAIN_PER_BURST):
 		var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
 		meteor.damage_mult = 1.0 + (difficulty_mult - 1.0) * 0.9
 		meteor.modulate = Color(0.6, 0.9, 1.7, 1.0)
+		meteor.telegraph_time = ICICLE_RAIN_TELEGRAPH
+		meteor.fall_time = ICICLE_RAIN_FALL_TIME
 		var angle: float = randf() * TAU
 		var dist: float = randf_range(0.0, ICICLE_RAIN_SPREAD)
 		var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
