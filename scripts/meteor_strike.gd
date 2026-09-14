@@ -15,6 +15,7 @@ var fall_time: float = 0.32
 var state: int = 0
 var timer: float = 0.0
 var damage_mult: float = 1.0
+var impact_color: Color = Color(1.8, 0.85, 0.35, 1.0)
 
 func _ready() -> void:
 	timer = telegraph_time
@@ -56,7 +57,7 @@ func _impact() -> void:
 	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.modulate = Color(1.8, 0.85, 0.35, 1.0)
+	fx.modulate = impact_color
 	fx.set_radius(RADIUS, true)
 	struck.emit()
 	queue_free()

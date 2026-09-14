@@ -420,18 +420,6 @@ func _halberd_barrage() -> void:
 		bolt.modulate = Color(1.3, 0.5, 0.95, 1.0)
 		bolt.scale *= HALBERD_BOLT_SCALE
 
-func _frost_melee_burst(range_mult: float = 1.0, damage_mult: float = 1.0) -> void:
-	var r: float = BOSS_SLAM_RANGE * FROST_BURST_RANGE_MULT * range_mult
-	if global_position.distance_to(player.global_position) <= r:
-		player.take_damage(FROST_BURST_DAMAGE * damage_mult * (1.0 + (difficulty_mult - 1.0) * 0.6))
-		player.apply_slow(FROST_BURST_SLOW_DURATION, FROST_BURST_SLOW_MULT)
-	SoundManager.play("explosion", 1.5, 0.6)
-	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
-	get_parent().add_child(fx)
-	fx.global_position = global_position
-	fx.modulate = Color(0.6, 0.95, 1.6, 1.0)
-	fx.set_radius(r, type == Type.OVERLORD)
-
 func _frost_bolt_spread() -> void:
 	SoundManager.play("attack_fireball", 1.5, 1.4)
 	var total: int = FROST_BOLT_COUNT * FROST_BOLT_SWEEP_COUNT
@@ -459,7 +447,33 @@ func _fire_frost_bolt(angle: float) -> void:
 	bolt.modulate = Color(0.55, 0.9, 1.7, 1.0)
 
 func _frost_pulse() -> void:
-	_frost_melee_burst(FROST_PULSE_RANGE_MULT, FROST_PULSE_DAMAGE_MULT)
+	var parent := get_parent()
+	if parent == null:
+		return
+	var r: float = BOSS_SLAM_RANGE * FROST_BURST_RANGE_MULT * FROST_PULSE_RANGE_MULT
+	SoundManager.play("attack_ranged", 1.0, 0.5)
+	var telegraph := preload("res://scenes/SlashEffect.tscn").instantiate()
+	parent.add_child(telegraph)
+	telegraph.global_position = global_position
+	telegraph.modulate = Color(0.6, 0.95, 1.6, 0.5)
+	telegraph.set_radius(r, true)
+	get_tree().create_timer(FROST_FINALE_RECOVERY_DURATION).timeout.connect(func() -> void:
+		if is_instance_valid(self):
+			_frost_pulse_impact(r))
+
+func _frost_pulse_impact(r: float) -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	if global_position.distance_to(player.global_position) <= r:
+		player.take_damage(FROST_BURST_DAMAGE * FROST_PULSE_DAMAGE_MULT * (1.0 + (difficulty_mult - 1.0) * 0.6))
+		player.apply_slow(FROST_BURST_SLOW_DURATION, FROST_BURST_SLOW_MULT)
+	SoundManager.play("explosion", 1.5, 0.6)
+	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
+	parent.add_child(fx)
+	fx.global_position = global_position
+	fx.modulate = Color(0.6, 0.95, 1.6, 1.0)
+	fx.set_radius(r, type == Type.OVERLORD)
 
 func _icicle_rain() -> void:
 	_fire_icicle_burst()
@@ -478,6 +492,7 @@ func _fire_icicle_burst() -> void:
 		var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
 		meteor.damage_mult = 1.0 + (difficulty_mult - 1.0) * 0.9
 		meteor.modulate = Color(0.6, 0.9, 1.7, 1.0)
+		meteor.impact_color = Color(0.55, 1.0, 1.9, 1.0)
 		meteor.telegraph_time = ICICLE_RAIN_TELEGRAPH
 		meteor.fall_time = ICICLE_RAIN_FALL_TIME
 		var angle: float = randf() * TAU
@@ -499,6 +514,7 @@ func _process_frost_dash(delta: float) -> void:
 	if to_target.length() < 12.0 or frost_dash_timer <= 0.0:
 		frost_dashing = false
 		frost_recovery_timer = FROST_FINALE_RECOVERY_DURATION
+		_spawn_ice_patch_cluster(global_position)
 		return
 	var dir: Vector2 = to_target.normalized()
 	velocity = dir * FROST_DASH_SPEED
@@ -515,6 +531,14 @@ func _process_frost_dash(delta: float) -> void:
 	if frost_dash_trail_timer <= 0.0:
 		frost_dash_trail_timer = FROST_DASH_TRAIL_INTERVAL
 		_spawn_ice_patch(global_position)
+
+const FROST_DASH_END_PATCH_COUNT := 5
+const FROST_DASH_END_PATCH_SPREAD := 70.0
+
+func _spawn_ice_patch_cluster(center: Vector2) -> void:
+	for i in range(FROST_DASH_END_PATCH_COUNT):
+		var offset := Vector2(randf_range(-FROST_DASH_END_PATCH_SPREAD, FROST_DASH_END_PATCH_SPREAD), randf_range(-FROST_DASH_END_PATCH_SPREAD, FROST_DASH_END_PATCH_SPREAD))
+		_spawn_ice_patch(center + offset)
 
 func _spawn_ice_patch(pos: Vector2) -> void:
 	var parent := get_parent()
