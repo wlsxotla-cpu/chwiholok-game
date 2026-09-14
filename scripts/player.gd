@@ -4,7 +4,7 @@ const Guide = preload("res://scripts/weapon_guide_data.gd")
 
 signal died
 signal stats_changed
-signal leveled_up(options: Array)
+signal leveled_up(options: Array, queued_remaining: int)
 signal weapon_evolved(weapon_name: String)
 signal weapon_fused(weapon_name: String)
 signal revived
@@ -120,6 +120,8 @@ var continues_used: int = 0
 var max_continues: int = 1
 var declined_fusions: Dictionary = {}
 var pending_fusion_id: String = ""
+var fusion_offer_active: bool = false
+var pending_level_ups: int = 0
 
 var upgrade_pool: Array = [
 	{"id": "dmg", "name": "공격력 증가", "desc": "모든 무기 공격력 +10%"},
@@ -151,6 +153,8 @@ func _ready() -> void:
 
 	if GameState.resuming_run:
 		restore_state(GameState.pending_run_data)
+		if pending_level_ups > 0:
+			call_deferred("_offer_level_up")
 	else:
 		_apply_meta_upgrades()
 		_apply_character_tier_bonus(char_data)
@@ -184,6 +188,7 @@ func serialize_state() -> Dictionary:
 		"declined_fusions": declined_fusions.duplicate(true),
 		"pos_x": global_position.x,
 		"pos_y": global_position.y,
+		"pending_level_ups": pending_level_ups,
 	}
 
 func restore_state(data: Dictionary) -> void:
@@ -200,6 +205,7 @@ func restore_state(data: Dictionary) -> void:
 	coins = int(data.get("coins", 0))
 	continues_used = int(data.get("continues_used", 0))
 	max_continues = int(data.get("max_continues", max_continues))
+	pending_level_ups = int(data.get("pending_level_ups", 0))
 
 	weapons.clear()
 	for w in data.get("weapons", []):
@@ -897,10 +903,17 @@ func gain_xp(amount: float) -> void:
 		amount *= HARD_MODE_XP_MULT
 	xp += amount
 	stats_changed.emit()
-	if xp >= xp_to_level:
+	var did_level_up := false
+	while xp >= xp_to_level:
 		xp -= xp_to_level
 		level += 1
 		xp_to_level *= 1.17
+		pending_level_ups += 1
+		did_level_up = true
+	# If a level-up choice (or a fusion offer it triggered) is already being
+	# shown, don't stack another pause on top of it - _resume_after_choice()
+	# will surface this one once the current one is resolved.
+	if did_level_up and not get_tree().paused:
 		_offer_level_up()
 
 const REROLL_COST := 15
@@ -960,7 +973,15 @@ func _offer_level_up() -> void:
 	SoundManager.play("levelup")
 	reroll_used_this_levelup = false
 	get_tree().paused = true
-	leveled_up.emit(_build_level_up_choices())
+	leveled_up.emit(_build_level_up_choices(), max(0, pending_level_ups - 1))
+
+func _resume_after_choice() -> void:
+	pending_level_ups = max(0, pending_level_ups - 1)
+	if pending_level_ups > 0:
+		_offer_level_up()
+	else:
+		get_tree().paused = false
+		invincible_timer = max(invincible_timer, LEVEL_UP_RESUME_INVINCIBLE)
 
 func can_reroll_level_up() -> bool:
 	return not reroll_used_this_levelup and GameState.total_coins + coins >= REROLL_COST
@@ -976,7 +997,7 @@ func reroll_level_up() -> void:
 		coins = 0
 		GameState.spend_coins(remainder)
 	SoundManager.play("click")
-	leveled_up.emit(_build_level_up_choices())
+	leveled_up.emit(_build_level_up_choices(), max(0, pending_level_ups - 1))
 
 func _describe_option(entry: Dictionary) -> Dictionary:
 	match entry.kind:
@@ -1047,6 +1068,7 @@ func _check_fusion_offer(wid: String) -> void:
 	if int(w_self.level) < MAX_WEAPON_LEVEL or int(w_partner.level) < MAX_WEAPON_LEVEL:
 		return
 	pending_fusion_id = fid
+	fusion_offer_active = true
 	get_tree().paused = true
 	fusion_offered.emit(fid, wid, partner)
 
@@ -1056,6 +1078,7 @@ func confirm_fuse(fid: String) -> void:
 	var w_b := _get_weapon(pair[1])
 	if w_a.is_empty() or w_b.is_empty():
 		pending_fusion_id = ""
+		_resolve_fusion_offer()
 		return
 	weapons.erase(w_a)
 	weapons.erase(w_b)
@@ -1065,10 +1088,21 @@ func confirm_fuse(fid: String) -> void:
 	weapon_fused.emit(WEAPON_DEFS.get(fid, {}).get("name", fid))
 	pending_fusion_id = ""
 	stats_changed.emit()
+	_resolve_fusion_offer()
 
 func decline_fuse(fid: String) -> void:
 	declined_fusions[fid] = true
 	pending_fusion_id = ""
+	_resolve_fusion_offer()
+
+func _resolve_fusion_offer() -> void:
+	# Only an offer surfaced via _check_fusion_offer (mid level-up-choice
+	# chain) owns the pause; a manual "지금 합치기" fuse from the weapon
+	# guide manages its own pause state and must be left untouched.
+	if not fusion_offer_active:
+		return
+	fusion_offer_active = false
+	_resume_after_choice()
 
 func apply_upgrade(id: String) -> void:
 	if id.begins_with("new_weapon:"):
@@ -1123,8 +1157,7 @@ func apply_upgrade(id: String) -> void:
 					pickup_radius = base_pickup_radius
 	stats_changed.emit()
 	if pending_fusion_id == "":
-		get_tree().paused = false
-		invincible_timer = max(invincible_timer, LEVEL_UP_RESUME_INVINCIBLE)
+		_resume_after_choice()
 
 func heal(amount: float) -> void:
 	health = min(max_health, health + amount)

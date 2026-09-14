@@ -23,6 +23,7 @@ signal pet_skill_pressed
 @onready var level_label: Label = $Margin/VBox/CharInfo/NameRow/LevelLabel
 @onready var coin_label: Label = $TopRightInfo/CoinLabel
 @onready var level_up_panel: Panel = $LevelUpPanel
+@onready var level_up_title: Label = $LevelUpPanel/VBox/Title
 @onready var option_buttons: Array = [
 	$LevelUpPanel/VBox/Option1,
 	$LevelUpPanel/VBox/Option2,
@@ -126,12 +127,10 @@ func _ready() -> void:
 	fusion_confirm_button.pressed.connect(func() -> void:
 		SoundManager.play("click")
 		fusion_offer_panel.visible = false
-		get_tree().paused = false
 		fusion_confirmed.emit(pending_fusion_fid))
 	fusion_decline_button.pressed.connect(func() -> void:
 		SoundManager.play("click")
 		fusion_offer_panel.visible = false
-		get_tree().paused = false
 		fusion_declined.emit(pending_fusion_fid))
 	restart_button.pressed.connect(func() -> void: SoundManager.play("click"); restart_pressed.emit())
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
@@ -809,7 +808,8 @@ const KIND_TINTS := {
 	"passive": Color(1.3, 0.85, 1.2),
 }
 
-func show_level_up(options: Array) -> void:
+func show_level_up(options: Array, queued_remaining: int = 0) -> void:
+	level_up_title.text = "레벨 업! 강화를 선택하세요 (%d개 더 대기 중)" % queued_remaining if queued_remaining > 0 else "레벨 업! 강화를 선택하세요"
 	for i in range(option_buttons.size()):
 		var btn: Button = option_buttons[i]
 		if i >= options.size():

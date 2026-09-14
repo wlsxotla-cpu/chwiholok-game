@@ -59,8 +59,8 @@ func _ready() -> void:
 	_apply_map_theme()
 	_spawn_pets(was_resuming, resume_consumable_pets)
 	player.died.connect(_on_player_died)
-	player.leveled_up.connect(func(options: Array) -> void:
-		hud.show_level_up(options)
+	player.leveled_up.connect(func(options: Array, queued_remaining: int) -> void:
+		hud.show_level_up(options, queued_remaining)
 		hud.set_reroll_state(player.can_reroll_level_up(), player.REROLL_COST)
 		_autosave())
 	hud.reroll_requested.connect(player.reroll_level_up)
