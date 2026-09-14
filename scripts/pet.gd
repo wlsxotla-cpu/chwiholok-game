@@ -2,7 +2,7 @@ extends Node2D
 
 const SUPPORT_INTERVAL := 12.0
 const PUSH_RADIUS := 360.0
-const PUSH_FORCE := 2100.0
+const PUSH_FORCE := 4200.0
 const PUSH_KNOCKBACK_DURATION := 0.6
 const PUSH_COOLDOWN := 30.0
 
