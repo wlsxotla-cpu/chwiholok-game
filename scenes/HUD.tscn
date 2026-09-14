@@ -238,6 +238,25 @@ grow_horizontal = 0
 theme_override_font_sizes/font_size = 28
 text = "II"
 
+[node name="PetSkillButton" type="Button" parent="."]
+process_mode = 3
+visible = false
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -80.0
+offset_top = 76.0
+offset_right = -24.0
+offset_bottom = 124.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(1.0, 0.75, 0.4, 1)
+text = "충격정령
+밀치기"
+autowrap_mode = 2
+
 [node name="PausePanel" type="Panel" parent="."]
 process_mode = 3
 visible = false

@@ -12,6 +12,7 @@ signal manual_fuse_requested(fid: String)
 signal reroll_requested
 signal altar_offer_confirmed
 signal altar_offer_declined
+signal pet_skill_pressed
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var boss_health_panel: VBoxContainer = $BossHealthPanel
@@ -50,6 +51,7 @@ var pending_fusion_fid: String = ""
 @onready var restart_button: Button = $RestartButton
 @onready var menu_button: Button = $MenuButton
 @onready var pause_button: Button = $PauseButton
+@onready var pet_skill_button: Button = $PetSkillButton
 @onready var pause_panel: Panel = $PausePanel
 @onready var resume_button: Button = $PausePanel/VBox/ResumeButton
 @onready var pause_menu_button: Button = $PausePanel/VBox/MenuButton
@@ -133,6 +135,9 @@ func _ready() -> void:
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	reroll_button.pressed.connect(func() -> void: reroll_requested.emit())
 	pause_button.pressed.connect(_on_pause_pressed)
+	pet_skill_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		pet_skill_pressed.emit())
 	resume_button.pressed.connect(_on_resume_pressed)
 	pause_menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	sfx_button.pressed.connect(_on_sfx_toggle)
@@ -725,6 +730,12 @@ func show_evolution(weapon_name: String) -> void:
 
 func show_fusion(weapon_name: String) -> void:
 	_show_banner("무기 합체! %s" % weapon_name, Color(1.0, 0.95, 0.6, 1))
+
+func set_pet_skill_available(v: bool) -> void:
+	pet_skill_button.visible = v
+
+func set_pet_skill_used() -> void:
+	pet_skill_button.visible = false
 
 func show_boss_health(boss_name: String, current: float, max_hp: float) -> void:
 	boss_name_label.text = boss_name

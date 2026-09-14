@@ -88,6 +88,7 @@ func _ready() -> void:
 		active_altar = null)
 	hud.altar_offer_declined.connect(func() -> void:
 		active_altar = null)
+	hud.pet_skill_pressed.connect(_on_pet_skill_pressed)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	var mode_suffix: String = " [패스트]" if GameState.fast_mode else (" [하드]" if GameState.hard_mode else "")
 	hud.set_character_name(char_data.name + mode_suffix)
@@ -134,7 +135,7 @@ const LAVA_CRACK_SCALE := 1.7
 const LAVA_LAKE_COUNT := 4
 const RUINS_BOSS_HP_MULT := 1.7
 const RUINS_BOSS_XP_MULT := 4.0
-const FROSTPEAK_BOSS_HP_MULT := 3.2
+const FROSTPEAK_BOSS_HP_MULT := 2.2
 const FROSTPEAK_BOSS_XP_MULT := 5.0
 const FROSTPEAK_OVERLORD_MULT := 2.7
 const CHEST_INTERVAL := 300.0
@@ -566,7 +567,6 @@ func _spawn_boss(is_resume: bool = false, resume_health: float = 0.0, resume_pos
 		boss_name = "빙령"
 		boss.boss_texture_override = "res://assets/sprites/enemy_frost_mid.png"
 		boss.use_frost_burst = true
-		boss.speed_override = 150.0
 		boss.xp_mult_override = FROSTPEAK_BOSS_XP_MULT
 	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
@@ -778,12 +778,25 @@ func _spawn_meteor_strike() -> void:
 	meteor.struck.connect(screen_shake_all)
 	add_child(meteor)
 
+var push_pet: Node = null
+
 func _spawn_pets() -> void:
 	for pet_id in GameState.owned_pets:
 		var pet := preload("res://scenes/Pet.tscn").instantiate()
 		pet.pet_id = pet_id
 		pet.main_ref = self
 		player.add_child(pet)
+		if pet_id == "push_spirit":
+			push_pet = pet
+	hud.set_pet_skill_available(push_pet != null)
+
+func _on_pet_skill_pressed() -> void:
+	if push_pet == null or not is_instance_valid(push_pet):
+		hud.set_pet_skill_used()
+		return
+	if push_pet.try_trigger_push_skill():
+		hud.set_pet_skill_used()
+		push_pet = null
 
 func _trigger_ruins_midpoint_event() -> void:
 	hud.show_map_event_warning("귀마의 힘이 강해집니다")
