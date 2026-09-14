@@ -16,8 +16,14 @@ var state: int = 0
 var timer: float = 0.0
 var damage_mult: float = 1.0
 var impact_color: Color = Color(1.8, 0.85, 0.35, 1.0)
+var warning_texture_override: Texture2D = null
+var meteor_texture_override: Texture2D = null
 
 func _ready() -> void:
+	if warning_texture_override != null:
+		warning.texture = warning_texture_override
+	if meteor_texture_override != null:
+		meteor.texture = meteor_texture_override
 	timer = telegraph_time
 	var target_scale: float = RADIUS / WARNING_TEXTURE_RADIUS_PX
 	warning.scale = Vector2(target_scale, target_scale) * 0.3

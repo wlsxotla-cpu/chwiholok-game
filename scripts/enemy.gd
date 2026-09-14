@@ -104,6 +104,7 @@ var frost_dash_trail_timer: float = 0.0
 var frost_dash_target: Vector2 = Vector2.ZERO
 var speed_override: float = -1.0
 var xp_mult_override: float = 1.0
+var hp_mult_override: float = 1.0
 var use_cheonmagung_skin: bool = false
 var slam_timer: float = 0.0
 
@@ -111,6 +112,13 @@ var speed: float
 var max_health: float
 var contact_damage: float
 var xp_value: float
+
+var slow_timer: float = 0.0
+var slow_mult: float = 1.0
+
+func apply_slow(duration: float, mult: float) -> void:
+	slow_timer = max(slow_timer, duration)
+	slow_mult = min(slow_mult, mult)
 
 var health: float
 var player: Node2D
@@ -125,7 +133,7 @@ var exploded: bool = false
 func _ready() -> void:
 	var def: Dictionary = DEFS[type]
 	speed = def.speed if speed_override < 0.0 else speed_override
-	max_health = def.health * difficulty_mult
+	max_health = def.health * difficulty_mult * hp_mult_override
 	contact_damage = def.contact_damage * (1.0 + (difficulty_mult - 1.0) * 0.6)
 	xp_value = def.xp * (1.0 + (difficulty_mult - 1.0) * 0.5) * xp_mult_override
 	health = max_health
@@ -184,6 +192,11 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		return
 
+	if slow_timer > 0.0:
+		slow_timer -= delta
+		if slow_timer <= 0.0:
+			slow_mult = 1.0
+
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
 		velocity = knockback_velocity
@@ -203,7 +216,7 @@ func _physics_process(delta: float) -> void:
 
 func _process_chase(delta: float) -> void:
 	var dir: Vector2 = (player.global_position - global_position).normalized()
-	velocity = dir * speed
+	velocity = dir * speed * slow_mult
 	move_and_slide()
 	sprite.flip_h = dir.x < 0
 
@@ -219,9 +232,9 @@ func _process_archer(delta: float) -> void:
 	var dir: Vector2 = to_player.normalized()
 	var preferred: float = DEFS[Type.ARCHER].preferred_range
 	if dist > preferred + 20.0:
-		velocity = dir * speed
+		velocity = dir * speed * slow_mult
 	elif dist < preferred - 20.0:
-		velocity = -dir * speed
+		velocity = -dir * speed * slow_mult
 	else:
 		velocity = Vector2.ZERO
 	move_and_slide()
@@ -249,7 +262,7 @@ func _fire_arrow() -> void:
 
 func _process_bomber(_delta: float) -> void:
 	var dir: Vector2 = (player.global_position - global_position).normalized()
-	velocity = dir * speed
+	velocity = dir * speed * slow_mult
 	move_and_slide()
 	sprite.flip_h = dir.x < 0
 
@@ -491,7 +504,8 @@ func _fire_icicle_burst() -> void:
 	for i in range(ICICLE_RAIN_PER_BURST):
 		var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
 		meteor.damage_mult = 1.0 + (difficulty_mult - 1.0) * 0.9
-		meteor.modulate = Color(0.6, 0.9, 1.7, 1.0)
+		meteor.warning_texture_override = preload("res://assets/sprites/icicle_warning.png")
+		meteor.meteor_texture_override = preload("res://assets/sprites/icicle_chunk.png")
 		meteor.impact_color = Color(0.55, 1.0, 1.9, 1.0)
 		meteor.telegraph_time = ICICLE_RAIN_TELEGRAPH
 		meteor.fall_time = ICICLE_RAIN_FALL_TIME

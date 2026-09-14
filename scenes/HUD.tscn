@@ -1,8 +1,9 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/VirtualJoystick.tscn" id="2"]
 [ext_resource type="Texture2D" path="res://assets/ui/icon_shockwave.png" id="2_shockwave"]
+[ext_resource type="Texture2D" path="res://assets/ui/icon_freeze.png" id="2_freeze"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp"]
 bg_color = Color(0.62, 0.86, 0.32, 1)
@@ -264,6 +265,47 @@ theme_override_font_sizes/font_size = 16
 theme_override_colors/font_color = Color(1.0, 0.75, 0.4, 1)
 vertical_alignment = 1
 text = "충격파 스킬"
+
+[node name="FreezeSkillButton" type="Button" parent="."]
+process_mode = 3
+visible = false
+anchors_preset = 12
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -136.0
+offset_right = 168.0
+offset_bottom = -84.0
+grow_vertical = 0
+flat = true
+
+[node name="Row" type="HBoxContainer" parent="FreezeSkillButton"]
+mouse_filter = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 0
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="FreezeSkillButton/Row"]
+mouse_filter = 2
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2_freeze")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="FreezeSkillButton/Row"]
+mouse_filter = 2
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.55, 0.85, 1.0, 1)
+vertical_alignment = 1
+text = "빙결부 스킬"
 
 [node name="PauseButton" type="Button" parent="."]
 process_mode = 3

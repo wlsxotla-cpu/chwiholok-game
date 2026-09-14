@@ -90,6 +90,7 @@ func _ready() -> void:
 	hud.altar_offer_declined.connect(func() -> void:
 		active_altar = null)
 	hud.pet_skill_pressed.connect(_on_pet_skill_pressed)
+	hud.freeze_skill_pressed.connect(_on_freeze_skill_pressed)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	var mode_suffix: String = " [패스트]" if GameState.fast_mode else (" [하드]" if GameState.hard_mode else "")
 	hud.set_character_name(char_data.name + mode_suffix)
@@ -479,6 +480,9 @@ func _process(delta: float) -> void:
 	if push_pet != null and is_instance_valid(push_pet):
 		hud.update_pet_skill_cooldown(push_pet.push_cooldown_timer, push_pet.PUSH_COOLDOWN)
 
+	if freeze_pet != null and is_instance_valid(freeze_pet):
+		hud.update_freeze_skill_cooldown(freeze_pet.freeze_cooldown_timer, freeze_pet.FREEZE_COOLDOWN)
+
 	autosave_timer -= delta
 	if autosave_timer <= 0.0:
 		autosave_timer = AUTOSAVE_INTERVAL
@@ -646,6 +650,7 @@ func _spawn_overlord() -> void:
 		overlord.use_frost_finale = true
 		overlord.speed_override = 380.0
 		overlord.difficulty_mult = base_mult * FROSTPEAK_OVERLORD_MULT
+		overlord.hp_mult_override = 2.0
 	else:
 		overlord.difficulty_mult = base_mult * 1.3
 	var angle: float = randf() * TAU
@@ -785,8 +790,15 @@ func _spawn_meteor_strike() -> void:
 	add_child(meteor)
 
 var push_pet: Node = null
+var freeze_pet: Node = null
 
 var active_consumable_pets: Array = []
+
+func _register_consumable_pet(pet_id: String, pet: Node) -> void:
+	if pet_id == "push_spirit":
+		push_pet = pet
+	elif pet_id == "freeze_charm":
+		freeze_pet = pet
 
 func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) -> void:
 	for pet_id in GameState.owned_pets:
@@ -801,8 +813,7 @@ func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) ->
 			pet.main_ref = self
 			player.add_child(pet)
 			active_consumable_pets.append(pet_id)
-			if pet_id == "push_spirit":
-				push_pet = pet
+			_register_consumable_pet(pet_id, pet)
 	else:
 		for pet_id in GameState.PET_DEFS.keys():
 			if not GameState.is_consumable_pet(pet_id):
@@ -815,15 +826,21 @@ func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) ->
 			pet.pet_id = pet_id
 			pet.main_ref = self
 			player.add_child(pet)
-			if pet_id == "push_spirit":
-				push_pet = pet
+			_register_consumable_pet(pet_id, pet)
 	hud.set_pet_skill_available(push_pet != null)
+	hud.set_freeze_skill_available(freeze_pet != null)
 
 func _on_pet_skill_pressed() -> void:
 	if push_pet == null or not is_instance_valid(push_pet):
 		hud.set_pet_skill_available(false)
 		return
 	push_pet.try_trigger_push_skill()
+
+func _on_freeze_skill_pressed() -> void:
+	if freeze_pet == null or not is_instance_valid(freeze_pet):
+		hud.set_freeze_skill_available(false)
+		return
+	freeze_pet.try_trigger_freeze_skill()
 
 func _trigger_ruins_midpoint_event() -> void:
 	hud.show_map_event_warning("귀마의 힘이 강해집니다")

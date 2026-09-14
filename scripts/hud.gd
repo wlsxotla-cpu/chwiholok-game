@@ -13,6 +13,7 @@ signal reroll_requested
 signal altar_offer_confirmed
 signal altar_offer_declined
 signal pet_skill_pressed
+signal freeze_skill_pressed
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var boss_health_panel: VBoxContainer = $BossHealthPanel
@@ -55,6 +56,9 @@ var pending_fusion_fid: String = ""
 @onready var pet_skill_button: Button = $PetSkillButton
 @onready var pet_skill_icon: TextureRect = $PetSkillButton/Row/Icon
 @onready var pet_skill_label: Label = $PetSkillButton/Row/Label
+@onready var freeze_skill_button: Button = $FreezeSkillButton
+@onready var freeze_skill_icon: TextureRect = $FreezeSkillButton/Row/Icon
+@onready var freeze_skill_label: Label = $FreezeSkillButton/Row/Label
 @onready var pause_panel: Panel = $PausePanel
 @onready var resume_button: Button = $PausePanel/VBox/ResumeButton
 @onready var pause_menu_button: Button = $PausePanel/VBox/MenuButton
@@ -139,6 +143,9 @@ func _ready() -> void:
 	pet_skill_button.pressed.connect(func() -> void:
 		SoundManager.play("click")
 		pet_skill_pressed.emit())
+	freeze_skill_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		freeze_skill_pressed.emit())
 	resume_button.pressed.connect(_on_resume_pressed)
 	pause_menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	sfx_button.pressed.connect(_on_sfx_toggle)
@@ -744,6 +751,19 @@ func update_pet_skill_cooldown(remaining: float, total: float) -> void:
 		pet_skill_icon.modulate = Color(1, 1, 1, 0.35)
 		pet_skill_label.modulate = Color(1, 1, 1, 0.5)
 		pet_skill_label.text = "충격파 스킬 (%d)" % int(ceil(remaining))
+
+func set_freeze_skill_available(v: bool) -> void:
+	freeze_skill_button.visible = v
+
+func update_freeze_skill_cooldown(remaining: float, total: float) -> void:
+	if remaining <= 0.0:
+		freeze_skill_icon.modulate = Color(1, 1, 1, 1)
+		freeze_skill_label.modulate = Color(1, 1, 1, 1)
+		freeze_skill_label.text = "빙결부 스킬"
+	else:
+		freeze_skill_icon.modulate = Color(1, 1, 1, 0.35)
+		freeze_skill_label.modulate = Color(1, 1, 1, 0.5)
+		freeze_skill_label.text = "빙결부 스킬 (%d)" % int(ceil(remaining))
 
 func show_boss_health(boss_name: String, current: float, max_hp: float) -> void:
 	boss_name_label.text = boss_name

@@ -5,6 +5,8 @@ const PUSH_RADIUS := 360.0
 const PUSH_FORCE := 4200.0
 const PUSH_KNOCKBACK_DURATION := 0.6
 const PUSH_COOLDOWN := 30.0
+const FREEZE_DURATION := 2.5
+const FREEZE_COOLDOWN := 30.0
 
 var pet_id: String = "green_spirit"
 var main_ref: Node = null
@@ -12,6 +14,7 @@ var pulse_timer: float = 0.0
 var bob_time: float = 0.0
 var base_offset: Vector2 = Vector2(34.0, -52.0)
 var push_cooldown_timer: float = 0.0
+var freeze_cooldown_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -32,6 +35,11 @@ func _process(delta: float) -> void:
 	if pet_id == "push_spirit":
 		if push_cooldown_timer > 0.0:
 			push_cooldown_timer -= delta
+		return
+
+	if pet_id == "freeze_charm":
+		if freeze_cooldown_timer > 0.0:
+			freeze_cooldown_timer -= delta
 		return
 
 	var player: Node = get_parent()
@@ -63,6 +71,27 @@ func try_trigger_push_skill() -> bool:
 	fx.set_radius(PUSH_RADIUS, true)
 	if hit_any:
 		player.screen_shake(5.0, 0.2)
+	return true
+
+func try_trigger_freeze_skill() -> bool:
+	if freeze_cooldown_timer > 0.0:
+		return false
+	freeze_cooldown_timer = FREEZE_COOLDOWN
+	var player: Node = get_parent()
+	var container: Node = main_ref if main_ref != null else player.get_parent()
+	var hit_any := false
+	for e in get_tree().get_nodes_in_group("enemies"):
+		if e.has_method("apply_slow"):
+			e.apply_slow(FREEZE_DURATION, 0.0)
+			hit_any = true
+	SoundManager.play("attack_ranged", 2.0, 0.5)
+	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
+	container.add_child(fx)
+	fx.global_position = player.global_position
+	fx.modulate = Color(0.55, 1.3, 2.2, 1.0)
+	fx.set_radius(600.0, true)
+	if hit_any:
+		player.screen_shake(4.0, 0.2)
 	return true
 
 func _grant_shield(player: Node) -> void:
