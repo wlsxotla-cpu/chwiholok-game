@@ -135,7 +135,7 @@ const LAVA_CRACK_SCALE := 1.7
 const LAVA_LAKE_COUNT := 4
 const RUINS_BOSS_HP_MULT := 1.7
 const RUINS_BOSS_XP_MULT := 4.0
-const FROSTPEAK_BOSS_HP_MULT := 2.2
+const FROSTPEAK_BOSS_HP_MULT := 3.0
 const FROSTPEAK_BOSS_XP_MULT := 5.0
 const FROSTPEAK_OVERLORD_MULT := 2.7
 const CHEST_INTERVAL := 300.0
@@ -474,6 +474,9 @@ func _process(delta: float) -> void:
 	game_time += game_delta
 	hud.set_timer(elapsed)
 
+	if push_pet != null and is_instance_valid(push_pet):
+		hud.update_pet_skill_cooldown(push_pet.push_cooldown_timer, push_pet.PUSH_COOLDOWN)
+
 	autosave_timer -= delta
 	if autosave_timer <= 0.0:
 		autosave_timer = AUTOSAVE_INTERVAL
@@ -567,6 +570,7 @@ func _spawn_boss(is_resume: bool = false, resume_health: float = 0.0, resume_pos
 		boss_name = "빙령"
 		boss.boss_texture_override = "res://assets/sprites/enemy_frost_mid.png"
 		boss.use_frost_burst = true
+		boss.speed_override = 150.0
 		boss.xp_mult_override = FROSTPEAK_BOSS_XP_MULT
 	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
@@ -792,11 +796,9 @@ func _spawn_pets() -> void:
 
 func _on_pet_skill_pressed() -> void:
 	if push_pet == null or not is_instance_valid(push_pet):
-		hud.set_pet_skill_used()
+		hud.set_pet_skill_available(false)
 		return
-	if push_pet.try_trigger_push_skill():
-		hud.set_pet_skill_used()
-		push_pet = null
+	push_pet.try_trigger_push_skill()
 
 func _trigger_ruins_midpoint_event() -> void:
 	hud.show_map_event_warning("귀마의 힘이 강해집니다")

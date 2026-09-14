@@ -426,6 +426,7 @@ func _build_pet_card(id: String) -> Control:
 
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var icon := TextureRect.new()
 	if def.has("sprite"):

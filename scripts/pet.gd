@@ -1,15 +1,16 @@
 extends Node2D
 
 const SUPPORT_INTERVAL := 12.0
-const PUSH_RADIUS := 220.0
+const PUSH_RADIUS := 360.0
 const PUSH_FORCE := 340.0
+const PUSH_COOLDOWN := 30.0
 
 var pet_id: String = "green_spirit"
 var main_ref: Node = null
 var pulse_timer: float = 0.0
 var bob_time: float = 0.0
 var base_offset: Vector2 = Vector2(34.0, -52.0)
-var used: bool = false
+var push_cooldown_timer: float = 0.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -28,6 +29,8 @@ func _process(delta: float) -> void:
 	position = base_offset + Vector2(0.0, sin(bob_time) * 4.0)
 
 	if pet_id == "push_spirit":
+		if push_cooldown_timer > 0.0:
+			push_cooldown_timer -= delta
 		return
 
 	var player: Node = get_parent()
@@ -39,9 +42,9 @@ func _process(delta: float) -> void:
 		_grant_shield(player)
 
 func try_trigger_push_skill() -> bool:
-	if used:
+	if push_cooldown_timer > 0.0:
 		return false
-	used = true
+	push_cooldown_timer = PUSH_COOLDOWN
 	var player: Node = get_parent()
 	var container: Node = main_ref if main_ref != null else player.get_parent()
 	var hit_any := false
@@ -59,7 +62,6 @@ func try_trigger_push_skill() -> bool:
 	fx.set_radius(PUSH_RADIUS, true)
 	if hit_any:
 		player.screen_shake(5.0, 0.2)
-	queue_free()
 	return true
 
 func _grant_shield(player: Node) -> void:

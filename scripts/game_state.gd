@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.51.0 · 2026-09-14"
+const VERSION := "v0.51.1 · 2026-09-14"
 
 const MODES := [
 	{"id": "normal", "name": "일반"},
@@ -31,7 +31,7 @@ const JINAK_CLEAR_TARGET := 3
 const PET_COST := 5000
 const PET_DEFS := {
 	"green_spirit": {"name": "초록 정령", "sprite": "res://assets/sprites/pet_spirit_green.png", "offset": Vector2(34, -52), "desc": "내공 %d 소모해 영입. 이후 모든 판에 함께 등장해 12초마다 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌" % PET_COST},
-	"push_spirit": {"name": "충격 정령", "sprite": "res://assets/sprites/pet_spirit_push.png", "offset": Vector2(-34, -52), "cost": 10000, "consumable": true, "desc": "내공 10000 소모해 영입. 우측 상단 스킬 버튼을 누르면 주변 모든 적을 강하게 밀쳐냄 (한 판에 딱 한 번만 사용 가능, 사용하면 그 판에서는 사라짐)"},
+	"push_spirit": {"name": "충격 정령", "sprite": "res://assets/sprites/pet_spirit_push.png", "offset": Vector2(-34, -52), "cost": 10000, "desc": "내공 10000 소모해 영입. 우측 상단 스킬 버튼을 누르면 화면 절반 범위의 모든 적을 강하게 밀쳐냄 (재사용 대기시간 30초)"},
 }
 
 const MAPS := [
