@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.51.3 · 2026-09-14"
+const VERSION := "v0.51.4 · 2026-09-14"
 
 const MODES := [
 	{"id": "normal", "name": "일반"},
@@ -31,7 +31,7 @@ const JINAK_CLEAR_TARGET := 3
 const PET_COST := 5000
 const PET_DEFS := {
 	"green_spirit": {"name": "초록 정령", "sprite": "res://assets/sprites/pet_spirit_green.png", "offset": Vector2(34, -52), "desc": "내공 %d 소모해 영입. 이후 모든 판에 함께 등장해 12초마다 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌" % PET_COST},
-	"push_spirit": {"name": "충격 정령", "sprite": "res://assets/sprites/pet_spirit_push.png", "offset": Vector2(-34, -52), "cost": 10000, "desc": "내공 10000 소모해 영입. 좌측 하단 스킬 버튼을 누르면 주변 적을 밀쳐냄 - 판당 여러 번 사용 가능 (재사용 대기시간 30초)"},
+	"push_spirit": {"name": "충격 정령", "sprite": "res://assets/sprites/pet_spirit_push.png", "offset": Vector2(-34, -52), "cost": 10000, "consumable": true, "desc": "내공 10000 소모해 1개 구매하는 소모품. 보유한 개수만큼 판에 데려갈 수 있고, 한 판당 1개씩 소모됨. 그 판 안에서는 좌측 하단 스킬 버튼으로 여러 번 사용 가능 (재사용 대기시간 30초)"},
 }
 
 const MAPS := [
@@ -97,6 +97,7 @@ var player_nickname: String = ""
 var player_nickname_password: String = ""
 var nickname_prompt_shown: bool = false
 var owned_pets: Array = []
+var pet_stock: Dictionary = {}
 var sfx_enabled: bool = true
 var music_enabled: bool = true
 var resuming_run: bool = false
@@ -182,22 +183,40 @@ func unlock_jinak_by_clear() -> void:
 		unlocked_characters["jinak"] = true
 	_save_data()
 
+func is_consumable_pet(id: String) -> bool:
+	return bool(PET_DEFS.get(id, {}).get("consumable", false))
+
+func pet_stock_count(id: String) -> int:
+	return int(pet_stock.get(id, 0))
+
 func has_pet(id: String) -> bool:
+	if is_consumable_pet(id):
+		return pet_stock_count(id) > 0
 	return owned_pets.has(id)
 
 func pet_cost(id: String) -> int:
 	return int(PET_DEFS.get(id, {}).get("cost", PET_COST))
 
 func can_buy_pet(id: String) -> bool:
+	if is_consumable_pet(id):
+		return total_coins >= pet_cost(id)
 	return not has_pet(id) and total_coins >= pet_cost(id)
 
 func buy_pet(id: String) -> bool:
 	if not can_buy_pet(id):
 		return false
-	owned_pets.append(id)
+	if is_consumable_pet(id):
+		pet_stock[id] = pet_stock_count(id) + 1
+	else:
+		owned_pets.append(id)
 	total_coins -= pet_cost(id)
 	_save_data()
 	return true
+
+func consume_pet_stock(id: String) -> void:
+	if pet_stock_count(id) > 0:
+		pet_stock[id] = pet_stock_count(id) - 1
+		_save_data()
 
 func upgrade_cost(id: String) -> int:
 	var def: Dictionary = META_DEFS[id]
@@ -293,6 +312,8 @@ func _load_data() -> void:
 		jinak_clears = int(parsed.get("jinak_clears", 0))
 		var saved_pets: Array = parsed.get("owned_pets", [])
 		owned_pets = saved_pets.duplicate()
+		var saved_pet_stock: Dictionary = parsed.get("pet_stock", {})
+		pet_stock = saved_pet_stock.duplicate()
 		sfx_enabled = bool(parsed.get("sfx_enabled", true))
 		music_enabled = bool(parsed.get("music_enabled", true))
 		player_nickname = String(parsed.get("player_nickname", ""))
@@ -309,6 +330,7 @@ func _save_data() -> void:
 		"samahoek_kills": samahoek_kills,
 		"jinak_clears": jinak_clears,
 		"owned_pets": owned_pets,
+		"pet_stock": pet_stock,
 		"sfx_enabled": sfx_enabled,
 		"music_enabled": music_enabled,
 		"player_nickname": player_nickname,

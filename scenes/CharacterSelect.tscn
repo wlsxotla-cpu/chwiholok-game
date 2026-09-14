@@ -239,6 +239,17 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_diff_normal")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_diff_selected")
 text = "펫"
 
+[node name="ItemTab" type="Button" parent="Margin/VBox/TabRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 52)
+size_flags_horizontal = 3
+toggle_mode = true
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_diff_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_diff_selected")
+text = "아이템"
+
 [node name="RankingTab" type="Button" parent="Margin/VBox/TabRow"]
 layout_mode = 2
 custom_minimum_size = Vector2(0, 52)
@@ -272,6 +283,22 @@ size_flags_horizontal = 3
 horizontal_scroll_mode = 0
 
 [node name="PetList" type="VBoxContainer" parent="Margin/VBox/PetPanel/PetScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="ItemPanel" type="PanelContainer" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_diff_normal")
+
+[node name="ItemScroll" type="ScrollContainer" parent="Margin/VBox/ItemPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemList" type="VBoxContainer" parent="Margin/VBox/ItemPanel/ItemScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 14

@@ -55,8 +55,9 @@ func _ready() -> void:
 		GameState.resuming_run = false
 		GameState.pending_run_data = {}
 	var resume_mid_boss_alive: bool = was_resuming and bool(resume_data.get("mid_boss_alive", false))
+	var resume_consumable_pets: Array = resume_data.get("active_consumable_pets", []) if was_resuming else []
 	_apply_map_theme()
-	_spawn_pets()
+	_spawn_pets(was_resuming, resume_consumable_pets)
 	player.died.connect(_on_player_died)
 	player.leveled_up.connect(func(options: Array) -> void:
 		hud.show_level_up(options)
@@ -424,6 +425,7 @@ func _autosave() -> void:
 	data["chest_timer"] = chest_timer
 	data["grass_broken_count"] = grass_broken_count
 	data["chests_opened_count"] = chests_opened_count
+	data["active_consumable_pets"] = active_consumable_pets
 	var mid_boss_alive: bool = has_tracked_boss and is_instance_valid(tracked_boss) and tracked_boss.type == Enemy.Type.BOSS
 	data["mid_boss_alive"] = mid_boss_alive
 	if mid_boss_alive:
@@ -784,14 +786,37 @@ func _spawn_meteor_strike() -> void:
 
 var push_pet: Node = null
 
-func _spawn_pets() -> void:
+var active_consumable_pets: Array = []
+
+func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) -> void:
 	for pet_id in GameState.owned_pets:
 		var pet := preload("res://scenes/Pet.tscn").instantiate()
 		pet.pet_id = pet_id
 		pet.main_ref = self
 		player.add_child(pet)
-		if pet_id == "push_spirit":
-			push_pet = pet
+	if is_resume:
+		for pet_id in resume_consumable_pets:
+			var pet := preload("res://scenes/Pet.tscn").instantiate()
+			pet.pet_id = pet_id
+			pet.main_ref = self
+			player.add_child(pet)
+			active_consumable_pets.append(pet_id)
+			if pet_id == "push_spirit":
+				push_pet = pet
+	else:
+		for pet_id in GameState.PET_DEFS.keys():
+			if not GameState.is_consumable_pet(pet_id):
+				continue
+			if GameState.pet_stock_count(pet_id) <= 0:
+				continue
+			GameState.consume_pet_stock(pet_id)
+			active_consumable_pets.append(pet_id)
+			var pet := preload("res://scenes/Pet.tscn").instantiate()
+			pet.pet_id = pet_id
+			pet.main_ref = self
+			player.add_child(pet)
+			if pet_id == "push_spirit":
+				push_pet = pet
 	hud.set_pet_skill_available(push_pet != null)
 
 func _on_pet_skill_pressed() -> void:

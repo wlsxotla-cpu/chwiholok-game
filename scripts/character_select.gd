@@ -13,6 +13,9 @@ extends Control
 @onready var pet_tab: Button = $Margin/VBox/TabRow/PetTab
 @onready var pet_panel: PanelContainer = $Margin/VBox/PetPanel
 @onready var pet_list: VBoxContainer = $Margin/VBox/PetPanel/PetScroll/PetList
+@onready var item_tab: Button = $Margin/VBox/TabRow/ItemTab
+@onready var item_panel: PanelContainer = $Margin/VBox/ItemPanel
+@onready var item_list: VBoxContainer = $Margin/VBox/ItemPanel/ItemScroll/ItemList
 @onready var ranking_tab: Button = $Margin/VBox/TabRow/RankingTab
 @onready var ranking_panel: PanelContainer = $Margin/VBox/RankingPanel
 @onready var ranking_map_row: HBoxContainer = $Margin/VBox/RankingPanel/RankingVBox/RankingMapRow
@@ -88,6 +91,7 @@ func _ready() -> void:
 	shop_tab.pressed.connect(_select_tab.bind("shop"))
 	guide_tab.pressed.connect(_select_tab.bind("guide"))
 	pet_tab.pressed.connect(_select_tab.bind("pet"))
+	item_tab.pressed.connect(_select_tab.bind("item"))
 	ranking_tab.pressed.connect(_select_tab.bind("ranking"))
 	_select_tab("character")
 	_build_guide()
@@ -179,6 +183,7 @@ func _refresh_all() -> void:
 		grid.add_child(_build_card(char_data))
 	_refresh_shop()
 	_refresh_pets()
+	_refresh_items()
 
 func _build_card(data: Dictionary) -> Control:
 	var panel := PanelContainer.new()
@@ -294,11 +299,13 @@ func _select_tab(tab: String) -> void:
 	shop_panel.visible = tab == "shop"
 	guide_panel.visible = tab == "guide"
 	pet_panel.visible = tab == "pet"
+	item_panel.visible = tab == "item"
 	ranking_panel.visible = tab == "ranking"
 	character_tab.button_pressed = tab == "character"
 	shop_tab.button_pressed = tab == "shop"
 	guide_tab.button_pressed = tab == "guide"
 	pet_tab.button_pressed = tab == "pet"
+	item_tab.button_pressed = tab == "item"
 	ranking_tab.button_pressed = tab == "ranking"
 	settings_row.visible = tab == "character"
 	difficulty_desc.visible = tab == "character"
@@ -418,7 +425,66 @@ func _refresh_pets() -> void:
 	for c in pet_list.get_children():
 		c.queue_free()
 	for id in GameState.PET_DEFS.keys():
+		if GameState.is_consumable_pet(id):
+			continue
 		pet_list.add_child(_build_pet_card(id))
+
+func _refresh_items() -> void:
+	for c in item_list.get_children():
+		c.queue_free()
+	for id in GameState.PET_DEFS.keys():
+		if not GameState.is_consumable_pet(id):
+			continue
+		item_list.add_child(_build_item_card(id))
+
+func _build_item_card(id: String) -> Control:
+	var def: Dictionary = GameState.PET_DEFS[id]
+	var stock: int = GameState.pet_stock_count(id)
+
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var icon := TextureRect.new()
+	if def.has("sprite"):
+		icon.texture = load(def.sprite)
+	icon.custom_minimum_size = Vector2(56, 56)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	row.add_child(icon)
+
+	var info := VBoxContainer.new()
+	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(info)
+
+	var name_label := Label.new()
+	name_label.text = "%s (소모품) - 보유 %d개" % [def.name, stock]
+	name_label.add_theme_font_size_override("font_size", 19)
+	if stock > 0:
+		name_label.add_theme_color_override("font_color", Color(0.91, 0.71, 0.24, 1))
+	info.add_child(name_label)
+
+	var desc_label := Label.new()
+	desc_label.text = String(def.get("desc", ""))
+	desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	desc_label.add_theme_font_size_override("font_size", 14)
+	desc_label.add_theme_color_override("font_color", Color(0.7, 0.66, 0.6, 1))
+	info.add_child(desc_label)
+
+	var buy_btn := Button.new()
+	buy_btn.text = "내공 %d로 1개 구매" % GameState.pet_cost(id)
+	buy_btn.disabled = not GameState.can_buy_pet(id)
+	buy_btn.pressed.connect(_on_item_buy_pressed.bind(id))
+	info.add_child(buy_btn)
+
+	return row
+
+func _on_item_buy_pressed(id: String) -> void:
+	SoundManager.play("click")
+	if GameState.buy_pet(id):
+		var def: Dictionary = GameState.PET_DEFS[id]
+		_show_toast("%s 구매! (보유 %d개)" % [def.name, GameState.pet_stock_count(id)])
+		_refresh_all()
 
 func _build_pet_card(id: String) -> Control:
 	var def: Dictionary = GameState.PET_DEFS[id]
