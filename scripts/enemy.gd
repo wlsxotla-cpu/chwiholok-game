@@ -117,6 +117,8 @@ var slow_timer: float = 0.0
 var slow_mult: float = 1.0
 
 func apply_slow(duration: float, mult: float) -> void:
+	if use_frost_burst or use_frost_finale:
+		return
 	slow_timer = max(slow_timer, duration)
 	slow_mult = min(slow_mult, mult)
 

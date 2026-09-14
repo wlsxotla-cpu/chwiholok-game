@@ -5,7 +5,7 @@ const PUSH_RADIUS := 360.0
 const PUSH_FORCE := 4200.0
 const PUSH_KNOCKBACK_DURATION := 0.6
 const PUSH_COOLDOWN := 30.0
-const FREEZE_DURATION := 1.0
+const FREEZE_DURATION := 2.0
 const FREEZE_COOLDOWN := 30.0
 
 var pet_id: String = "green_spirit"

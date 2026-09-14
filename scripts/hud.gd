@@ -14,6 +14,7 @@ signal altar_offer_confirmed
 signal altar_offer_declined
 signal pet_skill_pressed
 signal freeze_skill_pressed
+signal item_use_decided(use: bool)
 
 @onready var xp_bar: ProgressBar = $XPBar
 @onready var boss_health_panel: VBoxContainer = $BossHealthPanel
@@ -50,6 +51,11 @@ signal freeze_skill_pressed
 @onready var fusion_confirm_button: Button = $FusionOfferPanel/VBox/ConfirmButton
 @onready var fusion_decline_button: Button = $FusionOfferPanel/VBox/DeclineButton
 var pending_fusion_fid: String = ""
+@onready var item_use_offer_panel: Panel = $ItemUseOfferPanel
+@onready var item_use_title: Label = $ItemUseOfferPanel/VBox/Title
+@onready var item_use_desc_label: Label = $ItemUseOfferPanel/VBox/DescLabel
+@onready var item_use_confirm_button: Button = $ItemUseOfferPanel/VBox/ConfirmButton
+@onready var item_use_decline_button: Button = $ItemUseOfferPanel/VBox/DeclineButton
 @onready var restart_button: Button = $RestartButton
 @onready var menu_button: Button = $MenuButton
 @onready var pause_button: Button = $PauseButton
@@ -136,6 +142,16 @@ func _ready() -> void:
 		SoundManager.play("click")
 		fusion_offer_panel.visible = false
 		fusion_declined.emit(pending_fusion_fid))
+
+	item_use_offer_panel.visible = false
+	item_use_confirm_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		item_use_offer_panel.visible = false
+		item_use_decided.emit(true))
+	item_use_decline_button.pressed.connect(func() -> void:
+		SoundManager.play("click")
+		item_use_offer_panel.visible = false
+		item_use_decided.emit(false))
 	restart_button.pressed.connect(func() -> void: SoundManager.play("click"); restart_pressed.emit())
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	reroll_button.pressed.connect(func() -> void: reroll_requested.emit())
@@ -862,6 +878,11 @@ func show_fusion_offer(fid: String, wid: String, partner: String) -> void:
 	fusion_offer_panel.visible = true
 
 const PlayerScript = preload("res://scripts/player.gd")
+
+func show_item_use_offer(item_name: String, desc: String, stock: int) -> void:
+	item_use_title.text = "%s 사용하시겠습니까?" % item_name
+	item_use_desc_label.text = "%s\n(보유 %d개)" % [desc, stock]
+	item_use_offer_panel.visible = true
 
 func show_continue_offer(cost: int, available: int, remaining: int) -> void:
 	var can_afford: bool = available >= cost

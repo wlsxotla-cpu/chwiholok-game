@@ -57,6 +57,8 @@ func _ready() -> void:
 	var resume_mid_boss_alive: bool = was_resuming and bool(resume_data.get("mid_boss_alive", false))
 	var resume_consumable_pets: Array = resume_data.get("active_consumable_pets", []) if was_resuming else []
 	_apply_map_theme()
+	if not was_resuming:
+		await _confirm_consumable_item_use()
 	_spawn_pets(was_resuming, resume_consumable_pets)
 	player.died.connect(_on_player_died)
 	player.leveled_up.connect(func(options: Array, queued_remaining: int) -> void:
@@ -793,12 +795,28 @@ var push_pet: Node = null
 var freeze_pet: Node = null
 
 var active_consumable_pets: Array = []
+var item_use_decisions: Dictionary = {}
 
 func _register_consumable_pet(pet_id: String, pet: Node) -> void:
 	if pet_id == "push_spirit":
 		push_pet = pet
 	elif pet_id == "freeze_charm":
 		freeze_pet = pet
+
+func _confirm_consumable_item_use() -> void:
+	var candidates: Array = []
+	for pet_id in GameState.PET_DEFS.keys():
+		if GameState.is_consumable_pet(pet_id) and GameState.pet_stock_count(pet_id) > 0:
+			candidates.append(pet_id)
+	if candidates.is_empty():
+		return
+	get_tree().paused = true
+	for pet_id in candidates:
+		var def: Dictionary = GameState.PET_DEFS[pet_id]
+		hud.show_item_use_offer(def.name, def.get("desc", ""), GameState.pet_stock_count(pet_id))
+		var use: bool = await hud.item_use_decided
+		item_use_decisions[pet_id] = use
+	get_tree().paused = false
 
 func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) -> void:
 	for pet_id in GameState.owned_pets:
@@ -819,6 +837,8 @@ func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) ->
 			if not GameState.is_consumable_pet(pet_id):
 				continue
 			if GameState.pet_stock_count(pet_id) <= 0:
+				continue
+			if not item_use_decisions.get(pet_id, false):
 				continue
 			GameState.consume_pet_stock(pet_id)
 			active_consumable_pets.append(pet_id)
