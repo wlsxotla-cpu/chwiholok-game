@@ -233,10 +233,15 @@ func _find_joystick() -> void:
 	joystick = get_tree().get_first_node_in_group("joystick")
 
 const RUINS_META_DEBUFF := 0.5
+const FROSTPEAK_META_DEBUFF := 0.4
 
 func _apply_meta_upgrades() -> void:
 	var meta: Dictionary = GameState.meta_upgrades
-	var mult: float = RUINS_META_DEBUFF if GameState.selected_map == "ruins" else 1.0
+	var mult: float = 1.0
+	if GameState.selected_map == "ruins":
+		mult = RUINS_META_DEBUFF
+	elif GameState.selected_map == "frostpeak":
+		mult = FROSTPEAK_META_DEBUFF
 	max_health += 15.0 * float(meta.get("hp", 0)) * mult
 	global_damage_mult *= (1.0 + 0.05 * float(meta.get("dmg", 0)) * mult)
 	speed *= (1.0 + 0.03 * float(meta.get("move", 0)) * mult)
@@ -244,12 +249,17 @@ func _apply_meta_upgrades() -> void:
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 
 const RUINS_TIER_DEBUFF := 0.1
+const FROSTPEAK_TIER_DEBUFF := 0.0
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))
 	if tier <= 0:
 		return
-	var mult: float = RUINS_TIER_DEBUFF if GameState.selected_map == "ruins" else 1.0
+	var mult: float = 1.0
+	if GameState.selected_map == "ruins":
+		mult = RUINS_TIER_DEBUFF
+	elif GameState.selected_map == "frostpeak":
+		mult = FROSTPEAK_TIER_DEBUFF
 	max_health *= (1.0 + 0.06 * tier * mult)
 	global_damage_mult *= (1.0 + 0.06 * tier * mult)
 
@@ -282,12 +292,24 @@ func _current_input_dir() -> Vector2:
 		input_dir = input_dir.normalized()
 	return input_dir
 
+var slow_timer: float = 0.0
+var slow_mult: float = 1.0
+
+func apply_slow(duration: float, mult: float) -> void:
+	slow_timer = max(slow_timer, duration)
+	slow_mult = min(slow_mult, mult)
+
 func _physics_process(delta: float) -> void:
 	var input_dir: Vector2 = _current_input_dir()
-	var target_velocity: Vector2 = input_dir * speed
+	var target_velocity: Vector2 = input_dir * speed * slow_mult
 	velocity = velocity.lerp(target_velocity, clamp(20.0 * delta, 0.0, 1.0))
 	move_and_slide()
 	_update_animation(input_dir)
+
+	if slow_timer > 0.0:
+		slow_timer -= delta
+		if slow_timer <= 0.0:
+			slow_mult = 1.0
 
 	if invincible_timer > 0.0:
 		invincible_timer -= delta
@@ -846,6 +868,8 @@ func confirm_continue() -> void:
 	GameState.spend_coins(cost)
 	health = max_health * REVIVE_HEALTH_FRACTION
 	invincible_timer = REVIVE_INVINCIBLE_DURATION
+	slow_timer = 0.0
+	slow_mult = 1.0
 	velocity = _current_input_dir() * speed
 	stats_changed.emit()
 	revived.emit()

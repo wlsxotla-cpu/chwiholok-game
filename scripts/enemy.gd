@@ -46,6 +46,29 @@ const QI_CANNON_BURST_INTERVAL := 0.18
 const QI_CANNON_DAMAGE := 10.0
 const QI_CANNON_ATTACK_INTERVAL := 3.0
 
+const FROST_BURST_RANGE_MULT := 1.15
+const FROST_BURST_DAMAGE := 28.0
+const FROST_BURST_SLOW_DURATION := 2.2
+const FROST_BURST_SLOW_MULT := 0.45
+const FROST_BOLT_COUNT := 6
+const FROST_BOLT_DAMAGE := 16.0
+const FROST_BOLT_INTERVAL := 2.6
+
+const FROST_FINALE_ATTACK_INTERVAL := 2.0
+const FROST_FINALE_RECOVERY_DURATION := 0.4
+const FROST_PULSE_RANGE_MULT := 1.6
+const FROST_PULSE_DAMAGE_MULT := 1.4
+const ICICLE_RAIN_COUNT := 5
+const ICICLE_RAIN_SPREAD := 260.0
+const FROST_DASH_SPEED := 620.0
+const FROST_DASH_DURATION := 0.55
+const FROST_DASH_DAMAGE := 40.0
+const FROST_DASH_TRAIL_INTERVAL := 0.08
+const ICE_PATCH_RADIUS := 55.0
+const ICE_PATCH_DURATION := 2.5
+const ICE_PATCH_SLOW_DURATION := 0.7
+const ICE_PATCH_SLOW_MULT := 0.5
+
 signal overlord_defeated
 signal samahoek_defeated
 signal died
@@ -63,6 +86,14 @@ var cheonma_recovery_timer: float = 0.0
 var use_qi_cannon: bool = false
 var qi_burst_remaining: int = 0
 var qi_burst_timer: float = 0.0
+var use_frost_burst: bool = false
+var use_frost_finale: bool = false
+var frost_phase: int = 0
+var frost_recovery_timer: float = 0.0
+var frost_dashing: bool = false
+var frost_dash_timer: float = 0.0
+var frost_dash_trail_timer: float = 0.0
+var frost_dash_target: Vector2 = Vector2.ZERO
 var speed_override: float = -1.0
 var xp_mult_override: float = 1.0
 var use_cheonmagung_skin: bool = false
@@ -110,11 +141,18 @@ func _ready() -> void:
 			var base_interval: float = OVERLORD_SLAM_INTERVAL
 			if use_cheonma_finale:
 				base_interval = CHEONMA_ATTACK_INTERVAL
+			elif use_frost_finale:
+				base_interval = FROST_FINALE_ATTACK_INTERVAL
 			elif use_halberd_barrage:
 				base_interval = HALBERD_BARRAGE_INTERVAL
 			slam_timer = base_interval * randf_range(0.5, 1.0)
 		else:
-			slam_timer = (QI_CANNON_ATTACK_INTERVAL if use_qi_cannon else BOSS_SLAM_INTERVAL) * randf_range(0.5, 1.0)
+			var mid_interval: float = BOSS_SLAM_INTERVAL
+			if use_qi_cannon:
+				mid_interval = QI_CANNON_ATTACK_INTERVAL
+			elif use_frost_burst:
+				mid_interval = FROST_BOLT_INTERVAL
+			slam_timer = mid_interval * randf_range(0.5, 1.0)
 	else:
 		_apply_rank_tint()
 
@@ -221,8 +259,14 @@ func _explode() -> void:
 	queue_free()
 
 func _process_boss(delta: float) -> void:
-	if use_cheonma_finale and cheonma_recovery_timer > 0.0:
+	if frost_dashing:
+		_process_frost_dash(delta)
+	elif use_cheonma_finale and cheonma_recovery_timer > 0.0:
 		cheonma_recovery_timer -= delta
+		velocity = velocity.lerp(Vector2.ZERO, 0.25)
+		move_and_slide()
+	elif use_frost_finale and frost_recovery_timer > 0.0:
+		frost_recovery_timer -= delta
 		velocity = velocity.lerp(Vector2.ZERO, 0.25)
 		move_and_slide()
 	else:
@@ -238,6 +282,9 @@ func _process_boss(delta: float) -> void:
 			qi_burst_remaining -= 1
 		return
 
+	if frost_dashing:
+		return
+
 	slam_timer -= delta
 	if slam_timer <= 0.0:
 		if use_cheonma_finale:
@@ -251,6 +298,24 @@ func _process_boss(delta: float) -> void:
 				_:
 					_cheonma_nova()
 			cheonma_phase = (cheonma_phase + 1) % 3
+		elif use_frost_finale:
+			slam_timer = FROST_FINALE_ATTACK_INTERVAL
+			match frost_phase:
+				0:
+					_frost_pulse()
+					frost_recovery_timer = FROST_FINALE_RECOVERY_DURATION
+				1:
+					_icicle_rain()
+				_:
+					_frost_dash_start()
+			frost_phase = (frost_phase + 1) % 3
+		elif use_frost_burst:
+			slam_timer = FROST_BOLT_INTERVAL
+			if frost_phase % 2 == 0:
+				_frost_melee_burst()
+			else:
+				_frost_bolt_spread()
+			frost_phase += 1
 		elif use_halberd_barrage:
 			slam_timer = HALBERD_BARRAGE_INTERVAL
 			_halberd_barrage()
@@ -350,6 +415,89 @@ func _halberd_barrage() -> void:
 		bolt_sprite.scale = Vector2(0.6, 0.6)
 		bolt.modulate = Color(1.3, 0.5, 0.95, 1.0)
 		bolt.scale *= HALBERD_BOLT_SCALE
+
+func _frost_melee_burst(range_mult: float = 1.0, damage_mult: float = 1.0) -> void:
+	var r: float = BOSS_SLAM_RANGE * FROST_BURST_RANGE_MULT * range_mult
+	if global_position.distance_to(player.global_position) <= r:
+		player.take_damage(FROST_BURST_DAMAGE * damage_mult * (1.0 + (difficulty_mult - 1.0) * 0.6))
+		player.apply_slow(FROST_BURST_SLOW_DURATION, FROST_BURST_SLOW_MULT)
+	SoundManager.play("explosion", 1.5, 0.6)
+	var fx := preload("res://scenes/SlashEffect.tscn").instantiate()
+	get_parent().add_child(fx)
+	fx.global_position = global_position
+	fx.modulate = Color(0.6, 0.95, 1.6, 1.0)
+	fx.set_radius(r, type == Type.OVERLORD)
+
+func _frost_bolt_spread() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	SoundManager.play("attack_fireball", 1.5, 1.4)
+	for i in range(FROST_BOLT_COUNT):
+		var angle: float = TAU * float(i) / float(FROST_BOLT_COUNT)
+		var bolt := preload("res://scenes/EnemyOrb.tscn").instantiate()
+		parent.add_child(bolt)
+		bolt.global_position = global_position
+		var aim: Vector2 = global_position + Vector2(cos(angle), sin(angle)) * 400.0
+		bolt.setup(aim, FROST_BOLT_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
+		bolt.modulate = Color(0.55, 0.9, 1.7, 1.0)
+
+func _frost_pulse() -> void:
+	_frost_melee_burst(FROST_PULSE_RANGE_MULT, FROST_PULSE_DAMAGE_MULT)
+
+func _icicle_rain() -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	SoundManager.play("attack_fireball", 1.0, 1.3)
+	for i in range(ICICLE_RAIN_COUNT):
+		var meteor := preload("res://scenes/MeteorStrike.tscn").instantiate()
+		meteor.damage_mult = 1.0 + (difficulty_mult - 1.0) * 0.9
+		meteor.modulate = Color(0.6, 0.9, 1.7, 1.0)
+		var angle: float = randf() * TAU
+		var dist: float = randf_range(0.0, ICICLE_RAIN_SPREAD)
+		var pos: Vector2 = player.global_position + Vector2(cos(angle), sin(angle)) * dist
+		meteor.global_position = pos
+		parent.add_child(meteor)
+
+func _frost_dash_start() -> void:
+	frost_dashing = true
+	frost_dash_timer = FROST_DASH_DURATION
+	frost_dash_trail_timer = 0.0
+	frost_dash_target = player.global_position
+	SoundManager.play("attack_ranged", -2.0, 0.6)
+
+func _process_frost_dash(delta: float) -> void:
+	frost_dash_timer -= delta
+	var to_target: Vector2 = frost_dash_target - global_position
+	if to_target.length() < 12.0 or frost_dash_timer <= 0.0:
+		frost_dashing = false
+		frost_recovery_timer = FROST_FINALE_RECOVERY_DURATION
+		return
+	var dir: Vector2 = to_target.normalized()
+	velocity = dir * FROST_DASH_SPEED
+	move_and_slide()
+	sprite.flip_h = dir.x < 0
+
+	if global_position.distance_to(player.global_position) < 42.0:
+		damage_tick -= delta
+		if damage_tick <= 0.0:
+			player.take_damage(FROST_DASH_DAMAGE * (1.0 + (difficulty_mult - 1.0) * 0.6))
+			damage_tick = 0.6
+
+	frost_dash_trail_timer -= delta
+	if frost_dash_trail_timer <= 0.0:
+		frost_dash_trail_timer = FROST_DASH_TRAIL_INTERVAL
+		_spawn_ice_patch(global_position)
+
+func _spawn_ice_patch(pos: Vector2) -> void:
+	var parent := get_parent()
+	if parent == null:
+		return
+	var patch := preload("res://scenes/IcePatch.tscn").instantiate()
+	parent.add_child(patch)
+	patch.global_position = pos
+	patch.setup(ICE_PATCH_RADIUS, ICE_PATCH_DURATION, ICE_PATCH_SLOW_DURATION, ICE_PATCH_SLOW_MULT)
 
 func _process_overlord_aura(delta: float) -> void:
 	if boss_texture_override == "":

@@ -113,12 +113,16 @@ func _apply_map_theme() -> void:
 	var env: Environment = $WorldEnvironment.environment
 	env.background_color = map_data.bg_color
 	var wall_tint: Color = map_data.wall_tint
-	var is_ruins: bool = GameState.selected_map == "ruins"
-	var wall_texture: Texture2D = load("res://assets/sprites/ruins_wall.png") if is_ruins else null
+	var maze_wall_textures: Dictionary = {
+		"ruins": "res://assets/sprites/ruins_wall.png",
+		"frostpeak": "res://assets/sprites/frostpeak_wall.png",
+	}
+	var wall_texture_path: String = maze_wall_textures.get(GameState.selected_map, "")
+	var wall_texture: Texture2D = load(wall_texture_path) if wall_texture_path != "" else null
 	for wall_name in ["WallTop", "WallBottom", "WallLeft", "WallRight"]:
 		var glow: Sprite2D = $Walls.get_node(wall_name + "/Glow")
 		glow.modulate = wall_tint
-		if is_ruins:
+		if wall_texture != null:
 			glow.texture = wall_texture
 
 const GRASS_PROP_COUNT := 26
@@ -130,6 +134,9 @@ const LAVA_CRACK_SCALE := 1.7
 const LAVA_LAKE_COUNT := 4
 const RUINS_BOSS_HP_MULT := 1.7
 const RUINS_BOSS_XP_MULT := 4.0
+const FROSTPEAK_BOSS_HP_MULT := 2.2
+const FROSTPEAK_BOSS_XP_MULT := 5.0
+const FROSTPEAK_OVERLORD_MULT := 1.9
 const CHEST_INTERVAL := 300.0
 const CHEST_FIRST_DELAY := 60.0
 const COIN_ALTAR_COUNT := 2
@@ -155,12 +162,16 @@ var corridor_cell_size: float = 0.0
 func _spawn_map_props() -> void:
 	var in_corridors: bool = GameState.selected_map == "cheonmagung"
 	var in_ruins: bool = GameState.selected_map == "ruins"
-	var in_grid: bool = in_corridors or in_ruins
+	var in_frostpeak: bool = GameState.selected_map == "frostpeak"
+	var in_maze: bool = in_ruins or in_frostpeak
+	var in_grid: bool = in_corridors or in_maze
 	in_grid_layout = in_grid
 	if in_corridors:
 		_spawn_palace_corridors()
 	elif in_ruins:
-		_spawn_ruins_maze()
+		_spawn_ruins_maze("res://assets/sprites/ruins_wall.png")
+	elif in_frostpeak:
+		_spawn_ruins_maze("res://assets/sprites/frostpeak_wall.png")
 
 	var prop_scene: PackedScene = preload("res://scenes/GrassProp.tscn") if not in_grid else preload("res://scenes/PalaceVaseProp.tscn")
 	var prop_break_color: Color = Color(0.55, 1.0, 0.5, 1.0)
@@ -168,10 +179,12 @@ func _spawn_map_props() -> void:
 		prop_break_color = Color(0.75, 0.6, 1.0, 1.0)
 	elif in_ruins:
 		prop_break_color = Color(1.0, 0.55, 0.3, 1.0)
+	elif in_frostpeak:
+		prop_break_color = Color(0.65, 0.9, 1.0, 1.0)
 	var prop_count: int = GRASS_PROP_COUNT
 	if in_corridors:
 		prop_count = CORRIDOR_PROP_COUNT
-	elif in_ruins:
+	elif in_maze:
 		prop_count = RUINS_PROP_COUNT
 	for i in range(prop_count):
 		var prop := prop_scene.instantiate()
@@ -188,11 +201,12 @@ func _spawn_map_props() -> void:
 			altar.player_exited_range.connect(_on_altar_range_exited)
 			add_child(altar)
 
-	if in_ruins:
+	if in_maze:
 		for i in range(RUINS_OBSTACLE_COUNT):
 			var obstacle := preload("res://scenes/PalaceObstacle.tscn").instantiate()
 			obstacle.global_position = _random_cell_safe_pos(260.0)
 			add_child(obstacle)
+	if in_ruins:
 		for i in range(LAVA_CRACK_COUNT):
 			var lava := preload("res://scenes/LavaCrack.tscn").instantiate()
 			lava.global_position = _random_cell_safe_pos(220.0)
@@ -297,7 +311,7 @@ func _spawn_palace_corridors() -> void:
 		obstacle.global_position = pos
 		add_child(obstacle)
 
-func _spawn_ruins_maze() -> void:
+func _spawn_ruins_maze(wall_texture_path: String = "res://assets/sprites/ruins_wall.png") -> void:
 	var walls_body := StaticBody2D.new()
 	walls_body.collision_layer = 32
 	walls_body.collision_mask = 0
@@ -376,12 +390,12 @@ func _spawn_ruins_maze() -> void:
 				var c1 := Vector2(cx + cell / 2.0, cy)
 				var s1 := Vector2(RUINS_WALL_THICKNESS, cell)
 				if not _wall_blocks_spawn(c1, s1):
-					_add_wall_shape(walls_body, c1, s1, "res://assets/sprites/ruins_wall.png")
+					_add_wall_shape(walls_body, c1, s1, wall_texture_path)
 			if y < n - 1 and not open_down[x][y]:
 				var c2 := Vector2(cx, cy + cell / 2.0)
 				var s2 := Vector2(cell, RUINS_WALL_THICKNESS)
 				if not _wall_blocks_spawn(c2, s2):
-					_add_wall_shape(walls_body, c2, s2, "res://assets/sprites/ruins_wall.png")
+					_add_wall_shape(walls_body, c2, s2, wall_texture_path)
 
 func _wall_blocks_spawn(center: Vector2, size: Vector2) -> bool:
 	var half_size: Vector2 = size / 2.0
@@ -548,10 +562,17 @@ func _spawn_boss(is_resume: bool = false, resume_health: float = 0.0, resume_pos
 		boss.boss_texture_override = "res://assets/sprites/enemy_ruins_boss.png"
 		boss.use_qi_cannon = true
 		boss.xp_mult_override = RUINS_BOSS_XP_MULT
+	elif GameState.selected_map == "frostpeak":
+		boss_name = "빙령"
+		boss.boss_texture_override = "res://assets/sprites/enemy_frost_mid.png"
+		boss.use_frost_burst = true
+		boss.xp_mult_override = FROSTPEAK_BOSS_XP_MULT
 	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
 	if GameState.selected_map == "ruins":
 		boss_mult *= RUINS_BOSS_HP_MULT
+	elif GameState.selected_map == "frostpeak":
+		boss_mult *= FROSTPEAK_BOSS_HP_MULT
 	boss.difficulty_mult = boss_mult
 	var pos: Vector2
 	if is_resume:
@@ -612,6 +633,11 @@ func _spawn_overlord() -> void:
 		current_overlord_name = "천마"
 		overlord.use_cheonma_finale = true
 		overlord.difficulty_mult = base_mult * 1.6
+	elif GameState.selected_map == "frostpeak":
+		overlord.boss_texture_override = "res://assets/sprites/enemy_frost_overlord.png"
+		current_overlord_name = "빙제"
+		overlord.use_frost_finale = true
+		overlord.difficulty_mult = base_mult * FROSTPEAK_OVERLORD_MULT
 	else:
 		overlord.difficulty_mult = base_mult * 1.3
 	var angle: float = randf() * TAU
