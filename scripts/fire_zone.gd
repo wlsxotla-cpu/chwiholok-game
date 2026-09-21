@@ -6,6 +6,9 @@ extends Area2D
 const MAX_ACTIVE_ZONES := 6
 static var active_zones: Array = []
 
+const SLOW_DURATION := 0.6
+const SLOW_MULT := 0.6
+
 var damage: float = 4.0
 var duration: float = 2.0
 var tick_interval: float = 0.5
@@ -36,7 +39,7 @@ func setup(dmg: float, dur: float, r: float, maxed: bool = false) -> void:
 	$CollisionShape2D.shape = shape
 
 	if maxed:
-		sprite.modulate = Color(1.8, 0.35, 1.1, 1.0)
+		sprite.modulate = Color(1.25, 0.95, 0.8, 1.0)
 	sprite.scale = Vector2(0.15, 0.15)
 	var base_scale: float = radius / FIRE_TEXTURE_OUTER_RADIUS_PX
 	var land_tween := create_tween()
@@ -45,16 +48,11 @@ func setup(dmg: float, dur: float, r: float, maxed: bool = false) -> void:
 	var burst := preload("res://scenes/HitSpark.tscn").instantiate()
 	get_parent().add_child(burst)
 	burst.global_position = global_position
-
-	var pulse := create_tween()
-	pulse.set_loops()
-	pulse.tween_property(sprite, "scale", Vector2(base_scale * 1.08, base_scale * 1.08), 0.35).set_trans(Tween.TRANS_SINE)
-	pulse.tween_property(sprite, "scale", Vector2(base_scale * 0.96, base_scale * 0.96), 0.35).set_trans(Tween.TRANS_SINE)
 	queue_redraw()
 
 func _draw() -> void:
-	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(1.0, 0.65, 0.25, 0.9), 3.5, true)
-	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(0.15, 0.05, 0.0, 0.6), 1.0, true)
+	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(1.0, 0.65, 0.25, 0.65), 3.0, true)
+	draw_arc(Vector2.ZERO, radius, 0.0, TAU, 48, Color(0.15, 0.05, 0.0, 0.5), 1.0, true)
 
 func _physics_process(delta: float) -> void:
 	duration -= delta
@@ -68,10 +66,12 @@ func _physics_process(delta: float) -> void:
 		for body in get_overlapping_bodies():
 			if body.is_in_group("enemies") and body.has_method("take_damage"):
 				body.take_damage(damage)
+				if body.has_method("apply_slow"):
+					body.apply_slow(SLOW_DURATION, SLOW_MULT)
 
 	ember_timer -= delta
 	if ember_timer <= 0.0:
-		ember_timer = 0.18
+		ember_timer = 0.45
 		_spawn_ember()
 
 func _spawn_ember() -> void:

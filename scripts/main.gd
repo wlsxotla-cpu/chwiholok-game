@@ -17,6 +17,8 @@ var elapsed: float = 0.0
 var game_time: float = 0.0
 var spawn_timer: float = 0.0
 var heal_spawn_timer: float = 18.0
+var songpyeon_spawn_timer: float = 25.0
+var chuseok_event_active: bool = false
 var boss_spawn_timer: float = BOSS_INTERVAL
 var boss_count: int = 0
 var horde_timer: float = FIRST_HORDE_DELAY
@@ -56,6 +58,7 @@ func _ready() -> void:
 		GameState.pending_run_data = {}
 	var resume_mid_boss_alive: bool = was_resuming and bool(resume_data.get("mid_boss_alive", false))
 	var resume_consumable_pets: Array = resume_data.get("active_consumable_pets", []) if was_resuming else []
+	chuseok_event_active = GameState.is_chuseok_event_active()
 	_apply_map_theme()
 	if not was_resuming:
 		await _confirm_consumable_item_use()
@@ -518,6 +521,12 @@ func _process(delta: float) -> void:
 		_spawn_heal()
 		heal_spawn_timer = randf_range(22.0, 32.0)
 
+	if chuseok_event_active:
+		songpyeon_spawn_timer -= game_delta
+		if songpyeon_spawn_timer <= 0.0:
+			_spawn_songpyeon()
+			songpyeon_spawn_timer = randf_range(20.0, 28.0)
+
 	boss_spawn_timer -= game_delta
 	if boss_spawn_timer <= 0.0:
 		boss_spawn_timer = BOSS_INTERVAL
@@ -627,8 +636,21 @@ func _spawn_horde() -> void:
 		enemy.global_position = pos
 		enemy.died.connect(func() -> void: run_kill_count += 1)
 		add_child(enemy)
-	hud.show_horde_warning()
+	if chuseok_event_active:
+		hud.show_chuseok_horde_warning()
+		_spawn_songpyeon_cluster()
+	else:
+		hud.show_horde_warning()
 	SoundManager.play("explosion", -2.0, 0.85)
+
+func _spawn_songpyeon_cluster() -> void:
+	for i in range(3):
+		var songpyeon := preload("res://scenes/Pickup.tscn").instantiate()
+		songpyeon.type = songpyeon.Type.SONGPYEON
+		var angle: float = randf() * TAU
+		var dist: float = randf_range(150.0, 320.0)
+		songpyeon.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * dist
+		add_child(songpyeon)
 
 func _spawn_overlord() -> void:
 	var overlord := preload("res://scenes/Enemy.tscn").instantiate()
@@ -886,6 +908,14 @@ func _spawn_heal() -> void:
 	var dist: float = randf_range(120.0, 300.0)
 	heal.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * dist
 	add_child(heal)
+
+func _spawn_songpyeon() -> void:
+	var songpyeon := preload("res://scenes/Pickup.tscn").instantiate()
+	songpyeon.type = songpyeon.Type.SONGPYEON
+	var angle: float = randf() * TAU
+	var dist: float = randf_range(120.0, 300.0)
+	songpyeon.global_position = player.global_position + Vector2(cos(angle), sin(angle)) * dist
+	add_child(songpyeon)
 
 func _update_hud() -> void:
 	hud.set_xp(player.xp, player.xp_to_level, player.level)

@@ -1,13 +1,16 @@
 extends Area2D
 
-enum Type { XP, MAGNET, HEAL, COIN }
+enum Type { XP, MAGNET, HEAL, COIN, SONGPYEON }
 
 const TEXTURES := {
 	Type.XP: preload("res://assets/sprites/pickup_xp.png"),
 	Type.MAGNET: preload("res://assets/sprites/pickup_magnet.png"),
 	Type.HEAL: preload("res://assets/sprites/pickup_heal.png"),
 	Type.COIN: preload("res://assets/sprites/pickup_coin.png"),
+	Type.SONGPYEON: preload("res://assets/sprites/pickup_songpyeon.png"),
 }
+
+const SONGPYEON_BUFF_DURATION := 8.0
 
 @export var type: Type = Type.XP
 @export var value: float = 1.0
@@ -59,4 +62,7 @@ func _on_body_entered(body: Node) -> void:
 		Type.COIN:
 			body.add_coins(int(value))
 			SoundManager.play("coin", -6.0)
+		Type.SONGPYEON:
+			body.activate_chuseok_buff(SONGPYEON_BUFF_DURATION)
+			SoundManager.play("levelup", 2.0, 1.3)
 	queue_free()

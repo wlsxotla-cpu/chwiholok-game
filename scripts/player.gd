@@ -95,6 +95,14 @@ var magnet_timer: float = 0.0
 var global_damage_mult: float = 1.0
 var global_cooldown_mult: float = 1.0
 
+var chuseok_buff_timer: float = 0.0
+const CHUSEOK_SPEED_MULT := 1.3
+const CHUSEOK_COOLDOWN_MULT := 0.8
+
+func activate_chuseok_buff(duration: float) -> void:
+	chuseok_buff_timer = max(chuseok_buff_timer, duration)
+	anim.modulate = Color(1.9, 1.6, 0.6, 1.0)
+
 var weapons: Array = []
 var owned_passives: Dictionary = {}
 var orbit_node: Node2D = null
@@ -307,7 +315,8 @@ func apply_slow(duration: float, mult: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	var input_dir: Vector2 = _current_input_dir()
-	var target_velocity: Vector2 = input_dir * speed * slow_mult
+	var chuseok_speed_mult: float = CHUSEOK_SPEED_MULT if chuseok_buff_timer > 0.0 else 1.0
+	var target_velocity: Vector2 = input_dir * speed * slow_mult * chuseok_speed_mult
 	velocity = velocity.lerp(target_velocity, clamp(20.0 * delta, 0.0, 1.0))
 	move_and_slide()
 	_update_animation(input_dir)
@@ -316,6 +325,11 @@ func _physics_process(delta: float) -> void:
 		slow_timer -= delta
 		if slow_timer <= 0.0:
 			slow_mult = 1.0
+
+	if chuseok_buff_timer > 0.0:
+		chuseok_buff_timer -= delta
+		if chuseok_buff_timer <= 0.0 and invincible_timer <= 0.0:
+			anim.modulate = Color(1, 1, 1, 1)
 
 	if invincible_timer > 0.0:
 		invincible_timer -= delta
@@ -413,7 +427,7 @@ func _weapon_stat(w: Dictionary, key: String) -> float:
 	var value: float = 0.0
 	match key:
 		"cooldown":
-			value = float(def.cooldown) * global_cooldown_mult
+			value = float(def.cooldown) * global_cooldown_mult * (CHUSEOK_COOLDOWN_MULT if chuseok_buff_timer > 0.0 else 1.0)
 		"damage":
 			value = float(def.damage) * _level_mult(lvl, 0.15) * global_damage_mult
 		"radius":

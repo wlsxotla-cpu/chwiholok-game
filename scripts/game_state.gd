@@ -3,7 +3,17 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.52.1 · 2026-09-21"
+const VERSION := "v0.53.0 · 2026-09-21"
+
+const CHUSEOK_EVENT_START := {"year": 2026, "month": 9, "day": 18}
+const CHUSEOK_EVENT_END := {"year": 2026, "month": 10, "day": 3}
+
+func is_chuseok_event_active() -> bool:
+	var now: Dictionary = Time.get_date_dict_from_system()
+	var today: int = now.year * 10000 + now.month * 100 + now.day
+	var start: int = CHUSEOK_EVENT_START.year * 10000 + CHUSEOK_EVENT_START.month * 100 + CHUSEOK_EVENT_START.day
+	var end: int = CHUSEOK_EVENT_END.year * 10000 + CHUSEOK_EVENT_END.month * 100 + CHUSEOK_EVENT_END.day
+	return today >= start and today <= end
 
 const MODES := [
 	{"id": "normal", "name": "일반"},

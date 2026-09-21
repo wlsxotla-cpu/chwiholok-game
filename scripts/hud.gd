@@ -800,6 +800,9 @@ func show_boss_warning() -> void:
 func show_horde_warning() -> void:
 	_show_banner("몬스터 웨이브!", Color(1.0, 0.65, 0.3, 1))
 
+func show_chuseok_horde_warning() -> void:
+	_show_banner("보름달 무리! 송편이 쏟아진다", Color(1.0, 0.85, 0.5, 1))
+
 func show_chest_spawned() -> void:
 	_show_banner("보물상자 출현!", Color(0.95, 0.82, 0.35, 1))
 
