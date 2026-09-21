@@ -238,8 +238,8 @@ func _ensure_orbit_node(wid: String) -> void:
 func _find_joystick() -> void:
 	joystick = get_tree().get_first_node_in_group("joystick")
 
-const RUINS_META_DEBUFF := 0.5
-const FROSTPEAK_META_DEBUFF := 0.4
+const RUINS_META_DEBUFF := 0.65
+const FROSTPEAK_META_DEBUFF := 0.55
 
 func _apply_meta_upgrades() -> void:
 	var meta: Dictionary = GameState.meta_upgrades
@@ -254,8 +254,8 @@ func _apply_meta_upgrades() -> void:
 	base_pickup_radius *= (1.0 + 0.10 * float(meta.get("pickup", 0)) * mult)
 	max_continues = 1 + int(meta.get("revive_slots", 0))
 
-const RUINS_TIER_DEBUFF := 0.1
-const FROSTPEAK_TIER_DEBUFF := 0.0
+const RUINS_TIER_DEBUFF := 0.3
+const FROSTPEAK_TIER_DEBUFF := 0.15
 
 func _apply_character_tier_bonus(char_data: Dictionary) -> void:
 	var tier: int = int(char_data.get("tier", 0))

@@ -652,7 +652,7 @@ func _spawn_overlord() -> void:
 		overlord.use_frost_finale = true
 		overlord.speed_override = 380.0
 		overlord.difficulty_mult = base_mult * FROSTPEAK_OVERLORD_MULT
-		overlord.hp_mult_override = 2.0
+		overlord.hp_mult_override = 1.5
 	else:
 		overlord.difficulty_mult = base_mult * 1.3
 	var angle: float = randf() * TAU
