@@ -88,8 +88,27 @@ func _show_changelog_popup(show_all: bool) -> void:
 	vbox.add_theme_constant_override("separation", 10)
 	box.add_child(vbox)
 
+	# Multiple versions can ship on the same day; group them together so the
+	# player sees everything from the latest patch day in one notice instead
+	# of only the single newest version entry.
+	var entries: Array = Changelog.ENTRIES
+	if not show_all:
+		var latest_date: String = Changelog.ENTRIES[0].date
+		var todays_entries: Array = []
+		for e in Changelog.ENTRIES:
+			if e.date == latest_date:
+				todays_entries.append(e)
+			else:
+				break
+		entries = todays_entries
+
 	var title_lbl := Label.new()
-	title_lbl.text = "업데이트 기록" if show_all else ("버전 업데이트: %s" % GameState.VERSION)
+	if show_all:
+		title_lbl.text = "업데이트 기록"
+	elif entries.size() > 1:
+		title_lbl.text = "업데이트 소식 (%s)" % entries[0].date
+	else:
+		title_lbl.text = "버전 업데이트: %s" % GameState.VERSION
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_size_override("font_size", 20)
 	title_lbl.add_theme_color_override("font_color", Color(0.91, 0.71, 0.24, 1))
@@ -103,8 +122,6 @@ func _show_changelog_popup(show_all: bool) -> void:
 	list.add_theme_constant_override("separation", 14)
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
-
-	var entries: Array = Changelog.ENTRIES if show_all else [Changelog.ENTRIES[0]]
 	for entry in entries:
 		var ver_lbl := Label.new()
 		ver_lbl.text = "%s (%s)" % [entry.version, entry.date]
