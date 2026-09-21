@@ -11,6 +11,7 @@ const TEXTURES := {
 }
 
 const SONGPYEON_BUFF_DURATION := 8.0
+const SONGPYEON_XP_RATIO := 0.2
 
 @export var type: Type = Type.XP
 @export var value: float = 1.0
@@ -64,5 +65,6 @@ func _on_body_entered(body: Node) -> void:
 			SoundManager.play("coin", -6.0)
 		Type.SONGPYEON:
 			body.activate_chuseok_buff(SONGPYEON_BUFF_DURATION)
+			body.gain_xp(body.xp_to_level * SONGPYEON_XP_RATIO)
 			SoundManager.play("levelup", 2.0, 1.3)
 	queue_free()

@@ -17,7 +17,7 @@ var elapsed: float = 0.0
 var game_time: float = 0.0
 var spawn_timer: float = 0.0
 var heal_spawn_timer: float = 18.0
-var songpyeon_spawn_timer: float = 25.0
+var songpyeon_spawn_timer: float = 12.0
 var chuseok_event_active: bool = false
 var boss_spawn_timer: float = BOSS_INTERVAL
 var boss_count: int = 0
@@ -525,7 +525,7 @@ func _process(delta: float) -> void:
 		songpyeon_spawn_timer -= game_delta
 		if songpyeon_spawn_timer <= 0.0:
 			_spawn_songpyeon()
-			songpyeon_spawn_timer = randf_range(20.0, 28.0)
+			songpyeon_spawn_timer = randf_range(10.0, 16.0)
 
 	boss_spawn_timer -= game_delta
 	if boss_spawn_timer <= 0.0:
@@ -644,7 +644,7 @@ func _spawn_horde() -> void:
 	SoundManager.play("explosion", -2.0, 0.85)
 
 func _spawn_songpyeon_cluster() -> void:
-	for i in range(3):
+	for i in range(5):
 		var songpyeon := preload("res://scenes/Pickup.tscn").instantiate()
 		songpyeon.type = songpyeon.Type.SONGPYEON
 		var angle: float = randf() * TAU
