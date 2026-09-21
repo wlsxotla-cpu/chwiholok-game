@@ -30,7 +30,7 @@ const WEAPON_DEFS := {
 	"lightning": {"name": "뇌전장", "cooldown": 1.8, "damage": 7.0, "count": 2.0},
 	"heaven_blade": {"name": "천지개벽검", "cooldown": 1.0, "damage": 22.0, "radius": 130.0, "knockback": 160.0},
 	"piercing_calamity": {"name": "멸겁관천검", "cooldown": 1.3, "damage": 26.0, "radius": 340.0},
-	"whirl_storm": {"name": "선풍만리표", "cooldown": 1.2, "damage": 17.0, "count": 5.0},
+	"whirl_storm": {"name": "선풍만리표", "cooldown": 1.0, "damage": 17.0, "count": 5.0},
 	"thunder_formation": {"name": "뇌검진", "cooldown": 1.0, "damage": 9.0, "radius": 100.0, "count": 3.0},
 	"halberd": {"name": "패왕붕권", "cooldown": 1.3, "damage": 13.0, "count": 3.0},
 	"swordshield": {"name": "호심검방", "cooldown": 1.5, "damage": 9.0, "radius": 260.0, "count": 6.0},
@@ -643,7 +643,7 @@ func _fire_whirl_storm(w: Dictionary) -> void:
 	var base_dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
 	var count: int = int(_weapon_stat(w, "count"))
 	var damage: float = _weapon_stat(w, "damage")
-	var spread_deg: float = 16.0
+	var spread_deg: float = 9.0
 	for i in range(count):
 		var start_angle: float = TAU * float(i) / float(count)
 		var launch_offset: float = (i - (count - 1) / 2.0) * spread_deg

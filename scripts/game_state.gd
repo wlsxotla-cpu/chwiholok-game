@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.53.3 · 2026-09-21"
+const VERSION := "v0.53.4 · 2026-09-21"
 
 const CHUSEOK_EVENT_START := {"year": 2026, "month": 9, "day": 18}
 const CHUSEOK_EVENT_END := {"year": 2026, "month": 10, "day": 3}
