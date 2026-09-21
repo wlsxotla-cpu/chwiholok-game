@@ -940,8 +940,11 @@ func gain_xp(amount: float) -> void:
 		did_level_up = true
 	# If a level-up choice (or a fusion offer it triggered) is already being
 	# shown, don't stack another pause on top of it - _resume_after_choice()
-	# will surface this one once the current one is resolved.
-	if did_level_up and not get_tree().paused:
+	# will surface this one once the current one is resolved. Track this with
+	# a dedicated flag rather than get_tree().paused, since the tree can be
+	# paused for unrelated reasons (manual pause menu, dev panel, etc.) that
+	# must not suppress the level-up modal from ever appearing.
+	if did_level_up and not level_up_flow_active:
 		_offer_level_up()
 
 const REROLL_COST := 15
@@ -997,9 +1000,12 @@ func _is_locked_character_weapon(wid: String) -> bool:
 			return not GameState.is_character_unlocked(c.id)
 	return false
 
+var level_up_flow_active: bool = false
+
 func _offer_level_up() -> void:
 	SoundManager.play("levelup")
 	reroll_used_this_levelup = false
+	level_up_flow_active = true
 	get_tree().paused = true
 	leveled_up.emit(_build_level_up_choices(), max(0, pending_level_ups - 1))
 
@@ -1008,6 +1014,7 @@ func _resume_after_choice() -> void:
 	if pending_level_ups > 0:
 		_offer_level_up()
 	else:
+		level_up_flow_active = false
 		get_tree().paused = false
 		invincible_timer = max(invincible_timer, LEVEL_UP_RESUME_INVINCIBLE)
 
