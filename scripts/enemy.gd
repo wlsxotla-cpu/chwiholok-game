@@ -129,6 +129,18 @@ func apply_vulnerable(duration: float, mult: float) -> void:
 	vulnerable_timer = max(vulnerable_timer, duration)
 	vulnerable_mult = max(vulnerable_mult, mult)
 
+const CURSE_TICK_INTERVAL := 0.5
+var curse_timer: float = 0.0
+var curse_tick_timer: float = 0.0
+var curse_tick_damage: float = 0.0
+var curse_boss_ratio: float = 0.0
+
+func apply_curse(duration: float, tick_damage: float, boss_ratio: float) -> void:
+	curse_timer = max(curse_timer, duration)
+	curse_tick_damage = tick_damage
+	curse_boss_ratio = boss_ratio
+	curse_tick_timer = 0.0
+
 var health: float
 var player: Node2D
 var damage_tick: float = 0.0
@@ -210,6 +222,16 @@ func _physics_process(delta: float) -> void:
 		vulnerable_timer -= delta
 		if vulnerable_timer <= 0.0:
 			vulnerable_mult = 1.0
+
+	if curse_timer > 0.0:
+		curse_timer -= delta
+		curse_tick_timer -= delta
+		if curse_tick_timer <= 0.0:
+			curse_tick_timer = CURSE_TICK_INTERVAL
+			var curse_dmg: float = curse_tick_damage
+			if type == Type.BOSS or type == Type.OVERLORD:
+				curse_dmg += max_health * curse_boss_ratio
+			take_damage(curse_dmg)
 
 	if knockback_timer > 0.0:
 		knockback_timer -= delta

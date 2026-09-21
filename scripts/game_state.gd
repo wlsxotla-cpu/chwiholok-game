@@ -3,7 +3,7 @@ extends Node
 const SAVE_PATH := "user://save.json"
 const RUN_SAVE_PATH := "user://run_save.json"
 const ARENA_HALF_SIZE := 1800.0
-const VERSION := "v0.54.0 · 2026-09-21"
+const VERSION := "v0.55.0 · 2026-09-21"
 
 const CHUSEOK_EVENT_START := {"year": 2026, "month": 9, "day": 18}
 const CHUSEOK_EVENT_END := {"year": 2026, "month": 10, "day": 3}
@@ -42,8 +42,8 @@ const PET_COST := 5000
 const MAX_PET_STOCK := 99
 const PET_DEFS := {
 	"green_spirit": {"name": "초록 정령", "sprite": "res://assets/sprites/pet_spirit_green.png", "offset": Vector2(34, -52), "desc": "내공 %d 소모해 영입. 이후 모든 판에 함께 등장해 12초마다 보호막을 씌워줘서 다음 피격 1회를 완전히 막아줌" % PET_COST},
-	"push_spirit": {"name": "충격파", "sprite": "res://assets/sprites/pet_spirit_push.png", "offset": Vector2(-34, -52), "cost": 2000, "consumable": true, "desc": "내공 2000 소모해 1개 구매하는 소모품 (최대 99개 보유). 보유한 개수만큼 판에 데려갈 수 있고, 한 판당 1개씩 소모됨. 그 판 안에서는 30초마다 자동으로 발동해 주변 적을 밀쳐냄 (패시브, 버튼 조작 불필요)"},
-	"freeze_charm": {"name": "빙결부", "sprite": "res://assets/sprites/pet_spirit_freeze.png", "offset": Vector2(-34, -92), "cost": 2000, "consumable": true, "desc": "내공 2000 소모해 1개 구매하는 소모품 (최대 99개 보유). 보유한 개수만큼 판에 데려갈 수 있고, 한 판당 1개씩 소모됨. 그 판 안에서는 30초마다 자동으로 발동해 화면 내 모든 적을 2초간 완전히 얼려버림 (패시브, 버튼 조작 불필요, 빙궁 보스에게는 통하지 않음)"},
+	"push_spirit": {"name": "충격파", "sprite": "res://assets/sprites/pet_spirit_push.png", "offset": Vector2(-34, -52), "cost": 200, "consumable": true, "desc": "내공 200 소모해 1개 구매하는 소모품 (최대 99개 보유). 보유한 개수만큼 판에 데려갈 수 있고, 한 판당 1개씩 소모됨. 그 판 안에서는 30초마다 자동으로 발동해 주변 적을 밀쳐냄 (패시브, 버튼 조작 불필요)"},
+	"freeze_charm": {"name": "빙결부", "sprite": "res://assets/sprites/pet_spirit_freeze.png", "offset": Vector2(-34, -92), "cost": 200, "consumable": true, "desc": "내공 200 소모해 1개 구매하는 소모품 (최대 99개 보유). 보유한 개수만큼 판에 데려갈 수 있고, 한 판당 1개씩 소모됨. 그 판 안에서는 30초마다 자동으로 발동해 화면 내 모든 적을 2초간 완전히 얼려버림 (패시브, 버튼 조작 불필요, 빙궁 보스에게는 통하지 않음)"},
 }
 
 const MAPS := [

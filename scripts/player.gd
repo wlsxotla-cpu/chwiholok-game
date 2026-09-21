@@ -400,12 +400,12 @@ func _find_nearest_enemy() -> Node2D:
 
 const BOSS_TARGET_SEARCH_RANGE := 600.0
 
-func _find_boss_priority_target() -> Node2D:
+func _find_boss_priority_target(any_range: float = TARGET_SEARCH_RANGE, boss_range: float = BOSS_TARGET_SEARCH_RANGE) -> Node2D:
 	var enemies := get_tree().get_nodes_in_group("enemies")
 	var nearest_boss: Node2D = null
-	var nearest_boss_dist := BOSS_TARGET_SEARCH_RANGE
+	var nearest_boss_dist := boss_range
 	var nearest_any: Node2D = null
-	var nearest_any_dist := TARGET_SEARCH_RANGE
+	var nearest_any_dist := any_range
 	for e in enemies:
 		var d: float = global_position.distance_to(e.global_position)
 		if d < nearest_any_dist:
@@ -800,27 +800,25 @@ func _fire_rapier(w: Dictionary) -> void:
 		fx.set_radius(26.0, maxed)
 	SoundManager.play("attack_melee", -3.0, 1.5)
 
-const CURSE_MAX_EFFECTS := 12
+const CURSE_MARK_DURATION := 3.0
+const CURSE_BOSS_RATIO := 0.01
+const CATACLYSM_CURSE_BOSS_RATIO := 0.02
 
 func _fire_curse(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")
 	var range: float = _weapon_stat(w, "radius")
-	var enemies: Array = get_tree().get_nodes_in_group("enemies").filter(
-		func(e: Node) -> bool: return global_position.distance_to(e.global_position) <= range
-	)
-	var struck: int = 0
-	for e in enemies:
-		e.take_damage(damage)
-		if struck < CURSE_MAX_EFFECTS:
-			var fx := preload("res://scenes/LightningEffect.tscn").instantiate()
-			get_parent().add_child(fx)
-			fx.global_position = e.global_position
-			fx.setup(_is_maxed(w))
-			fx.modulate = Color(1.3, 0.5, 1.5, 1.0)
-		struck += 1
-	if struck > 0:
-		SoundManager.play("attack_fireball", -2.0, 0.8)
-		screen_shake(2.0, 0.08)
+	var target := _find_boss_priority_target(range, range * 2.0)
+	if target == null:
+		return
+	if target.has_method("apply_curse"):
+		target.apply_curse(CURSE_MARK_DURATION, damage, CURSE_BOSS_RATIO)
+	var fx := preload("res://scenes/LightningEffect.tscn").instantiate()
+	get_parent().add_child(fx)
+	fx.global_position = target.global_position
+	fx.setup(_is_maxed(w))
+	fx.modulate = Color(1.3, 0.5, 1.5, 1.0)
+	SoundManager.play("attack_fireball", -2.0, 0.8)
+	screen_shake(2.0, 0.08)
 
 func _fire_cataclysm_fury(w: Dictionary) -> void:
 	var damage: float = _weapon_stat(w, "damage")
@@ -839,21 +837,15 @@ func _fire_cataclysm_fury(w: Dictionary) -> void:
 		fist.setup(start_pos + dir * FIST_RANGE, damage, maxed)
 		fist.modulate = Color(1.3, 0.6, 1.7, 1.0)
 
-	var enemies: Array = get_tree().get_nodes_in_group("enemies").filter(
-		func(e: Node) -> bool: return global_position.distance_to(e.global_position) <= TARGET_SEARCH_RANGE
-	)
-	enemies.shuffle()
-	var struck: int = 0
-	for e in enemies:
-		e.take_damage(damage * 0.75)
+	var curse_target := _find_boss_priority_target(TARGET_SEARCH_RANGE, TARGET_SEARCH_RANGE * 2.0)
+	if curse_target != null:
+		if curse_target.has_method("apply_curse"):
+			curse_target.apply_curse(CURSE_MARK_DURATION, damage * 0.75, CATACLYSM_CURSE_BOSS_RATIO)
 		var curse_fx := preload("res://scenes/LightningEffect.tscn").instantiate()
 		get_parent().add_child(curse_fx)
-		curse_fx.global_position = e.global_position
+		curse_fx.global_position = curse_target.global_position
 		curse_fx.setup(maxed)
 		curse_fx.modulate = Color(1.2, 0.5, 1.55, 1.0)
-		struck += 1
-		if struck >= count:
-			break
 	SoundManager.play("attack_fireball", -2.0, 0.75)
 	screen_shake(3.0, 0.12)
 

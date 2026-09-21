@@ -585,7 +585,7 @@ func _spawn_boss(is_resume: bool = false, resume_health: float = 0.0, resume_pos
 		boss_name = "빙령"
 		boss.boss_texture_override = "res://assets/sprites/enemy_frost_mid.png"
 		boss.use_frost_burst = true
-		boss.speed_override = 150.0
+		boss.speed_override = 120.0
 		boss.xp_mult_override = FROSTPEAK_BOSS_XP_MULT
 	var base_mult: float = 1.0 + game_time / _difficulty_divisor()
 	var boss_mult: float = base_mult * (1.0 + (boss_count - 1) * 0.45)
