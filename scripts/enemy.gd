@@ -122,6 +122,13 @@ func apply_slow(duration: float, mult: float) -> void:
 	slow_timer = max(slow_timer, duration)
 	slow_mult = min(slow_mult, mult)
 
+var vulnerable_timer: float = 0.0
+var vulnerable_mult: float = 1.0
+
+func apply_vulnerable(duration: float, mult: float) -> void:
+	vulnerable_timer = max(vulnerable_timer, duration)
+	vulnerable_mult = max(vulnerable_mult, mult)
+
 var health: float
 var player: Node2D
 var damage_tick: float = 0.0
@@ -198,6 +205,11 @@ func _physics_process(delta: float) -> void:
 		slow_timer -= delta
 		if slow_timer <= 0.0:
 			slow_mult = 1.0
+
+	if vulnerable_timer > 0.0:
+		vulnerable_timer -= delta
+		if vulnerable_timer <= 0.0:
+			vulnerable_mult = 1.0
 
 	if knockback_timer > 0.0:
 		knockback_timer -= delta
@@ -584,7 +596,7 @@ func apply_knockback(v: Vector2, duration: float = 0.25) -> void:
 	knockback_velocity = v
 
 func take_damage(amount: float) -> void:
-	health -= amount
+	health -= amount * vulnerable_mult
 	_spawn_hit_spark()
 	if health <= 0.0:
 		SoundManager.play("death", -4.0, randf_range(0.9, 1.1))

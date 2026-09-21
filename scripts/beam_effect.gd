@@ -8,7 +8,7 @@ var fill_color: Color = Color(1.9, 1.75, 1.35, 0.45)
 var core_color: Color = Color(1.0, 0.95, 0.75, 0.9)
 var core_width: float = 5.0
 
-func setup(direction: Vector2, l: float, w: float, empowered: bool = false) -> void:
+func setup(direction: Vector2, l: float, w: float, empowered: bool = false, color_override: Color = Color(-1.0, -1.0, -1.0, -1.0)) -> void:
 	dir = direction
 	length = l
 	width = w
@@ -17,6 +17,9 @@ func setup(direction: Vector2, l: float, w: float, empowered: bool = false) -> v
 		fill_color = Color(0.85, 0.25, 0.95, 0.55)
 		core_color = Color(1.0, 0.85, 1.0, 1.0)
 		core_width = 10.0
+	if color_override.a >= 0.0:
+		fill_color = Color(color_override.r, color_override.g, color_override.b, 0.5)
+		core_color = Color(minf(color_override.r * 1.2, 2.0), minf(color_override.g * 1.2, 2.0), minf(color_override.b * 1.2, 2.0), 1.0)
 	queue_redraw()
 	var tween := create_tween()
 	tween.tween_method(_set_alpha, 1.0, 0.0, 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.03)

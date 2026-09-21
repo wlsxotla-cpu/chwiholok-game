@@ -485,7 +485,7 @@ func _fire_weapon(w: Dictionary) -> void:
 		"piercing_calamity":
 			_fire_beam(w)
 		"whirl_storm":
-			_fire_boomerang(w)
+			_fire_whirl_storm(w)
 		"thunder_formation":
 			_fire_thunder_formation(w)
 		"halberd":
@@ -532,12 +532,16 @@ func _fire_thunder_formation(w: Dictionary) -> void:
 	orbit_node.sync(_weapon_stat(w, "damage"), _weapon_stat(w, "radius"), int(_weapon_stat(w, "count")), _is_maxed(w))
 	_fire_lightning(w)
 
+const CALAMITY_VULN_DURATION := 3.0
+const CALAMITY_VULN_MULT := 1.4
+
 func _fire_beam(w: Dictionary) -> void:
 	var target := _find_boss_priority_target()
 	var dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
 	var length: float = _weapon_stat(w, "radius")
 	var damage: float = _weapon_stat(w, "damage")
-	var width: float = float(WEAPON_DEFS[w.id].get("width", 36.0)) if w.id != "piercing_calamity" else 90.0
+	var is_calamity: bool = w.id == "piercing_calamity"
+	var width: float = float(WEAPON_DEFS[w.id].get("width", 36.0)) if not is_calamity else 90.0
 	if _is_maxed(w):
 		width *= 1.6
 	var hit_any := false
@@ -549,6 +553,8 @@ func _fire_beam(w: Dictionary) -> void:
 		var perp: float = (to_e - dir * proj).length()
 		if perp <= width / 2.0:
 			e.take_damage(damage)
+			if is_calamity and e.has_method("apply_vulnerable"):
+				e.apply_vulnerable(CALAMITY_VULN_DURATION, CALAMITY_VULN_MULT)
 			hit_any = true
 	if hit_any:
 		screen_shake(2.5, 0.1)
@@ -556,7 +562,11 @@ func _fire_beam(w: Dictionary) -> void:
 	var fx := preload("res://scenes/BeamEffect.tscn").instantiate()
 	get_parent().add_child(fx)
 	fx.global_position = global_position
-	fx.setup(dir, length, width, _is_maxed(w))
+	var calamity_color: Color = Color(0.85, 0.2, 0.75, 1.0) if is_calamity else Color(-1.0, -1.0, -1.0, -1.0)
+	fx.setup(dir, length, width, _is_maxed(w), calamity_color)
+
+const SKY_PIERCER_STAB_COUNT := 3
+const SKY_PIERCER_STAB_DAMAGE_MULT := 0.3
 
 func _fire_spear(w: Dictionary) -> void:
 	var target := _find_nearest_enemy()
@@ -564,10 +574,13 @@ func _fire_spear(w: Dictionary) -> void:
 		return
 	var damage: float = _weapon_stat(w, "damage")
 	var burst_radius: float = _weapon_stat(w, "radius")
+	var is_sky_piercer: bool = w.id == "sky_piercer"
 	var javelin := preload("res://scenes/JavelinBullet.tscn").instantiate()
 	get_parent().add_child(javelin)
 	javelin.global_position = global_position
-	javelin.setup(target.global_position, damage, burst_radius, _is_maxed(w))
+	var stabs: int = SKY_PIERCER_STAB_COUNT if is_sky_piercer else 0
+	var stab_dmg: float = damage * SKY_PIERCER_STAB_DAMAGE_MULT if is_sky_piercer else 0.0
+	javelin.setup(target.global_position, damage, burst_radius, _is_maxed(w), stabs, stab_dmg)
 	SoundManager.play("attack_ranged", -3.0, 0.9)
 
 func _fire_lightning(w: Dictionary) -> void:
@@ -610,6 +623,21 @@ func _fire_boomerang(w: Dictionary) -> void:
 		dart.global_position = global_position
 		dart.setup(self, d, damage, _is_maxed(w))
 	SoundManager.play("attack_ranged", -4.0, 1.05)
+
+func _fire_whirl_storm(w: Dictionary) -> void:
+	var target := _find_nearest_enemy()
+	var base_dir: Vector2 = (target.global_position - global_position).normalized() if target else _facing_vector()
+	var count: int = int(_weapon_stat(w, "count"))
+	var damage: float = _weapon_stat(w, "damage")
+	var spread_deg: float = 16.0
+	for i in range(count):
+		var start_angle: float = TAU * float(i) / float(count)
+		var launch_offset: float = (i - (count - 1) / 2.0) * spread_deg
+		var launch_dir: Vector2 = base_dir.rotated(deg_to_rad(launch_offset))
+		var blade := preload("res://scenes/WhirlBladeBullet.tscn").instantiate()
+		get_parent().add_child(blade)
+		blade.setup(self, start_angle, damage, _is_maxed(w), launch_dir)
+	SoundManager.play("attack_ranged", -2.0, 1.2)
 
 func _fire_slash(w: Dictionary) -> void:
 	var radius: float = _weapon_stat(w, "radius")
