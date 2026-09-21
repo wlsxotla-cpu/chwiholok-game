@@ -94,8 +94,6 @@ func _ready() -> void:
 		active_altar = null)
 	hud.altar_offer_declined.connect(func() -> void:
 		active_altar = null)
-	hud.pet_skill_pressed.connect(_on_pet_skill_pressed)
-	hud.freeze_skill_pressed.connect(_on_freeze_skill_pressed)
 	var char_data: Dictionary = GameState.get_character(GameState.selected_character)
 	var mode_suffix: String = " [패스트]" if GameState.fast_mode else (" [하드]" if GameState.hard_mode else "")
 	hud.set_character_name(char_data.name + mode_suffix)
@@ -871,18 +869,6 @@ func _spawn_pets(is_resume: bool = false, resume_consumable_pets: Array = []) ->
 			_register_consumable_pet(pet_id, pet)
 	hud.set_pet_skill_available(push_pet != null)
 	hud.set_freeze_skill_available(freeze_pet != null)
-
-func _on_pet_skill_pressed() -> void:
-	if push_pet == null or not is_instance_valid(push_pet):
-		hud.set_pet_skill_available(false)
-		return
-	push_pet.try_trigger_push_skill()
-
-func _on_freeze_skill_pressed() -> void:
-	if freeze_pet == null or not is_instance_valid(freeze_pet):
-		hud.set_freeze_skill_available(false)
-		return
-	freeze_pet.try_trigger_freeze_skill()
 
 func _trigger_ruins_midpoint_event() -> void:
 	hud.show_map_event_warning("귀마의 힘이 강해집니다")

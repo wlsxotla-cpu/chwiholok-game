@@ -35,11 +35,15 @@ func _process(delta: float) -> void:
 	if pet_id == "push_spirit":
 		if push_cooldown_timer > 0.0:
 			push_cooldown_timer -= delta
+		else:
+			try_trigger_push_skill()
 		return
 
 	if pet_id == "freeze_charm":
 		if freeze_cooldown_timer > 0.0:
 			freeze_cooldown_timer -= delta
+		else:
+			try_trigger_freeze_skill()
 		return
 
 	var player: Node = get_parent()

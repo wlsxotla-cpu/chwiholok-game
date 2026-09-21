@@ -12,8 +12,6 @@ signal manual_fuse_requested(fid: String)
 signal reroll_requested
 signal altar_offer_confirmed
 signal altar_offer_declined
-signal pet_skill_pressed
-signal freeze_skill_pressed
 signal item_use_decided(use: bool)
 
 @onready var xp_bar: ProgressBar = $XPBar
@@ -156,12 +154,10 @@ func _ready() -> void:
 	menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	reroll_button.pressed.connect(func() -> void: reroll_requested.emit())
 	pause_button.pressed.connect(_on_pause_pressed)
-	pet_skill_button.pressed.connect(func() -> void:
-		SoundManager.play("click")
-		pet_skill_pressed.emit())
-	freeze_skill_button.pressed.connect(func() -> void:
-		SoundManager.play("click")
-		freeze_skill_pressed.emit())
+	# Push/freeze skills are now passive - they auto-fire off cooldown, so
+	# these buttons are display-only status indicators, not clickable.
+	pet_skill_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	freeze_skill_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	resume_button.pressed.connect(_on_resume_pressed)
 	pause_menu_button.pressed.connect(func() -> void: SoundManager.play("click"); menu_pressed.emit())
 	sfx_button.pressed.connect(_on_sfx_toggle)
